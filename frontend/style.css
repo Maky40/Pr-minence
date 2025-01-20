@@ -1,0 +1,218 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    display: flex;
+	flex-direction: column;
+    height: 100vh; /* Utilise toute la hauteur de la fenêtre */
+}
+
+/* Conteneur principal */
+nav {
+    background-color: #000000;
+    padding: 20px 20px; /* Ajoute un peu d'espace autour du contenu */
+}
+
+.navigator {
+    display: flex; /* Active le modèle Flexbox */
+    justify-content: space-between; /* Place les éléments aux extrémités (gauche et droite) */
+    align-items: center; /* Centre verticalement les éléments */
+    width: 100%; /* Le conteneur occupe toute la largeur */
+    box-sizing: border-box; /* Inclut le padding dans la largeur totale */
+}
+
+/* Logo */
+.logo {
+    height: 150px; /* Ajuste la hauteur du logo */
+	width: auto;
+    object-fit: contain; /* Assure un redimensionnement propre si nécessaire */
+}
+
+/* Groupe de boutons */
+.button-group {
+    display: flex; /* Arrange les boutons horizontalement */
+    gap: 20px; /* Espacement entre les boutons */
+}
+
+/* Style des boutons */
+.button-group button {
+    background-color: #8e86b5; /* Couleur de fond */
+    color: white; /* Couleur du texte */
+    border: none; /* Pas de bordure */
+    border-radius: 5px; /* Coins arrondis */
+    padding: 10px 20px; /* Espacement interne */
+    font-size: 1em; /* Taille du texte */
+    cursor: pointer; /* Curseur pour indiquer l'interaction */
+}
+
+/* Effet au survol */
+.button-group button:hover {
+    background-color: #696484; /* Couleur de fond au survol */
+}
+
+main {
+	background-color: black;
+    display: flex;
+	flex-direction: column;
+    flex-grow: 1; /* Permet à cette section de prendre tout l'espace disponible entre le header et le footer */
+    justify-content: center;
+    align-items: center;
+}
+
+.gif_pong {
+    max-width: 100%; /* Assure que l'image ne dépasse pas la largeur de son conteneur */
+    height: auto; /* Garde les proportions du gif */
+}
+
+.play{
+	color : white;
+	border : double;
+	border-radius: 87% 13% 84% 16% / 15% 80% 20% 85% ;
+	border-color: #696484;
+	margin-top: 50px;
+	font-size: 200%;
+	cursor : pointer;
+}
+.play:hover{
+	transform: scale(1.5); /* Agrandit l'élément au survol sans deplacer le gif*/
+	background-color: #696484;
+	border-radius: 87% 13% 84% 16% / 15% 80% 20% 85% ;
+}
+
+/* Pied de page */
+footer {
+    background-color: #8e86b5;
+    text-align: center;
+    padding: 10px 20px;
+}
+
+#login-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background-color: black;
+    color: white;
+    font-family: 'Manrope', sans-serif;
+}
+#login-form form {
+    background: #8e86b5;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+#login-form input {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: none;
+}
+#login-form button {
+    background-color: #696484;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+#login-form button:hover {
+    background-color: #8e86b5;
+}
+
+/*Chat page*/
+#chat-content{
+	display : grid;
+	grid-template-columns: 5fr 1fr;
+	grid-template-rows: 4fr 1fr;
+	height: 100%;
+	background-color: aqua;
+}
+
+.chat-history{
+	grid-column: 1/2;
+	grid-row: 1/2;
+	border-top : solid;
+	border-right : solid;
+	border-color: #8e86b5;
+}
+
+.users-list{
+	/* background-color: white; */
+	grid-column: 2 / 3;
+	grid-row : 1 / 2;
+	padding : 20px;
+	border-top : solid;
+	border-color: #8e86b5;
+}
+
+.message-input{
+	grid-column: 1 / 3;
+  	grid-row: 2 / 3;
+	border-top : solid;
+	border-color: #8e86b5;
+	display: flex;
+	align-items: center;
+	gap : 10px;
+	padding: 10px;
+}
+
+.message-input input {
+    flex-grow: 2;          /* L'input prend deux fois plus de place que le bouton */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.message-input button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #8e86b5;
+    color: white;
+    cursor: pointer;
+}
+
+.message-input button:hover {
+    background-color: #696484;
+}
+
+#signup-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background-color: black;
+    color: white;
+    font-family: 'Manrope', sans-serif;
+}
+
+#signup-form form {
+    background: #8e86b5;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#signup-form input {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: none;
+}
+
+#signup-form button {
+    background-color: #696484;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#signup-form button:hover {
+    background-color: #8e86b5;
+}
