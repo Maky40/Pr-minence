@@ -20,4 +20,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
 # Commande par défaut pour démarrer Django après les migrations
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+CMD ["sh", "-c", "python manage.py makemigrations api && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
