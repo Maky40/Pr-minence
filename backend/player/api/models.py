@@ -1,25 +1,34 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser
 
 
-class Player(models.Model):
-    email = models.EmailField(unique=True)
-    username = models.CharField(max_length=50, unique=True)
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    avatar = models.URLField(null=True, blank=True)
-    champions = models.IntegerField(default=0)
-    wins = models.IntegerField(default=0)
-    losses = models.IntegerField(default=0)
-    two_factor = models.BooleanField(default=False)
-    STATE_CHOICES = [
-        ('OF', 'Offline'),
-        ('ON', 'Online'),
-        ('IG', 'In-game'),
+class Player(AbstractBaseUser):
+    STATUS_CHOICES = [
+        ('ON', 'ONLINE'),
+        ('OF', 'OFFLINE'),
+        ('IG', 'INGAME'),
     ]
-    state = models.CharField(max_length=2, choices=STATE_CHOICES, default='OF')
+
+    id = models.AutoField(primary_key=True)
+    email = models.EmailField(max_length=30, blank=False, null=False, unique=True)
+    username = models.CharField(max_length=20, blank=False, null=False, unique=False)
+    first_name = models.CharField(max_length=20, blank=False, null=False)
+    last_name = models.CharField(max_length=20, blank=False, null=False)
+    alias_name = models.CharField(max_length=20, blank=False, null=True)
+    avatar = models.URLField(blank=False, null=False)
+    champions = models.IntegerField(blank=False, null=False, default=0)
+    wins = models.IntegerField(blank=False, null=False, default=0)
+    losses = models.IntegerField(blank=False, null=False, default=0)
+    two_factor = models.BooleanField(default=False)
+    status = models.CharField(max_length=2, choices=STATUS_CHOICES, default='OF')
+
+    # Configuration du "user model"
+    USERNAME_FIELD = 'email'
+    EMAIL_FIELD = 'email'
 
     def __str__(self):
-        return self.username
+        return f'Player: [ email: {self.email}, username: {self.username} ]'
+
 
 class Friendship(models.Model):
     player_sender = models.ForeignKey(Player, related_name='friend_requests_sent', on_delete=models.CASCADE)
