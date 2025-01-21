@@ -12,12 +12,17 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from os import getenv
+from dotenv import load_dotenv
+
 
 # === 1. Chemins dynamiques ===
 BASE_DIR = Path(__file__).resolve().parent  # backend/player/api/
 PLAYER_DIR = BASE_DIR.parent  # backend/player/
 BACKEND_DIR = PLAYER_DIR.parent  # backend/
 PROJECT_ROOT = BACKEND_DIR.parent  # Racine du projet
+
+DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
+load_dotenv(DOTENV_PATH)
 
 # === 2. Sécurité ===
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")  # Clé par défaut si non définie
@@ -51,6 +56,25 @@ MIDDLEWARE = [
 ROOT_URLCONF = "api.urls"  # Chemin vers le fichier urls.py de l'application
 WSGI_APPLICATION = "api.wsgi.application"
 
+
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'api.wsgi.application'
 # === 6. Base de données ===
 DATABASES = {
     "default": {
@@ -83,5 +107,8 @@ STATIC_ROOT = PLAYER_DIR / "static/"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = PLAYER_DIR / "media/"
 
+
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # === 10. Authentification ===
 AUTH_USER_MODEL = "api.Player"  # Modèle utilisateur personnalisé (Player)

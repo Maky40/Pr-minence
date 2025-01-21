@@ -129,3 +129,6 @@ STATIC_ROOT = AUTH_DIR / 'static/'  # Directory where static files are collected
 AUTH_USER_MODEL = "api.Player"
 
 
+PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"  # Remplace par ton URL réelle
+
+
