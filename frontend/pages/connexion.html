@@ -1,0 +1,43 @@
+<section class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Connexion</h2>
+                    
+                    <!-- Bouton 42 -->
+                    <div class="d-grid gap-2 mb-4">
+                        <button class="btn btn-dark" type="button">
+                            <img src="/assets/42_Logo.svg" alt="42 Logo" height="30" class="me-2">
+                            Connexion avec 42
+                        </button>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <span class="bg-white px-2 text-muted">ou</span>
+                        <hr class="mt-n2">
+                    </div>
+
+                    <form>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nom d'utilisateur</label>
+                            <input type="text" class="form-control" id="username" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Se connecter</button>
+                            <button type="button" id="signup-button" class="btn btn-outline-secondary" onclick="changePage('signup')">
+                                S'inscrire
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

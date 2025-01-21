@@ -1,0 +1,47 @@
+@import url('./pages/404.css');
+@import url('./pages/home.css');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    display: flex;
+	flex-direction: column;
+    height: 100vh; /* Utilise toute la hauteur de la fenêtre */
+}
+
+/* Conteneur principal */
+nav {
+    background-color: #000000;
+    padding: 20px 20px; /* Ajoute un peu d'espace autour du contenu */
+}
+
+.navigator {
+    display: flex; /* Active le modèle Flexbox */
+    justify-content: space-between; /* Place les éléments aux extrémités (gauche et droite) */
+    align-items: center; /* Centre verticalement les éléments */
+    width: 100%; /* Le conteneur occupe toute la largeur */
+    box-sizing: border-box; /* Inclut le padding dans la largeur totale */
+}
+
+/* Logo */
+.logo {
+    height: 150px; /* Ajuste la hauteur du logo */
+	width: auto;
+    object-fit: contain; /* Assure un redimensionnement propre si nécessaire */
+}
+
+.player-avatar {
+    transition: transform 0.2s ease;
+}
+
+.player-avatar:hover {
+    transform: scale(1.1);
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 0.5em 1em;
+}
