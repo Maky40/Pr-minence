@@ -20,7 +20,7 @@ class Player(models.Model):
 
     def __str__(self):
         return self.username
-    
+
 class Friendship(models.Model):
     player_sender = models.ForeignKey(Player, related_name='friend_requests_sent', on_delete=models.CASCADE)
     player_receiver = models.ForeignKey(Player, related_name='friend_requests_received', on_delete=models.CASCADE)
@@ -82,8 +82,8 @@ class Match(models.Model):
 
     def __str__(self):
         return f"Match {self.id} ({self.get_state_display()})"
-    
-    
+
+
 class PlayerMatch(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     match = models.ForeignKey(Match, on_delete=models.CASCADE)

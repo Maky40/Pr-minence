@@ -42,7 +42,7 @@ logs:
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) logs -f
 
 # Nettoie les conteneurs, réseaux, volumes et images inutilisés
-clean:
+fclean:
 	@echo "Cleaning up Docker environment and removing nginx.conf..."
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down --volumes --rmi all --remove-orphans
 	@rm -f ./nginx/nginx.conf
@@ -52,3 +52,8 @@ clean:
 create_nginx_conf:
 	@echo "Creating nginx.conf using the script..."
 	@bash $(NGINX_SCRIPT)
+
+re: fclean
+	@echo "Rebuilding project..."
+	@$(MAKE)
+	@echo "Rebuild complete!"

@@ -12,3 +12,41 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro           # Certificats SSL
       - ./frontend:/usr/share/nginx/html:ro         # Fichiers frontend
     restart: always
+
+  db:
+    image: postgres:latest  # Utilisation de l'image officielle PostgreSQL
+    container_name: db
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Volume pour persister les données
+    ports:
+      - "5432:5432"  # Port de la base de données accessible depuis l'hôte
+    networks:
+      - app_network
+    restart: always
+
+  player:
+    build:
+      context: ./backend/player
+    container_name: player
+    volumes:
+      - ./backend/player:/usr/src/app  # Volume pour la synchronisation des fichiers
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=api.settings  # Variable d'environnement explicite
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    restart: always
+
+volumes:
+  pgdata:  # Volume pour persister les données de la base de données
+
+networks:
+  app_network:
+    driver: bridge

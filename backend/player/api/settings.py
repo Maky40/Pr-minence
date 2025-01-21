@@ -14,7 +14,7 @@ from pathlib import Path
 from os import getenv
 
 # === 1. Chemins dynamiques ===
-BASE_DIR = Path(__file__).resolve().parent  # backend/player/api/
+BASE_DIR = Path(__file__).resolve().parent.parent  # backend/player/api/
 PLAYER_DIR = BASE_DIR.parent  # backend/player/
 BACKEND_DIR = PLAYER_DIR.parent  # backend/
 PROJECT_ROOT = BACKEND_DIR.parent  # Racine du projet
@@ -58,8 +58,8 @@ DATABASES = {
         "NAME": getenv("POSTGRES_DB"),  # Nom de la base par défaut si non défini
         "USER": getenv("POSTGRES_USER"),  # Utilisateur par défaut
         "PASSWORD": getenv("POSTGRES_PASSWORD"),  # Mot de passe par défaut
-        "HOST": getenv("POSTGRES_HOST"),  # Hôte PostgreSQL (localhost)
-        "PORT": getenv("POSTGRES_PORT")  # Port PostgreSQL
+        "HOST": getenv("POSTGRES_HOST", "db"),  # Hôte PostgreSQL (localhost)
+        "PORT": getenv("POSTGRES_PORT", "5432")  # Port PostgreSQL
     }
 }
 
