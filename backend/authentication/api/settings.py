@@ -12,12 +12,16 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from os import getenv
+from dotenv import load_dotenv
 
 # === 1. Chemins dynamiques ===
 # Base directory for the Django project.
 BASE_DIR = Path(__file__).resolve().parent  # backend/authentication/api/
 AUTH_DIR = BASE_DIR.parent  # backend/authentication/
 SERVICES_DIR = AUTH_DIR.parent  # backend/
+
+DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
+load_dotenv(DOTENV_PATH)
 
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
@@ -34,6 +38,7 @@ ALLOWED_HOSTS = [
 # === 3. Applications Django ===
 # Installed apps required for the microservice.
 INSTALLED_APPS = [
+	"daphne",
     'django.contrib.admin',  # Admin panel
     'django.contrib.auth',  # Authentication framework
     'django.contrib.contenttypes',  # Content types for models
@@ -42,8 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',  # Static files management
     "rest_framework",  # Django REST Framework for API development
 	"channels", # Asynchrone protocol
-	"daphne",
-    "api",  # The specific app for this microservice
+	"api",  # The specific app for this microservice
 ]
 
 # === 4. Middleware ===
@@ -81,6 +85,7 @@ TEMPLATES = [
 
 # Application server for synchronous requests (WSGI).
 WSGI_APPLICATION = 'api.wsgi.application'
+ASGI_APPLICATION = 'api.asgi.application'
 
 # === 6. Base de données ===
 # Configuration for connecting to PostgreSQL database.
@@ -94,6 +99,25 @@ DATABASES = {
         'PORT': getenv("POSTGRES_PORT", "5432"),  # Database port
     }
 }
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # === 7. Validation des mots de passe ===
 # Validators ensure secure password policies.
@@ -129,6 +153,6 @@ STATIC_ROOT = AUTH_DIR / 'static/'  # Directory where static files are collected
 AUTH_USER_MODEL = "api.Player"
 
 
-PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"  # Remplace par ton URL réelle
+PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
 
 
