@@ -1,6 +1,5 @@
 import Avatar from '../components/avatar.js';
 
-
 const players = [
 	{
 		rank: 1,
@@ -43,8 +42,11 @@ const players = [
 
 function initDashboard() {
 	const tbody = document.getElementById('leaderboard-body');
-	if (!tbody) return;
-
+	if (!tbody) {
+		console.error('Tableau non trouvé');
+		return;
+		};
+		console.log('Tableau trouvé');
 	players.forEach(player => {
 		const avatar = new Avatar(player.image, player.name, {
 			size: '30',
@@ -66,8 +68,7 @@ function initDashboard() {
 		tbody.innerHTML += row;
 	});
 }
-
-// Initialisation
-(() => {
-	initDashboard();
-})();
+export function init() {
+    console.log('Loading dashboard...');
+    initDashboard();
+}

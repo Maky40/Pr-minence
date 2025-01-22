@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Obtenir l'adresse IP locale
-SERVER_IP=$(hostname -I | awk '{print $1}')
+SERVER_IP=$(echo localhost)
 
 # Vérifier si une adresse IP a été trouvée
 if [ -z "$SERVER_IP" ]; then
