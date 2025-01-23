@@ -3,39 +3,48 @@ import Avatar from '../components/avatar.js';
 const players = [
 	{
 		rank: 1,
-		name: 'PongMaster42',
+		name: 'TRUMP2025',
 		image: 'assets/avatars/avatar1.png',
 		wins: 42,
 		losses: 8,
 		score: 2100,
-		level: { name: 'Légendaire', class: 'bg-warning' }
+		level: { name: 'Légendaire', class: 'bg-danger' }
 	},
 	{
 		rank: 2,
-		name: 'PingMaster32',
+		name: 'MUSK22',
 		image: 'assets/avatars/avatar1.png',
 		wins: 32,
-		losses: 8,
+		losses: 11,
 		score: 1100,
-		level: { name: 'Légendaire', class: 'bg-warning' }
+		level: { name: 'Maître', class: 'bg-warning' }
 	},
 	{
 		rank: 3,
-		name: 'toto',
+		name: 'PUTINE2024',
 		image: 'assets/avatars/avatar1.png',
-		wins: 42,
-		losses: 8,
-		score: 2100,
-		level: { name: 'Légendaire', class: 'bg-warning' }
+		wins: 20,
+		losses: 38,
+		score: 700,
+		level: { name: 'Expert', class: 'bg-primary' }
 	},
 	{
 		rank: 4,
-		name: 'trump',
+		name: 'TRUMP2020',
 		image: 'assets/avatars/avatar1.png',
 		wins: 4,
-		losses: 78,
+		losses: 378,
 		score: 20,
-		level: { name: 'Légendaire', class: 'bg-warning' }
+		level: { name: 'Novice', class: 'bg-secondary' }
+	},
+	{
+		rank: 3,
+		name: 'MACRON2022',
+		image: 'assets/avatars/avatar1.png',
+		wins: 1,
+		losses: 493,
+		score: 11,
+		level: { name: 'Novice', class: 'bg-secondary' }
 	}
 	// ...autres joueurs
 ];
