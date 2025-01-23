@@ -92,11 +92,11 @@ ASGI_APPLICATION = 'api.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',  # Database backend for PostgreSQL
-        'NAME': getenv("POSTGRES_DB", "auth_db"),  # Database name
-        'USER': getenv("POSTGRES_USER", "auth_user"),  # Username for the database
-        'PASSWORD': getenv("POSTGRES_PASSWORD", "auth_password"),  # Password
-        'HOST': getenv("POSTGRES_HOST", "localhost"),  # Database host
-        'PORT': getenv("POSTGRES_PORT", "5432"),  # Database port
+        'NAME': getenv("POSTGRES_DB"),  # Database name
+        'USER': getenv("POSTGRES_USER"),  # Username for the database
+        'PASSWORD': getenv("POSTGRES_PASSWORD"),  # Password
+        'HOST': getenv("POSTGRES_HOST"),  # Database host
+        'PORT': getenv("POSTGRES_PORT"),  # Database port
     }
 }
 

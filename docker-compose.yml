@@ -11,6 +11,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # Configuration générée
       - ./nginx/certs:/etc/nginx/certs:ro           # Certificats SSL
       - ./frontend:/usr/share/nginx/html:ro         # Fichiers frontend
+    networks:
+      - app_network
     restart: always
 
   db:
