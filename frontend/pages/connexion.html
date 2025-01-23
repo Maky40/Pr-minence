@@ -30,12 +30,35 @@
                             <label for="password" class="form-label">Mot de passe</label>
                             <input type="password" class="form-control" id="password" required>
                         </div>
-
+                        <div class="d-grid gap-2 d-none" id="login-waiting">
+                            <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm" type="button" disabled>
+                                <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                                Connexion...
+                              </button>
+                              </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Se connecter</button>
-                            <button type="button" id="signup-button" class="btn btn-outline-secondary" onclick="changePage('signup')">
-                                S'inscrire
-                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm" id="loginButton">Connexion</button>
+                        </div>
+                        <div class="d-grid gap-2 mt-2">
+                            <span class="text-center">
+                                <a href="#signup" data-locallink
+                                class="link-warning link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                                    mot de passe oublié?
+                                </a>
+                            </span>
+                            <span class="text-center">
+                            <a href="#signup" data-locallink
+                            class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                                Pas encore dans le game <i class="fas fa-gamepad text-danger me-2"></i>? rejoins-nous!
+                            </a>
+                            <div class="text-center mb-4">
+                                <hr class="mt-n2">
+                            </div>
+                            <div class="d-grid gap-2 mb-3">
+                                <div id="ft-42login-button"></div>
+                            </div>
+                        </span>
+                       
                         </div>
                     </form>
                 </div>

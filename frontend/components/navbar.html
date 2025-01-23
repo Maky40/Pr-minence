@@ -1,50 +1,51 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-	<div class="container-fluid">
-		<a class="navbar-brand" href="#">Pong 42</a>
-		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-			<span class="navbar-toggler-icon"></span>
-		</button>
-		<div class="collapse navbar-collapse" id="navbarNav">
-			<ul class="navbar-nav">
-				<li class="nav-item">
-					<a class="nav-link" href="#home">Accueil</a>
-				</li>
-				<li class="nav-item">
-					<a class="nav-link" href="#dashboard">Dashboard</a>
-				</li>
-				<li class="nav-item">
-					<a class="nav-link" href="#chat">Chat</a>
-				</li>
-			</ul>
-			<ul class="navbar-nav ms-auto">
-				<li class="nav-item">
-					<a class="nav-link" href="#connexion">Connexion</a>
-				</li>
-				<li class="nav-item">
-					<a class="nav-link" href="#signup">S'inscrire</a>
-				</li>
-			</ul>
-			<ul class="navbar-nav ms-auto">
-			      <!-- Avatar -->
-				<li class="nav-item dropdown">
-					<a data-mdb-dropdown-init class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdownMenuLink"
-					role="button" data-mdb-toggle="dropdown" aria-expanded="false">
-					<img src="https://mdbcdn.b-cdn.net/img/Photos/Avatars/img (31).webp" class="rounded-circle"
-						height="40" alt="Avatar" loading="lazy" />
-					</a>
-					<ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-					<li>
-						<a class="dropdown-item" href="#">My profile</a>
-					</li>
-					<li>
-						<a class="dropdown-item" href="#">Settings</a>
-					</li>
-					<li>
-						<a class="dropdown-item" href="#">Logout</a>
-					</li>
-					</ul>
-				</li>		
-			</ul>	
-		</div>
-	</div>
+<link href="../styles/components/navbar.css" rel="stylesheet">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(to right, #1a1a1a, #2d2d2d);">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">
+            <span class="text-warning">PONG</span>
+            <span class="text-info">42</span>
+        </a>
+        <button class="navbar-toggler border-info" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="#home">
+                        <i class="fas fa-home me-2"></i>Accueil
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="#score">
+                        <i class="fas fa-trophy text-warning me-2"></i>Légendes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="#game">
+                        <i class="fas fa-gamepad text-danger me-2"></i>Jouer
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="#chat">
+                        <i class="fas fa-comments text-info me-2"></i>Chat
+                    </a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link btn btn-outline-info mx-2 px-4" href="#connexion">
+                        <i class="fas fa-sign-in-alt me-2"></i>Connexion
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link btn btn-info mx-2 px-4" href="#signup">
+                        <i class="fas fa-user-plus me-2"></i>S'inscrire
+                    </a>
+                </li>
+            </ul>	
+        </div>
+    </div>
 </nav>
+
+<!-- Add FontAwesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

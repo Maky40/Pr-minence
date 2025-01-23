@@ -10,7 +10,7 @@ const templateManager = new TemplateManager(content);
 // Définit les routes
 const routes = {
   home: { template: 'home.html' },
-  dashboard: { template: 'dashboard.html' },
+  score: { template: 'score.html' },
   chat: { template: 'chatBox.html' },
   connexion: { template: 'connexion.html' },
   signup: { template: 'signup.html' },
@@ -36,3 +36,13 @@ window.changePage = (hash) => {
 };
 
 document.addEventListener('DOMContentLoaded', loadNavbar);
+
+//fonction qui surcharge les liens pour ne pas recharger la page
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a[data-locallink]');
+  if (link) {
+      e.preventDefault();
+      const hash = link.getAttribute('href');
+      changePage(hash);
+  }
+});

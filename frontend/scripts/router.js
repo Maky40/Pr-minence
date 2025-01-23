@@ -13,7 +13,6 @@ export default class Router {
   handleRoute() {
     const hash = window.location.hash.substring(1) || 'home';
     const route = this.routes[hash];
-
     if (route) {
       this.templateManager.loadTemplate(route.template);
     } else {

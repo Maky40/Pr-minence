@@ -1,0 +1,30 @@
+.navbar {
+    box-shadow: 0 2px 15px rgba(0,0,0,0.5);
+}
+
+.nav-link {
+    position: relative;
+    transition: all 0.3s ease;
+    border-radius: 5px;
+}
+
+.nav-link:hover {
+    color: #17a2b8 !important;
+    text-shadow: 0 0 8px rgba(23, 162, 184, 0.5);
+    transform: translateY(-2px);
+}
+
+.navbar-brand {
+    font-size: 1.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.btn-outline-info:hover {
+    box-shadow: 0 0 15px rgba(23, 162, 184, 0.5);
+}
+
+.btn-info:hover {
+    box-shadow: 0 0 15px rgba(23, 162, 184, 0.5);
+}
