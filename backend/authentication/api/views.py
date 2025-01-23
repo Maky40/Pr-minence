@@ -5,7 +5,9 @@ from rest_framework.response import Response
 from django.shortcuts import redirect
 from os import getenv
 import requests
-from .service import generate_jwt, create_player
+from .service import generate_jwt, create_player, jwt_cookie_required
+from django.core.cache import cache
+from .models import Player
 
 @api_view(['GET'])
 def intra_auth(request):
@@ -74,15 +76,28 @@ def intra_callback_auth(request):
     player = create_player(player_data)
     if player is None:
         # Rediriger vers la page de connexion en cas d'échec
-        return redirect(f"https://{settings.FT_TRANSCENDENCE_HOST}/login/", permanent=True)
-
+        return redirect(f"https://localhost/#connexion/", permanent=True)
+    player.status = "ON"
+    player.save()
     # Générer un token JWT pour le joueur
     jwt_token = generate_jwt(player.id, player.two_factor)
 
     # Rediriger vers le frontend avec un cookie JWT
-    frontend_url = 'http://127.0.0.1:5500/frontend/index.html'
+    frontend_url = 'https://localhost/#home'
     response = redirect(frontend_url)
 
     # Ajouter le token JWT et le pseudo dans les cookies
     response.set_cookie('jwt_token', jwt_token, httponly=True, secure=True)
     return response
+
+
+@api_view(["GET"])
+@jwt_cookie_required
+def logout_user(request):
+    if request.token is not None:
+        cache.set(request.token, True, timeout=None)
+        response = redirect(f"https://localhost/#connexion/", permanent=True)
+        response.delete_cookie("jwt_token")
+        return response
+    else:
+        return Response({"statusCode": 400, "detail": "No valid access token found"})

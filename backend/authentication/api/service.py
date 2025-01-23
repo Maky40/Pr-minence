@@ -17,9 +17,6 @@ def generate_jwt(id: int, two_factor: bool) -> str:
     jwt_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
     return jwt_token
 
-
-
-
 def jwt_cookie_required(view_func):
     def wrapped_view(request):
         if "jwt_token" not in request.COOKIES:

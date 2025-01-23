@@ -21,7 +21,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data  # Volume pour persister les données
     ports:
-      - "5432:5432"  # Port de la base de données accessible depuis l'hôte
+      - "5433:5432"  # Port de la base de données accessible depuis l'hôte
     networks:
       - app_network
     restart: always
