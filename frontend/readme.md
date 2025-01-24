@@ -45,6 +45,40 @@ const routes = {
 };
 ```
 
+## Link Handling
+To maintain the Single Page Application behavior, links are intercepted to prevent page reloads. Use the `data-locallink` attribute on anchor tags:
+
+```html
+<a href="/home" data-locallink>Home</a>
+```
+
+The following JavaScript code handles these links:
+```javascript
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("a[data-locallink]");
+  if (link) {
+    e.preventDefault();
+    const hash = link.getAttribute("href");
+    changePage(hash);
+  }
+});
+```
+
+The routing system uses a `changePage` function to handle navigation:
+```javascript
+window.changePage = (hash) => {
+  window.location.hash = hash; // Updates URL
+  router.handleRoute(); // Handles the new route
+};
+```
+
+This function:
+- Updates the URL hash without page reload
+- Triggers the router to handle the new route
+- Can be called programmatically: `changePage('/home')`
+
+This ensures smooth navigation without page refreshes.
+
 ## Progress Status
 
 ### Completed Features
