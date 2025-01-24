@@ -1,6 +1,13 @@
 import TemplateManager from "./templateManager.js";
 import Router from "./router.js";
 
+//class component
+class Component {
+  render(container) {
+      container.innerHTML = this.template();
+  }
+}
+
 // Sélectionne le conteneur pour le contenu dynamique
 const content = document.getElementById("content");
 

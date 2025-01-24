@@ -6,7 +6,7 @@ const UIinit = () => {
     document.getElementById('ft-42login-button').innerHTML = '';
     //ajout du bouton 42
     const button42 = new Button42("S'inscrire avec 42");
-    document.getElementById('ft-42login-button').appendChild(button42.render());
+    button42.render(document.getElementById('ft-42login-button'));
 }
 
 const init = () => {

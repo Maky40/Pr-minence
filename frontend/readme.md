@@ -79,6 +79,52 @@ This function:
 
 This ensures smooth navigation without page refreshes.
 
+## Component System
+
+### Base Component Class
+The project uses a component-based architecture with a base Component class:
+```javascript
+// Example from utils/Component.js
+class Component {
+    render(container) {
+        container.innerHTML = this.template();
+    }
+}
+```
+
+### Creating New Components
+1. Create a new class extending Component:
+```javascript
+import Component from "../utils/Component.js";
+
+export default class MyComponent extends Component {
+    constructor(text) {
+        super();
+        this.text = text;
+    }
+
+    template() {
+        return `<div class="my-component">${this.text}</div>`;
+    }
+}
+```
+
+2. Using the component:
+```javascript
+import MyComponent from "../components/MyComponent.js";
+
+function init() {
+    const myComponent = new MyComponent("Hello World");
+    myComponent.render(document.getElementById('target-container'));
+}
+```
+
+This component system allows for:
+- Reusable UI elements
+- Consistent rendering patterns
+- Easy maintenance and updates
+- Clean separation of concerns
+
 ## Progress Status
 
 ### Completed Features

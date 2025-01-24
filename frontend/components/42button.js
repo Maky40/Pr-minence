@@ -1,38 +1,24 @@
-const image_42 = "/assets/42_Logo.svg";
+import Component from '../utils/Component.js';
 
-class Button42 {
-  constructor(btnText) {
-    this.container = document.createElement("div");
-    this.container.className = "d-grid gap-2 mb-3";
-
-    // Create button
-    this.button = document.createElement("button");
-    this.button.className =
-      "btn btn-success btn-lg px-5 py-3 rounded-pill shadow-sm w-100";
-    this.button.type = "button";
-
-    // Create logo image
-    const logo = document.createElement("img");
-    logo.src = image_42;
-    logo.alt = "42 Logo";
-    logo.height = 30;
-    logo.className = "me-2";
-
-    this.button.addEventListener("click", () => {
-      window.location.href = "https://localhost/authentication/intra/";
-    });
-
-    // Create text node
-    const text = document.createTextNode(btnText);
-
-    // Append elements
-    this.button.appendChild(logo);
-    this.button.appendChild(text);
-    this.container.appendChild(this.button);
+class Button42 extends Component {
+  constructor(text = "S'inscrire avec 42") {
+      super();
+      this.text = text;
   }
 
-  render() {
-    return this.button;
+  template() {
+      return `
+          <button class="btn btn-success btn-lg px-5 py-3 rounded-pill shadow-sm" 
+                  onclick="window.location.href='https://localhost/authentication/intra/'">
+              <img src="/assets/42_Logo.svg" 
+                   alt="42 Logo" 
+                   height="30"
+                   class="me-2" 
+                   style="filter: brightness(0.8); transition: filter 0.3s ease"
+                   onmouseover="this.style.filter='brightness(1)'"
+                   onmouseout="this.style.filter='brightness(0.8)'">
+              ${this.text}
+          </button>`;
   }
 }
 
