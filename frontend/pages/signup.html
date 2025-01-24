@@ -1,45 +1,70 @@
 <section class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h2 class="card-title text-center mb-4">Rejoindre l'Aventure</h2>
-                    
-                    <!-- Bouton 42 -->
-                    <div class="d-grid gap-2 mb-4">
-                        <div id="ft-42login-button"></div>
-                    </div>
-                    
-                    <div class="text-center mb-4">
-                        <span class="bg-white px-2 text-muted">ou</span>
-                        <hr class="mt-n2">
-                    </div>
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h2 class="card-title text-center mb-4">Rejoindre l'Aventure</h2>
 
-                    <form>
-                        <div class="mb-3">
-                            <label for="new-username" class="form-label">Nom d'utilisateur</label>
-                            <input type="text" class="form-control" id="new-username" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" required>
-                        </div>
+          <!-- Bouton 42 -->
+          <div class="d-grid gap-2 mb-4">
+            <div id="ft-42login-button"></div>
+          </div>
 
-                        <div class="mb-3">
-                            <label for="new-password" class="form-label">Mot de passe</label>
-                            <input type="password" class="form-control" id="new-password" required>
-                        </div>
+          <div class="text-center mb-4">
+            <span class="bg-white px-2 text-muted">ou</span>
+            <hr class="mt-n2" />
+          </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm">Créer un compte</button>
-                            <button type="button" class="btn btn-warning btn-lg px-5 py-3 rounded-pill shadow-sm" onclick="changePage('#connexion')">
-                                Déjà inscrit? Se connecter
-                            </button>
-                        </div>
-                    </form>
-                </div>
+          <form>
+            <div class="mb-3">
+              <label for="new-username" class="form-label"
+                >Nom d'utilisateur</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="new-username"
+                required
+              />
             </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" required />
+            </div>
+
+            <div class="mb-3">
+              <label for="new-password" class="form-label">Mot de passe</label>
+              <input
+                type="password"
+                class="form-control"
+                id="new-password"
+                required
+              />
+            </div>
+
+            <div class="d-grid gap-2">
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm"
+              >
+                Créer un compte
+              </button>
+            </div>
+            <div class="d-grid gap-2 mt-4 text-center">
+              <a
+                href="#signup"
+                data-locallink
+                class="link-warning link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+              >
+                Déjà inscrit ?<i class="fas fa-gamepad text-danger me-2"></i>
+                Connecte-toi ! 
+              </a>
+              </div> 
+            </div>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
 </section>
