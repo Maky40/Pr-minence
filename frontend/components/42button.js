@@ -14,9 +14,7 @@ class Button42 extends Component {
                    alt="42 Logo" 
                    height="30"
                    class="me-2" 
-                   style="filter: brightness(0.8); transition: filter 0.3s ease"
-                   onmouseover="this.style.filter='brightness(1)'"
-                   onmouseout="this.style.filter='brightness(0.8)'">
+                   style="filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(90%) contrast(95%); transition: filter 0.3s ease">
               ${this.text}
           </button>`;
   }
