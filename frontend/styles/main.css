@@ -60,6 +60,17 @@ body::before {
   z-index: -1;
 }
 
+#content {
+  min-height: calc(
+    100vh - 180px
+  ); /* Adjust 180px based on navbar + footer height */
+  padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--dark-bg);
+}
+
 .btn.btn-primary {
   background-color: transparent;
   border: 2px solid var(--neon-blue);
