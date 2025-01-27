@@ -1,5 +1,6 @@
 import TemplateManager from "./templateManager.js";
 import Router from "./router.js";
+import Navbar from "../components/navbar.js";
 
 //class component
 class Component {
@@ -51,9 +52,11 @@ window.changePage = (hash) => {
 };
 
 document.addEventListener("DOMContentLoaded", loadComponent("footer"));
-document.addEventListener("DOMContentLoaded", loadComponent("navbar"));
 
-//fonction qui surcharge les liens pour ne pas recharger la page
+const navbar = new Navbar();
+document.addEventListener("DOMContentLoaded", () => {
+  navbar.render(document.getElementById("navbar-placeholder"));
+});
 document.addEventListener("click", (e) => {
   const link = e.target.closest("a[data-locallink]");
   if (link) {

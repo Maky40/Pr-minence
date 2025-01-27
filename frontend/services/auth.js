@@ -14,15 +14,47 @@ class Auth {
 
   initFromStorage() {
     try {
+      // Get token
       const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (token && user) {
-        this.authenticated = true;
-        this.token = token;
-        this.user = user;
+      if (!token) {
+        console.log("No token found in storage");
+        return;
       }
+
+      // Get and parse user data
+      let user = null;
+      try {
+        const userJSON = localStorage.getItem("user");
+        if (!userJSON) {
+          console.log("No user data found in storage");
+          return;
+        }
+        user = JSON.parse(userJSON);
+      } catch (parseError) {
+        console.error("Failed to parse user data:", parseError);
+        localStorage.removeItem("user"); // Clean invalid data
+        return;
+      }
+
+      // Validate user object
+      if (!user || !user.id || !user.username) {
+        console.error("Invalid user data structure");
+        return;
+      }
+
+      // Set authenticated state
+      this.authenticated = true;
+      this.token = token;
+      this.user = user;
+      console.log("Auth state restored successfully");
     } catch (error) {
-      console.error("Error loading auth state:", error);
+      this.authenticated = false;
+      this.token = null;
+      this.user = null;
+      console.error("Failed to initialize auth state:", error);
+      // Clean up storage on error
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     }
   }
 
@@ -60,9 +92,8 @@ class Auth {
     this.token = data.token;
     this.user = data.user;
     this.refreshToken = data.refreshToken;
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("token", data.accessToken);
+    localStorage.setItem("user", JSON.stringify(data));
     this.notifyListeners("login");
   }
 
@@ -116,6 +147,7 @@ class Auth {
   }
 
   notifyListeners(event) {
+    console.log("Auth event:", event);
     this.listeners.forEach((callback) => callback(event));
   }
 
