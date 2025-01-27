@@ -6,7 +6,7 @@ const UIinit = () => {
   document.getElementById("ft-42login-button").innerHTML = "";
   //ajout du bouton 42
   const button42 = new Button42("connexion avec 42");
-  button42.render(document.getElementById('ft-42login-button'));
+  button42.render(document.getElementById("ft-42login-button"));
 };
 
 const loading = (loading) => {
@@ -31,7 +31,7 @@ const showErrorMessage = (message) => {
   });
 };
 
-const loginFormHandler = async (data) => {
+const loginFormHandler = async () => {
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     loading(true);
