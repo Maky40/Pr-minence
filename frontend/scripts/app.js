@@ -22,6 +22,7 @@ const routes = {
   connexion: { template: "connexion.html" },
   signup: { template: "signup.html" },
   game: { template: "game.html" },
+  resetPassword: { template: "resetPassword.html" },
 };
 
 // Initialise le routeur
