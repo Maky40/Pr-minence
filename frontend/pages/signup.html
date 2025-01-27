@@ -5,21 +5,46 @@
         <h2 class="card-title text-center mb-4">Rejoindre l'Aventure</h2>
         <form id="signupForm">
           <div class="mb-3">
-            <label for="new-username" class="form-label">Nom d'utilisateur</label>
-            <input type="text" class="form-control" id="new-username" required name="username" />
+            <label for="username" class="form-label">Nom d'utilisateur</label>
+            <input type="text" class="form-control" id="username" required name="username" />
           </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="firstName" class="form-label">Prénom</label>
+              <input type="text" class="form-control" id="firstName" required name="firstName" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="lastName" class="form-label">Nom</label>
+              <input type="text" class="form-control" id="lastName" required name="lastName" />
+            </div>
+          </div>
+
           <div class="mb-3">
             <label for="email" class="form-label">Email</label>
             <input type="email" class="form-control" id="email" required name="email" />
           </div>
 
           <div class="mb-3">
-            <label for="new-password" class="form-label">Mot de passe</label>
-            <input type="password" class="form-control" id="new-password" required name="password" />
+            <label for="avatar" class="form-label">Avatar</label>
+            <div class="input-group">
+              <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" />
+              <label class="input-group-text" for="avatar">Upload</label>
+            </div>
+            <div id="avatarPreview" class="mt-2 text-center d-none">
+              <img src="" alt="Avatar Preview" class="rounded-circle"
+                style="width: 100px; height: 100px; object-fit: cover;">
+            </div>
           </div>
+
           <div class="mb-3">
-            <label for="new-password" class="form-label">Confirmation du mot de passe</label>
-            <input type="password" class="form-control" id="new-password" required name="passwordcheck" />
+            <label for="password" class="form-label">Mot de passe</label>
+            <input type="password" class="form-control" id="password" required name="password" />
+          </div>
+
+          <div class="mb-3">
+            <label for="passwordConfirm" class="form-label">Confirmation du mot de passe</label>
+            <input type="password" class="form-control" id="passwordConfirm" required name="passwordConfirm" />
           </div>
 
           <div class="d-grid gap-2">
@@ -27,22 +52,24 @@
               Créer un compte
             </button>
           </div>
+
           <div class="text-center mb-4">
-            <hr class="mt-n2" />
+            <hr class="mt-4" />
           </div>
+
           <div class="d-grid gap-2">
             <div id="ft-42login-button"></div>
           </div>
+
           <div class="d-grid gap-2 mt-4 text-center">
             <a href="#connexion" data-locallink
               class="link-warning link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
-              Déjà inscrit ?<i class="fas fa-gamepad text-danger me-2"></i>
-              Connecte-toi !
+              <i class="fas fa-gamepad text-danger me-2"></i>
+              Déjà inscrit ? Connecte-toi !
             </a>
           </div>
+        </form>
       </div>
-      </form>
     </div>
-  </div>
   </div>
 </section>

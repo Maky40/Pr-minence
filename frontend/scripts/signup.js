@@ -14,7 +14,7 @@ const UIinit = () => {
 const returnResult = (state, message) => {
   return { state, message };
 };
-
+//fonction qui check les données du formulaire
 const checkDataFromForm = (data) => {
   if (data.password !== data.passwordcheck) {
     console.log("Passwords don't match");
@@ -50,11 +50,37 @@ const singupHandler = async (event) => {
   }
 };
 
+//fonction pour previsualiser l'avatar
+const avatarHandler = (event) => {
+  const previewDiv = document.getElementById("avatarPreview");
+  const previewImg = previewDiv.querySelector("img");
+  const file = event.target.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      previewDiv.classList.remove("d-none");
+    };
+
+    reader.onerror = () => {
+      console.error("Error reading file");
+      previewDiv.classList.add("d-none");
+    };
+
+    reader.readAsDataURL(file);
+  } else {
+    previewDiv.classList.add("d-none");
+  }
+};
+
 const init = () => {
   UIinit();
   document
     .getElementById("signupForm")
     .addEventListener("submit", singupHandler);
+  document.getElementById("avatar").addEventListener("change", avatarHandler);
 };
 
 export { init };
