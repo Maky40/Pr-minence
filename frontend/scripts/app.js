@@ -4,7 +4,7 @@ import Router from "./router.js";
 //class component
 class Component {
   render(container) {
-      container.innerHTML = this.template();
+    container.innerHTML = this.template();
   }
 }
 
@@ -27,22 +27,29 @@ const routes = {
 // Initialise le routeur
 const router = new Router(routes, templateManager);
 
-async function loadNavbar() {
+const loadComponentTemplate = async (componentName) => {
   try {
-    const response = await fetch("/components/navbar.html");
-    const html = await response.text();
-    document.getElementById("nav-placeholder").innerHTML = html;
+    const response = await fetch(`/components/${componentName}.html`);
+    return await response.text();
   } catch (error) {
-    console.error("Erreur lors du chargement de la navbar:", error);
+    console.error(
+      `Erreur lors du chargement du composant ${componentName}:`,
+      error
+    );
   }
-}
+};
+
+const loadComponent = async (componentName) =>
+  (document.getElementById(`${componentName}-placeholder`).innerHTML =
+    await loadComponentTemplate(componentName));
 
 window.changePage = (hash) => {
   window.location.hash = hash; // Change l'URL
   router.handleRoute(); // Gère la nouvelle route
 };
 
-document.addEventListener("DOMContentLoaded", loadNavbar);
+document.addEventListener("DOMContentLoaded", loadComponent("footer"));
+document.addEventListener("DOMContentLoaded", loadComponent("navbar"));
 
 //fonction qui surcharge les liens pour ne pas recharger la page
 document.addEventListener("click", (e) => {
