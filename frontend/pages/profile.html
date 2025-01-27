@@ -1,0 +1,132 @@
+<div class="container py-5">
+    <!-- Profile Card -->
+    <div class="card shadow-lg mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <!-- Avatar Column -->
+                <div class="col-md-3 text-center">
+                    <img id="userAvatar" src="/assets/avatars/default.png" class="rounded-circle img-fluid mb-3"
+                        style="width: 150px; height: 150px; object-fit: cover;">
+                    <button id="editProfileBtn" class="btn btn-outline-primary d-none">
+                        <i class="fas fa-edit"></i> Modifier
+                    </button>
+                </div>
+                <!-- Info Column -->
+                <div class="col-md-9">
+                    <h2 id="username" class="display-6 mb-3">Username</h2>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Prénom:</strong> <span id="firstName">John</span></p>
+                            <p class="mb-1"><strong>Nom:</strong> <span id="lastName">Doe</span></p>
+                            <p id="emailContainer" class="mb-1 d-none">
+                                <strong>Email:</strong> <span id="email">user@example.com</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Status:</strong> <span id="status" class="badge bg-success">En
+                                    ligne</span></p>
+                            <p class="mb-1"><strong>Rang:</strong> <span id="rank">Expert</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Parties Jouées</h5>
+                    <p id="gamesPlayed" class="display-6">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Victoires</h5>
+                    <p id="wins" class="display-6">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Ratio V/D</h5>
+                    <p id="ratio" class="display-6">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Score Total</h5>
+                    <p id="totalScore" class="display-6">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scores Tables -->
+    <div class="row">
+        <!-- Solo Scores -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Scores Solo</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Score</th>
+                                    <th>Résultat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="soloScores"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Tournament Scores -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Tournois</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tournoi</th>
+                                    <th>Position</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tournamentScores"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Friends List -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">Amis</h3>
+            <button id="addFriendBtn" class="btn btn-sm btn-primary d-none">
+                <i class="fas fa-user-plus"></i> Ajouter
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row g-3" id="friendsList"></div>
+        </div>
+    </div>
+</div>
