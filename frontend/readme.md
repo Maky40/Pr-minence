@@ -187,6 +187,10 @@ This component system allows for:
 - ✅ Scores page
 - ✅ Login system
 - ✅ Basic registration
+- ✅ 🔄 Registration System
+- ✅ Complete signup process
+- 🔐 Authentication
+  - Connected/Disconnected state management
 
 ### In progress Features
 
@@ -195,8 +199,6 @@ This component system allows for:
 
 ### Todo List
 
-- 🔄 Registration System
-- Complete signup process
 - 👤 Profile Management
   - Profile display
   - Profile editing

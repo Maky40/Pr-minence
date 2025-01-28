@@ -106,6 +106,7 @@ class Auth {
     this.authenticated = false;
     this.user = null;
     this.notifyListeners("logout");
+    changePage("#home");
   }
 
   async refreshSession() {
