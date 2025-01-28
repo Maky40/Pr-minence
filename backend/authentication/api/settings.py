@@ -25,7 +25,7 @@ load_dotenv(DOTENV_PATH)
 
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
-SECRET_KEY = getenv("DJANGO_SECRET_KEY", "default-secret-key")
+SECRET_KEY = getenv("DJANGO_SECRET_KEY")
 
 # Debug mode should only be enabled during development.
 DEBUG = True
@@ -38,7 +38,6 @@ ALLOWED_HOSTS = [
 # === 3. Applications Django ===
 # Installed apps required for the microservice.
 INSTALLED_APPS = [
-	"daphne",
     'django.contrib.admin',  # Admin panel
     'django.contrib.auth',  # Authentication framework
     'django.contrib.contenttypes',  # Content types for models
@@ -46,7 +45,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',  # Messaging framework
     'django.contrib.staticfiles',  # Static files management
     "rest_framework",  # Django REST Framework for API development
-	"channels", # Asynchrone protocol
 	"api",  # The specific app for this microservice
 ]
 
@@ -139,4 +137,8 @@ AUTH_USER_MODEL = "api.Player"
 
 PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
 
+DEFAULT_AVATAR_URL = getenv("DEFAULT_AVATAR_URL", "https://localhost/player/static/api/images/default_avatar.png")
+
+
+AUTHENTICATION_BACKENDS = ['api.backends.EmailBackend']
 

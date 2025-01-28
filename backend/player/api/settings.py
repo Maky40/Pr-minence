@@ -27,7 +27,12 @@ load_dotenv(DOTENV_PATH)
 # === 2. Sécurité ===
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")  # Clé par défaut si non définie
 DEBUG = True  # Toujours en mode debug pour le développement local
-ALLOWED_HOSTS = ["localhost"]  # Autoriser uniquement localhost
+ALLOWED_HOSTS = [
+    'localhost',  # Pour les tests locaux
+    '127.0.0.1',  # Adresse IP locale
+    'player',     # Hôte utilisé dans votre conteneur Docker
+]
+
 
 # === 3. Applications Django ===
 INSTALLED_APPS = [
@@ -112,3 +117,5 @@ MEDIA_ROOT = PLAYER_DIR / "media/"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # === 10. Authentification ===
 AUTH_USER_MODEL = "api.Player"  # Modèle utilisateur personnalisé (Player)
+
+PUBLIC_PLAYER_URL = 'https://localhost' 

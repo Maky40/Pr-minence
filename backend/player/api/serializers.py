@@ -20,6 +20,6 @@ class PlayerInfoSerializer(serializers.ModelSerializer):
             'wins',
             'losses',
             'two_factor',
-            'state',        # Champ avec des choix
+            'status',        # Champ avec des choix
         ]
         read_only_fields = ['id', 'champions', 'wins', 'losses', 'state']

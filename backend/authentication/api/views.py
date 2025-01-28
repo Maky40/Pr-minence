@@ -8,6 +8,10 @@ import requests
 from .service import generate_jwt, create_player, jwt_cookie_required
 from django.core.cache import cache
 from .models import Player
+from rest_framework import status
+from rest_framework.views import APIView
+from .serializers import SignupSerializer, LoginSerializer
+
 
 @api_view(['GET'])
 def intra_auth(request):
@@ -101,3 +105,42 @@ def logout_user(request):
         return response
     else:
         return Response({"statusCode": 400, "detail": "No valid access token found"})
+    
+
+class SignupView(APIView):
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                "status": 201,
+                "message": "Inscription réussie. Veuillez vous connecter."
+            }, status=status.HTTP_201_CREATED)
+        return Response({
+            "status": 400,
+            "errors": serializer.errors,
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+# views.py
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            jwt_token = generate_jwt(user.id, user.two_factor)
+            response = Response({
+                "status": 200,
+                "message": "Connexion réussie",
+            }, status=status.HTTP_200_OK)
+            response.set_cookie(
+                'jwt_token',
+                jwt_token,
+                httponly=True,
+                secure=True,
+                samesite='Strict'  # Pour améliorer la sécurité des cookies
+            )
+            return response
+        return Response({
+            "status": 400,
+            "errors": serializer.errors,
+        }, status=status.HTTP_400_BAD_REQUEST)

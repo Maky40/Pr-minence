@@ -25,6 +25,9 @@ urlpatterns = [
 	path('intra/', views.intra_auth, name='intraView'),
     path('intra/callback/', views.intra_callback_auth, name='intracallbackView'),
 	path('logout/', views.logout_user, name='logoutView'),
+	path('signup/', views.SignupView.as_view(), name='signupView'),
+    path('login/', views.LoginView.as_view(), name='loginView'),
+
 ]
 
 
