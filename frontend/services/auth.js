@@ -1,72 +1,54 @@
-const API_URL = "https://dummyjson.com";
-const LoginURL = `${API_URL}/auth/login`;
-const RegisterURL = `${API_URL}/auth/register`;
+import { getCookie, setCookie, eraseCookie } from "../utils/cookie.js";
+
+const API_URL = "https://localhost";
+const LoginURL = `${API_URL}/authentication/login/`;
+const logoutURL = `${API_URL}/authentication/logout/`;
+const RegisterURL = `${API_URL}/authentication/signup/`;
 const RefreshURL = `${API_URL}/auth/refresh`;
+const getMyInfoURL = `${API_URL}/player`;
 class Auth {
   constructor() {
     this.authenticated = false;
     this.user = null;
-    this.token = null;
+    this.jwt_token = null;
     this.refreshToken = null;
     this.listeners = new Set();
-    this.initFromStorage();
+    this.initFromAPI();
   }
 
-  initFromStorage() {
+  async initFromAPI() {
     try {
-      // Get token
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.log("No token found in storage");
-        return;
+      const headers = {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+      const response = await fetch(getMyInfoURL, headers);
+      if (!response.ok) throw new Error("No user found in API");
+      const data = await response.json();
+      if (data.status === 200) {
+        this.setSession(response);
+        console.log("Auth state restored from API");
+      } else {
+        console.error("No user found in API");
       }
-
-      // Get and parse user data
-      let user = null;
-      try {
-        const userJSON = localStorage.getItem("user");
-        if (!userJSON) {
-          console.log("No user data found in storage");
-          return;
-        }
-        user = JSON.parse(userJSON);
-      } catch (parseError) {
-        console.error("Failed to parse user data:", parseError);
-        localStorage.removeItem("user"); // Clean invalid data
-        return;
-      }
-
-      // Validate user object
-      if (!user || !user.id || !user.username) {
-        console.error("Invalid user data structure");
-        return;
-      }
-
-      // Set authenticated state
-      this.authenticated = true;
-      this.token = token;
-      this.user = user;
-      console.log("Auth state restored successfully");
     } catch (error) {
       this.authenticated = false;
-      this.token = null;
       this.user = null;
       console.error("Failed to initialize auth state:", error);
-      // Clean up storage on error
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
     }
   }
 
-  async login(username, password) {
+  async login(email, password) {
     try {
       const response = await fetch(LoginURL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
       if (!response.ok) throw new Error("Login failed");
-
       const data = await response.json();
       this.setSession(data);
       return data;
@@ -76,35 +58,42 @@ class Auth {
     }
   }
 
-  registerUser(userData) {
-    return fetch(RegisterURL, {
+  async registerUser(userData) {
+    const response = await fetch(RegisterURL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    }).then((response) => {
-      if (!response.ok) throw new Error("Registration failed");
-      return response.json();
+      body: JSON.stringify({
+        email: userData.email,
+        username: userData.username,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        password: userData.password,
+      }),
     });
+    this.initFromAPI();
+    console.log("Register response:", response);
+
+    if (!response.ok) throw new Error("Registration failed");
+    return response.json();
   }
 
-  setSession(data) {
+  async setSession(data) {
+    const player = data.player;
+    console.log("Player:", player);
     this.authenticated = true;
-    this.token = data.token;
-    this.user = data.user;
-    this.refreshToken = data.refreshToken;
-    localStorage.setItem("token", data.accessToken);
-    localStorage.setItem("user", JSON.stringify(data));
+    this.user = player;
     this.notifyListeners("login");
   }
 
-  logout() {
+  async logout() {
+    const headers = {
+      method: "GET",
+    };
+    const response = await fetch(logoutURL, headers);
+    console.log("Logout response:", response);
+    if (!response.ok) throw new Error("Logout failed");
     this.authenticated = false;
     this.user = null;
-    this.token = null;
-    this.refreshToken = null;
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
     this.notifyListeners("logout");
   }
 

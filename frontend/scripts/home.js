@@ -21,6 +21,7 @@ const updateUI = () => {
 
 const init = () => {
   // Wait for content to be loaded
+  auth.initFromAPI();
   setTimeout(() => {
     updateUI();
     auth.addListener(() => updateUI());

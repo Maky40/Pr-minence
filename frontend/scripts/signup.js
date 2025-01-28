@@ -1,4 +1,5 @@
 import Button42 from "../components/42button.js";
+import auth from "../services/auth.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,7 +17,7 @@ const returnResult = (state, message) => {
 };
 //fonction qui check les données du formulaire
 const checkDataFromForm = (data) => {
-  if (data.password !== data.passwordcheck) {
+  if (data.password !== data.passwordConfirm) {
     console.log("Passwords don't match");
     return returnResult(false, "Passwords don't match");
   }
@@ -44,7 +45,16 @@ const singupHandler = async (event) => {
   const data = Object.fromEntries(formData);
   const result = checkDataFromForm(data);
   if (result.state) {
-    console.log(data);
+    try {
+      const response = await auth.registerUser(data);
+      if (response.ok) {
+        console.log("User registered");
+      } else {
+        console.log("Error registering user");
+      }
+    } catch (error) {
+      console.error("Error registering user:", error);
+    }
   } else {
     console.log("Error :" + result.message);
   }

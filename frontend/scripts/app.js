@@ -25,6 +25,7 @@ const routes = {
   game: { template: "game.html" },
   resetPassword: { template: "resetPassword.html" },
   profile: { template: "profile.html" },
+  login42: { template: "login42.html" },
 };
 
 // Initialise le routeur

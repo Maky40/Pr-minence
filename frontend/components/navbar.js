@@ -1,6 +1,7 @@
 import Component from "../utils/Component.js";
 import auth from "../services/auth.js";
 import ModalAlert from "./modal.js";
+import Avatar from "./avatar.js";
 
 export default class Navbar extends Component {
   constructor() {
@@ -80,6 +81,7 @@ export default class Navbar extends Component {
                                 </li>
                             `
                                 : `
+
                                 <li class="nav-item">
                                     <button class="nav-link btn btn-outline-danger mx-2 px-4" id="logoutBtn">
                                         <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
