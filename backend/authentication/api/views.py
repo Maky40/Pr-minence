@@ -119,7 +119,7 @@ class SignupView(APIView):
         return Response({
             "status": 400,
             "errors": serializer.errors,
-        }, status=status.HTTP_400_BAD_REQUEST)
+        }, status=status.HTTP_200_OK)
 
 # views.py
 class LoginView(APIView):
@@ -143,4 +143,4 @@ class LoginView(APIView):
         return Response({
             "status": 400,
             "errors": serializer.errors,
-        }, status=status.HTTP_400_BAD_REQUEST)
+        }, status=status.HTTP_200_OK)

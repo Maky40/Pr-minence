@@ -3,6 +3,18 @@ import auth from "../services/auth.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const showErrorMessage = (message) => {
+  const errorDiv = document.getElementById("error-msg");
+  errorDiv.innerHTML = message;
+  errorDiv.classList.remove("d-none");
+  errorDiv.classList.add("animate__animated", "animate__shakeX");
+
+  // Remove animation classes after animation ends
+  errorDiv.addEventListener("animationend", () => {
+    errorDiv.classList.remove("animate__animated", "animate__shakeX");
+  });
+};
+
 //initialisation de l'interface
 const UIinit = () => {
   //clean le ui avant de le recharger
@@ -46,42 +58,13 @@ const singupHandler = async (event) => {
   const result = checkDataFromForm(data);
   if (result.state) {
     try {
-      const response = await auth.registerUser(data);
-      if (response.ok) {
-        console.log("User registered");
-      } else {
-        console.log("Error registering user");
-      }
+      await auth.registerUser(data);
     } catch (error) {
       console.error("Error registering user:", error);
+      showErrorMessage(error.message);
     }
   } else {
     console.log("Error :" + result.message);
-  }
-};
-
-//fonction pour previsualiser l'avatar
-const avatarHandler = (event) => {
-  const previewDiv = document.getElementById("avatarPreview");
-  const previewImg = previewDiv.querySelector("img");
-  const file = event.target.files[0];
-
-  if (file) {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      previewImg.src = e.target.result;
-      previewDiv.classList.remove("d-none");
-    };
-
-    reader.onerror = () => {
-      console.error("Error reading file");
-      previewDiv.classList.add("d-none");
-    };
-
-    reader.readAsDataURL(file);
-  } else {
-    previewDiv.classList.add("d-none");
   }
 };
 

@@ -29,7 +29,7 @@ class Auth {
       if (!response.ok) throw new Error("No user found in API");
       const data = await response.json();
       if (data.status === 200) {
-        this.setSession(response);
+        this.setSession(data);
         console.log("Auth state restored from API");
       } else {
         console.error("No user found in API");
@@ -70,11 +70,22 @@ class Auth {
         password: userData.password,
       }),
     });
-    this.initFromAPI();
-    console.log("Register response:", response);
-
     if (!response.ok) throw new Error("Registration failed");
-    return response.json();
+    console.log("Register response:", response);
+    const data = await response.json();
+    if (data.status !== 201) {
+      console.error("Registration failed:", data.errors);
+      let error = "";
+      if (data.errors.email) {
+        error = "<div>Email already exists</div>";
+      }
+      if (data.errors.username) {
+        error += "<div>Username already exists</div>";
+      }
+      throw new Error(error);
+    }
+    await this.login(userData.email, userData.password);
+    changePage("#home");
   }
 
   async setSession(data) {

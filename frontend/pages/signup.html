@@ -4,7 +4,10 @@
       <div class="card-body">
         <h2 class="card-title text-center mb-4">Rejoindre l'Aventure</h2>
         <form id="signupForm">
+          <div class="alert alert-danger mt-1 d-none text-center flex " role="alert" id="error-msg">
+          </div>
           <div class="mb-3">
+
             <label for="username" class="form-label">Nom d'utilisateur</label>
             <input type="text" class="form-control" id="username" required name="username" />
           </div>
@@ -23,18 +26,6 @@
           <div class="mb-3">
             <label for="email" class="form-label">Email</label>
             <input type="email" class="form-control" id="email" required name="email" />
-          </div>
-
-          <div class="mb-3">
-            <label for="avatar" class="form-label">Avatar</label>
-            <div class="input-group">
-              <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" />
-              <label class="input-group-text" for="avatar">Upload</label>
-            </div>
-            <div id="avatarPreview" class="mt-2 text-center d-none">
-              <img src="" alt="Avatar Preview" class="rounded-circle"
-                style="width: 100px; height: 100px; object-fit: cover;">
-            </div>
           </div>
 
           <div class="mb-3">
