@@ -1,11 +1,6 @@
-import { getCookie, setCookie, eraseCookie } from "../utils/cookie.js";
+import api from "./api.js";
+import Toast from "../components/toast.js";
 
-const API_URL = "https://localhost";
-const LoginURL = `${API_URL}/authentication/login/`;
-const logoutURL = `${API_URL}/authentication/logout/`;
-const RegisterURL = `${API_URL}/authentication/signup/`;
-const RefreshURL = `${API_URL}/auth/refresh`;
-const getMyInfoURL = `${API_URL}/player`;
 class Auth {
   constructor() {
     this.authenticated = false;
@@ -18,18 +13,15 @@ class Auth {
 
   async initFromAPI() {
     try {
-      const headers = {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-      const response = await fetch(getMyInfoURL, headers);
-      if (!response.ok) throw new Error("No user found in API");
-      const data = await response.json();
+      const data = await api.apiFetch("/player/", true);
       if (data.status === 200) {
         this.setSession(data);
+        const toast = new Toast(
+          "Back to pong42",
+          "Bon retour dans le game",
+          "info"
+        );
+        toast.show();
         console.log("Auth state restored from API");
       } else {
         console.error("No user found in API");
@@ -37,19 +29,19 @@ class Auth {
     } catch (error) {
       this.authenticated = false;
       this.user = null;
+
       console.error("Failed to initialize auth state:", error);
     }
   }
 
   async login(email, password) {
     try {
-      const response = await fetch(LoginURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const data = await api.apiFetch("/authentication/login/", false, "POST", {
+        email,
+        password,
       });
-      if (!response.ok) throw new Error("Login failed");
-      const data = await response.json();
+      const toast = new Toast("Login", "Connexion reussite", "info");
+      toast.show();
       this.setSession(data);
       return data;
     } catch (error) {
@@ -59,22 +51,21 @@ class Auth {
   }
 
   async registerUser(userData) {
-    const response = await fetch(RegisterURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: userData.email,
-        username: userData.username,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        password: userData.password,
-      }),
-    });
+    const bodyData = {
+      email: userData.email,
+      username: userData.username,
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      password: userData.password,
+    };
     if (!response.ok) throw new Error("Registration failed");
-    console.log("Register response:", response);
-    const data = await response.json();
+    const data = await api.apiFetch("/authentication/signup/", false, "POST", {
+      bodyData,
+    });
     if (data.status !== 201) {
       console.error("Registration failed:", data.errors);
+      const toast = new Toast("error", "Erreur d'inscription", "error");
+      toast.show();
       let error = "";
       if (data.errors.email) {
         error = "<div>Email already exists</div>";
@@ -85,6 +76,8 @@ class Auth {
       throw new Error(error);
     }
     await this.login(userData.email, userData.password);
+    const toast = new Toast("Inscription", "Inscription validée", "info");
+    toast.show();
     changePage("#home");
   }
 
@@ -97,35 +90,15 @@ class Auth {
   }
 
   async logout() {
-    const headers = {
-      method: "GET",
-    };
-    const response = await fetch(logoutURL, headers);
-    console.log("Logout response:", response);
-    if (!response.ok) throw new Error("Logout failed");
-    this.authenticated = false;
-    this.user = null;
-    this.notifyListeners("logout");
-    changePage("#home");
-  }
-
-  async refreshSession() {
     try {
-      const response = await fetch(RefreshURL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.refreshToken}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) throw new Error("Token refresh failed");
-
-      const data = await response.json();
-      this.setSession(data);
-      return data;
+      const response = await api.apiFetch("/authentication/logout/", true);
+      this.authenticated = false;
+      this.user = null;
+      this.notifyListeners("logout");
+      const toast = new Toast("Success", "Déconnexion réussie", "success");
+      toast.show();
     } catch (error) {
-      this.logout();
+      console.error("Logout error:", error);
       throw error;
     }
   }
@@ -154,18 +127,19 @@ class Auth {
 
   async updateProfile(userData) {
     try {
-      const response = await fetch("/api/users/profile", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) throw new Error("Profile update failed");
-
-      const updatedUser = await response.json();
+      const bodyData = {
+        email: userData.email,
+        username: userData.username,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        avatar: userData.avatar,
+      };
+      const updatedUser = await api.apiFetch(
+        "/player/",
+        true,
+        "POST",
+        bodyData
+      );
       this.user = updatedUser;
       localStorage.setItem("user", JSON.stringify(updatedUser));
       this.notifyListeners("profile_updated");
