@@ -1,3 +1,5 @@
+import api from "./api.js";
+
 class Player {
   constructor() {
     this.id = null;
@@ -15,16 +17,7 @@ class Player {
 
   async init() {
     try {
-      const response = await fetch(PlayerURL, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("Failed to initialize player state");
-      if (data.status === 401) {
-        changepage("#connexion");
-      }
-
-      const data = await response.json();
+      const data = api.apiFetch("/player/", true);
       this.setSession(data);
     } catch (error) {
       console.error("Failed to initialize player state:", error);

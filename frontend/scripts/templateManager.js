@@ -18,7 +18,6 @@ export default class TemplateManager {
   async loadTemplate(templateFile) {
     try {
       this.cleanup();
-      pong42.setCurrentPage(templateFile);
       const response = await fetch(`pages/${templateFile}`);
       if (!response.ok) throw new Error("Template non trouvé");
 
@@ -47,7 +46,7 @@ export default class TemplateManager {
       // Charger le module JavaScript associé au template (s'il existe)
       const templateName = templateFile.replace(".html", ""); // Ex: 'dashboard.html' -> 'dashboard'
       const modulePath = `../scripts/${templateName}.js`; // Chemin vers le module JS
-
+      pong42.setCurrentPage(templateName);
       try {
         // Vérifier si le fichier JS existe avant de l'importer
         const jsResponse = await fetch(modulePath);

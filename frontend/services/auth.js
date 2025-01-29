@@ -94,9 +94,10 @@ class Auth {
       const response = await api.apiFetch("/authentication/logout/", true);
       this.authenticated = false;
       this.user = null;
-      this.notifyListeners("logout");
       const toast = new Toast("Success", "Déconnexion réussie", "success");
       toast.show();
+      this.notifyListeners("logout");
+      changePage("#home");
     } catch (error) {
       console.error("Logout error:", error);
       throw error;

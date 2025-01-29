@@ -1,5 +1,6 @@
 import Button42 from "../components/42button.js";
 import auth from "../services/auth.js";
+import pong42 from "../services/pong42.js";
 
 const UIinit = () => {
   //clean le ui avant de le recharger
@@ -40,8 +41,7 @@ const loginFormHandler = async () => {
 
     try {
       await auth.login(username, password);
-
-      changePage("#home");
+      changePage(pong42.getPreviousPage() || "home");
       console.log("Login successful");
     } catch (error) {
       showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");

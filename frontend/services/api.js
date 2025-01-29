@@ -1,3 +1,5 @@
+import Toast from "../components/toast.js";
+
 class Api {
   constructor() {
     this.baseUrl = "https://localhost";
@@ -39,6 +41,15 @@ class Api {
       // Check if response is ok
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      if (response.status === 401) {
+        const toast = new Toast(
+          "Session expired",
+          "Please login again",
+          "error"
+        );
+        toast.show();
+        changePage("login");
       }
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
