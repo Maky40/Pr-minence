@@ -1,3 +1,4 @@
+import pong42 from "./pong42.js";
 import api from "./api.js";
 import Toast from "../components/toast.js";
 
@@ -18,11 +19,10 @@ class Auth {
         this.setSession(data);
         const toast = new Toast(
           "Back to pong42",
-          "Bon retour dans le game",
+          "Bon retour dans le game " + pong42.player.username,
           "info"
         );
         toast.show();
-        console.log("Auth state restored from API");
       } else {
         console.error("No user found in API");
       }
@@ -40,7 +40,11 @@ class Auth {
         email,
         password,
       });
-      const toast = new Toast("Login", "Connexion reussite", "info");
+      const toast = new Toast(
+        "Bienvenue",
+        "Bienvenue " + pong42.player.username,
+        "info"
+      );
       toast.show();
       this.setSession(data);
       return data;
@@ -83,9 +87,10 @@ class Auth {
 
   async setSession(data) {
     const player = data.player;
-    console.log("Player:", player);
     this.authenticated = true;
     this.user = player;
+    pong42.player.setPlayerInformations(player);
+    console.log("Player:", pong42.player);
     this.notifyListeners("login");
   }
 

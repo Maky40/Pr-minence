@@ -1,8 +1,12 @@
+import Player from "./player.js";
+
 class Pong42 {
   constructor() {
     this.currentPage = "";
     this.beforePage = "";
-    this.timeout = 30000; // 30 seconds timeout
+    this.timeout = 30000;
+    const newPlayer = new Player();
+    this.player = newPlayer;
   }
 
   async handleMessage(message) {
@@ -12,8 +16,6 @@ class Pong42 {
       }, this.timeout);
 
       try {
-        // Handle message
-        // ...your message handling logic...
         clearTimeout(timer);
         resolve(response);
       } catch (error) {
