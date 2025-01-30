@@ -13,6 +13,9 @@ from io import BytesIO
 import urllib.parse
 import uuid
 from django.core.exceptions import ValidationError
+import pyotp
+import qrcode
+import base64
 
 
 class PlayerInfo(APIView):
@@ -84,9 +87,6 @@ class PlayerInfo(APIView):
                     })
                 player.last_name = last_name
                 changed = True
-            if "two_factor" in player_data and player_data['two_factor'] is False:
-                player.two_factor = player_data['two_factor']
-                changed = True
             player.save()
             message = "User updated successfully" if changed else "No changes detected"
             return Response({
@@ -103,6 +103,57 @@ class PlayerInfo(APIView):
                 "status": 500,
                 "message": str(e),
             })
+
+
+
+class TwoFactorActivation(APIView):
+    """
+    Gère l'activation/désactivation du 2FA
+    """
+
+    @method_decorator(jwt_cookie_required)
+    def post(self, request):
+        try:
+            id = request.decoded_token['id']
+            player = Player.objects.get(id=id)
+
+            # Vérifie si l'utilisateur souhaite activer ou désactiver le 2FA
+            activate_2fa = request.data.get("activate_2fa", None)
+
+            if activate_2fa is None:
+                return Response({"status": 400, "message": "Missing 'activate_2fa' field."})
+
+            if activate_2fa:  # Activation du 2FA
+                if not player.otp_secret:
+                    player.otp_secret = pyotp.random_base32()  # Générer une clé secrète
+                    player.save()
+
+                # Générer l'URI pour Google Authenticator
+                otp_uri = pyotp.TOTP(player.otp_secret).provisioning_uri(name=player.email, issuer_name="MyApp")
+
+                # Générer le QR Code
+                qr = qrcode.make(otp_uri)
+                buffer = BytesIO()
+                qr.save(buffer, format="PNG")
+                qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+                return Response({
+                    "status": 200,
+                    "message": "Scan this QR code with Google Authenticator.",
+                    "qr_code": f"data:image/png;base64,{qr_base64}"
+                })
+
+            else:  # Désactivation du 2FA
+                player.two_factor = False
+                player.otp_secret = None  # Supprimer la clé
+                player.save()
+                return Response({"status": 200, "message": "2FA disabled successfully."})
+
+        except Player.DoesNotExist:
+            return Response({"status": 404, "message": "User not found."})
+
+        except Exception as e:
+            return Response({"status": 500, "message": str(e)})
 
 
 class PlayerAvatarUpload(APIView):

@@ -26,7 +26,7 @@ urlpatterns = [
     path('', views.PlayerInfo.as_view(), name='playerInfoView'),
     path('avatar/', views.PlayerAvatarUpload.as_view(), name='playerAvatarUploadView'),
     path('friendship/', views.PlayerFriendship.as_view(), name='playerFriendshipView'),
-
+    path('2FAChange', views.TwoFactorActivation.as_view(), name='TwoFactorChangeView'),
 ]
 
 if settings.DEBUG:
