@@ -46,7 +46,6 @@ class Auth {
         "info"
       );
       toast.show();
-      this.setSession(data);
       return data;
     } catch (error) {
       console.error("Login error:", error);
@@ -55,16 +54,12 @@ class Auth {
   }
 
   async registerUser(userData) {
-    const bodyData = {
+    const data = await api.apiFetch("/authentication/signup/", false, "POST", {
       email: userData.email,
       username: userData.username,
       first_name: userData.first_name,
       last_name: userData.last_name,
       password: userData.password,
-    };
-    if (!response.ok) throw new Error("Registration failed");
-    const data = await api.apiFetch("/authentication/signup/", false, "POST", {
-      bodyData,
     });
     if (data.status !== 201) {
       console.error("Registration failed:", data.errors);
@@ -89,8 +84,8 @@ class Auth {
     const player = data.player;
     this.authenticated = true;
     this.user = player;
+    console.log(player);
     pong42.player.setPlayerInformations(player);
-    console.log("Player:", pong42.player);
     this.notifyListeners("login");
   }
 
@@ -127,7 +122,6 @@ class Auth {
   }
 
   notifyListeners(event) {
-    console.log("Auth event:", event);
     this.listeners.forEach((callback) => callback(event));
   }
 

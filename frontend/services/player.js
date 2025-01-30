@@ -18,7 +18,7 @@ class Player {
 
   async init() {
     try {
-      const data = api.apiFetch("/player/", true);
+      const data = await api.apiFetch("/player/", true);
       this.setPlayerInformations(data);
     } catch (error) {
       console.error("Failed to initialize player state:", error);
@@ -32,7 +32,6 @@ class Player {
   }
 
   setPlayerInformations(data) {
-    console.log(data.username);
     this.id = data.id;
     this.email = data.email;
     this.first_name = data.first_name;

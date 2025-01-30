@@ -10,7 +10,6 @@ export default class Navbar extends Component {
       isAuthenticated: auth.authenticated,
     };
     auth.addListener((event) => {
-      console.log("isAuthenticated:", auth.authenticated, auth.authenticated);
       if (event === "login" || event === "logout")
         if (auth.authenticated) {
           this.setState({ isAuthenticated: true });
