@@ -5,6 +5,7 @@ from .serializers import PlayerInfoSerializer
 from .models import Player, Friendship, PlayerMatch, Match
 from .decorators import jwt_cookie_required
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import os
@@ -60,15 +61,6 @@ class PlayerInfo(APIView):
             id = request.decoded_token['id']
             player_data = request.data.get('player')
             player = Player.objects.get(id=id)
-            if "username" in player_data:
-                username = ' '.join(player_data["username"].split())
-                if not username or len(player_data['username']) > 8 :
-                    return Response({
-                        "status": 400,
-                        "message": "Invalid username",
-                    })
-                player.username = username
-                changed = True
             if "first_name" in player_data:
                 first_name = ' '.join(player_data['first_name'].split())
                 if not first_name or len(first_name) > 20 :
@@ -387,3 +379,49 @@ class PlayerFriendship(APIView):
                     "status": 500,
                     "message": str(e),
                 })
+
+
+class ChangePasswordView(APIView):
+    """
+    Vue permettant à un utilisateur de changer son mot de passe.
+    """
+    @method_decorator(jwt_cookie_required)
+    def post(self, request):
+        try:
+            # 1️⃣ Récupérer l'utilisateur authentifié via le token JWT
+            user_id = request.decoded_token['id']
+            player = Player.objects.get(id=user_id)
+
+            # 2️⃣ Extraire les données de la requête
+            data = request.data
+            current_password = data.get('current_password')
+            new_password = data.get('new_password')
+            confirm_password = data.get('confirm_password')
+
+            # 3️⃣ Vérifier que tous les champs sont fournis
+            if not current_password or not new_password or not confirm_password:
+                return Response({"status": 400, "message": "Tous les champs sont requis."}, status=400)
+
+            # 4️⃣ Vérifier que le mot de passe actuel est correct
+            if not check_password(current_password, player.password):
+                return Response({"status": 400, "message": "Mot de passe actuel incorrect."}, status=400)
+
+            # 5️⃣ Vérifier que le nouveau mot de passe et la confirmation sont identiques
+            if new_password != confirm_password:
+                return Response({"status": 400, "message": "Les nouveaux mots de passe ne correspondent pas."}, status=400)
+
+            # 6️⃣ Vérifier la force du mot de passe (optionnel mais recommandé)
+            if len(new_password) < 8:
+                return Response({"status": 400, "message": "Le mot de passe doit contenir au moins 8 caractères."}, status=400)
+
+            # 7️⃣ Modifier le mot de passe et sauvegarder
+            player.set_password(new_password)
+            player.save()
+
+            return Response({"status": 200, "message": "Mot de passe mis à jour avec succès."}, status=200)
+
+        except Player.DoesNotExist:
+            return Response({"status": 404, "message": "Utilisateur non trouvé."}, status=404)
+
+        except Exception as e:
+            return Response({"status": 500, "message": str(e)}, status=500)
