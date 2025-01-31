@@ -1,20 +1,45 @@
-<section class="page">
-	<div id="chat-content"  data-view="chat" style="display:none;">
-		<div class="chat-history">
-			<div class="message">Utilisateur 1: Salut !</div>
-			<div class="message">Utilisateur 2: Bonjour !</div>
-		</div>
-		<div class="users-list">
-			<h3>Utilisateurs</h3>
-			<ul>
-				<li>Utilisateur 1</li>
-				<li>Utilisateur 2</li>
-				<li>Utilisateur 3</li>
-			</ul>
-		</div>
-		<div class="message-input">
-			<input type="text" placeholder="Entrez votre message...">
-			<button>Envoyer</button>
-		</div>
-	</div>
-</section>
+<div class="container text-center mt-2">
+    <h2 class="text-center mb-4">💬 Choisissez une option 💬</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <button id="tournament-room" class="btn btn-primary w-100">Tournament Chat</button>
+        </div>
+        <div class="col-md-4">
+            <button id="private-chat" class="btn btn-secondary w-100">Chat Privé</button>
+        </div>
+    </div>
+
+    <!-- Conteneur principal du chat -->
+    <div id="chat-container" class="mt-5" style="display: none;">
+        <!-- Section spécifique pour le chat privé -->
+        <div id="private-chat-container" style="display: none;">
+            <input type="text" id="search-friend" class="form-control mb-2" placeholder="Rechercher un ami...">
+            <button id="add-friend" class="btn btn-success w-100 mb-3">Ajouter un ami</button>
+            <div class="row">
+                <!-- Liste des amis sur la gauche -->
+                <div class="col-md-3">
+                    <ul id="friends-list" class="list-group"></ul>
+                </div>
+                <!-- Zone de chat sur la droite -->
+                <div class="col-md-9">
+                    <div class="chat-container p-3 border rounded">
+                        <div id="chat-header" class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 id="chat-friend-name" class="m-0" style="color: black;"></h4>
+                            <button id="block-friend" class="btn btn-danger btn-sm">Bloquer</button>
+                        </div>
+                        <div class="chat-box" id="chat-box">
+                            <!-- Historique des messages -->
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" class="message-input" id="message-input" placeholder="Envoyer un message...">
+                            <button id="send-message" class="btn btn-primary">Envoyer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/chatBox.js" type="module"></script>
+<link rel="stylesheet" href="../styles/pages/chatBox.css">
