@@ -52,12 +52,6 @@ class ProfileStats extends Component {
 </div>
 <!-- End Scores Tables -->`;
   }
-  render(container) {
-    if (!container) throw new Error("Container is required");
-    this.container = container;
-    this.beforeRender();
-    container.innerHTML = this.template();
-  }
 }
 
 export default ProfileStats;

@@ -1,0 +1,50 @@
+<section class="container mt-5">
+    <div class="card shadow">
+        <div class="card-body">
+            <h1 class="card-title text-center mb-4">Parametres de securité</h1>
+            <div class="alert alert-danger mt-1 d-none text-center" role="alert" id="error-msg">
+                A simple danger alert—check it out!
+            </div>
+            <h3 class="card-title text-center mb-4">Réinitialiser le mot de passe</h3>
+            <form id="resetPasswordForm">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Ancien mot de passe</label>
+                    <input type="password" class="form-control" id="oldPassword" required />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Nouveau mot de passe</label>
+                    <input type="password" class="form-control" id="password" required />
+                </div>
+                <div class="mb-3">
+                    <label for="passwordConfirm" class="form-label">Confirmer le mot de passe</label>
+                    <input type="password" class="form-control" id="passwordConfirm" required />
+                </div>
+                <div class="d-grid gap-2" id="reset-waiting">
+                    <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm  d-none" type="button"
+                        disabled>
+                        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                    </button>
+                    <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm" id="resetButton">
+                        Réinitialiser
+                    </button>
+            </form>
+            <h3 class="card-title text-center mb-4">Double authentification</h3>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+                <label class="form-check-label" for="flexSwitchCheckDefault">Double authentification</label>
+            </div>
+            <div class="d-grid gap-2 mt-2 d-none" id="double-auth">
+                <span class="text-center">
+                    pour activer la double authentification, veuillez vous rendre sur votre application mobile et
+                    scanner
+                    le QR code ci-dessous :
+                </span>
+                <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm" id="btn-qr-code">
+                    Afficher le QR code
+                </button>
+                <div class="text-center d-none" id="qr-code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=HelloWorld" alt="QR code">
+                </div>
+            </div>
+
+</section>

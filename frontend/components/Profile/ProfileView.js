@@ -65,12 +65,8 @@ class ProfileView extends Component {
                 </div>
             </div>`;
   }
-  render(container) {
-    super.render(container);
-    this.setupEvents();
-  }
 
-  setupEvents() {
+  attachEventListeners() {
     const editButton = this.container.querySelector("#editButton");
     if (editButton) {
       // Remove any existing listeners

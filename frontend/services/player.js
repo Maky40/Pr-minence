@@ -67,7 +67,23 @@ class Player {
     this.status = status;
     api.apiFetch("/player/", true, "PATCH", { status: status });
   }
+  checkUserInfos = (data) => {
+    if (data.first_name !== "" && data.last_name !== "") {
+      return false;
+    }
+    return true;
+  };
+
   updatePlayerInformations(data) {
+    if (this.checkUserInfos(data)) {
+      const toast = new Toast(
+        "Error",
+        "Veuillez remplir tous les champs",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
     this.email = data.email;
     this.first_name = data.first_name;
     this.last_name = data.last_name;
@@ -79,6 +95,7 @@ class Player {
     );
     updateToast.show();
     //api.apiFetch("/player/", true, "PATCH", data);
+    return true;
   }
 }
 

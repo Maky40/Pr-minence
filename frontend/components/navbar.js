@@ -1,7 +1,7 @@
 import Component from "../utils/Component.js";
 import auth from "../services/auth.js";
 import ModalAlert from "./modal.js";
-import Avatar from "./avatar.js";
+import pong42 from "../services/pong42.js";
 
 export default class Navbar extends Component {
   constructor() {
@@ -81,10 +81,33 @@ export default class Navbar extends Component {
                             `
                                 : `
 
-                                <li class="nav-item">
-                                    <button class="nav-link btn btn-outline-danger mx-2 px-4" id="logoutBtn">
+                                <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center btn btn-outline-info mx-2 px-4" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="${pong42.player.avatar}" alt="Avatar" class="rounded-circle me-2" width="35" height="35">
+                                <span id="userPseudo">${pong42.player.username}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="#profile" data-locallink>
+                                        <i class="fas fa-user me-2"></i>Mon profil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#security" data-locallink>
+                                       <i class="fas fa-lock me-2"></i></i>sécurité
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+
+                                <li>
+                                    <button class="nav-link btn btn-outline-danger mx-2 px-4 custom-danger" id="logoutBtn">
                                         <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
                                     </button>
+                                </li>
+                                </ul>
                                 </li>
                             `
                             }

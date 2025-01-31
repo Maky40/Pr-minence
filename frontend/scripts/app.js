@@ -23,7 +23,7 @@ const routes = {
   connexion: { template: "connexion.html" },
   signup: { template: "signup.html" },
   game: { template: "game.html" },
-  resetPassword: { template: "resetPassword.html" },
+  security: { template: "security.html" },
   profile: { template: "profile.html" },
   login42: { template: "login42.html" },
 };

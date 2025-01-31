@@ -17,12 +17,6 @@ class Auth {
       const data = await api.apiFetch("/player/", true);
       if (data.status === 200) {
         this.setSession(data);
-        const toast = new Toast(
-          "Back to pong42",
-          "Bon retour dans le game " + pong42.player.username,
-          "info"
-        );
-        toast.show();
       } else {
         console.error("No user found in API");
       }
@@ -40,6 +34,13 @@ class Auth {
         email,
         password,
       });
+      console.log("======Login successful:", data);
+      if (data.status !== 200) {
+        console.error("Login failed:", data.errors);
+        const toast = new Toast("error", "Erreur de connexion", "error");
+        toast.show();
+        throw new Error("Login failed");
+      }
       const toast = new Toast(
         "Bienvenue",
         "Bienvenue " + pong42.player.username,
@@ -84,7 +85,6 @@ class Auth {
     const player = data.player;
     this.authenticated = true;
     this.user = player;
-    console.log(player);
     pong42.player.setPlayerInformations(player);
     this.notifyListeners("login");
   }

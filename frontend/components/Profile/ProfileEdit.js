@@ -16,13 +16,6 @@ class ProfileEdit extends Component {
                                 </div>
                             </div>
                             <div class="col-md-9">
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">Nom d'utilisateur</label>
-                                    <input type="text" class="form-control" id="username" name="username" 
-                                        value="${
-                                          this.state.username || ""
-                                        }" disabled>
-                                </div>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
@@ -42,13 +35,6 @@ class ProfileEdit extends Component {
                                                 }">
                                         </div>
                                     </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" 
-                                        value="${
-                                          this.state.email || ""
-                                        }" disabled>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">Sauvegarder</button>
@@ -73,8 +59,6 @@ class ProfileEdit extends Component {
       for (let [key, value] of formData.entries()) {
         data[key] = value;
       }
-
-      console.log("Form data:", data);
       this.emit("save", data);
     });
 

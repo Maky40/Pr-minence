@@ -191,18 +191,17 @@ This component system allows for:
 - ✅ Complete signup process
 - 🔐 Authentication
   - Connected/Disconnected state management
+- ✅ Profile display (ui)
 
 ### In progress Features
 
-- Add password recovery (ui)
-- Profile display (ui)
+- 👤 Profile Management
+  - Profile picture management
+  - Add password change (ui)
+  - Profile editing
 
 ### Todo List
 
-- 👤 Profile Management
-  - Profile display
-  - Profile editing
-  - Profile picture management
 - 🏆 Tournament System
   - Tournament creation
   - Tournament participation
