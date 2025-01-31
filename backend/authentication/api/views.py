@@ -2,6 +2,7 @@ from django.conf import settings
 from django.utils.http import urlencode
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.utils.decorators import method_decorator
 from django.shortcuts import redirect
 from os import getenv
 import requests
@@ -11,6 +12,8 @@ from .models import Player
 from rest_framework import status
 from rest_framework.views import APIView
 from .serializers import SignupSerializer, LoginSerializer
+import pyotp
+import re
 
 
 @api_view(['GET'])
@@ -81,7 +84,6 @@ def intra_callback_auth(request):
     if player is None:
         # Rediriger vers la page de connexion en cas d'échec
         return redirect(f"https://localhost/#connexion/", permanent=True)
-    player.status = "ON"
     player.save()
     # Générer un token JWT pour le joueur
     jwt_token = generate_jwt(player.id, player.two_factor)
@@ -144,3 +146,40 @@ class LoginView(APIView):
             "status": 400,
             "errors": serializer.errors,
         }, status=status.HTTP_200_OK)
+
+
+
+class Verify2FAActivationView(APIView):
+    """
+    Vérifie le code OTP avant d'activer définitivement le 2FA
+    """
+
+    @method_decorator(jwt_cookie_required)
+    def post(self, request):
+        try:
+            id = request.decoded_token['id']
+            user = Player.objects.get(id=id)
+            otp_code = request.data.get("otp_code")
+
+            # Vérifier que l'utilisateur a bien activé le 2FA
+            if not user.otp_secret:
+                return Response({"error": "2FA is not enabled."}, status=400)
+
+            # Vérifier que otp_code est bien une chaîne de 6 chiffres
+            if not otp_code or not re.fullmatch(r"\d{6}", otp_code):
+                return Response({"error": "OTP must be exactly 6 digits."}, status=400)
+
+            # Vérification du code OTP avec pyotp
+            totp = pyotp.TOTP(user.otp_secret)
+            if totp.verify(otp_code):
+                user.two_factor = True
+                user.save()
+                return Response({"message": "2FA successfully activated."})
+            else:
+                return Response({"error": "Invalid OTP code."}, status=400)
+
+        except Player.DoesNotExist:
+            return Response({"status": 404, "message": "User not found."})
+
+        except Exception as e:
+            return Response({"status": 500, "message": str(e)})
