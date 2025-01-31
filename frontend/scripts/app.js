@@ -19,7 +19,7 @@ const templateManager = new TemplateManager(content);
 const routes = {
   home: { template: "home.html" },
   score: { template: "score.html" },
-  chat: { template: "chatBox.html" },
+  chat: { template: "chat.html" },
   connexion: { template: "connexion.html" },
   signup: { template: "signup.html" },
   game: { template: "game.html" },

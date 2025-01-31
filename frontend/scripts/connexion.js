@@ -41,7 +41,7 @@ const loginFormHandler = async () => {
     try {
       await auth.login(username, password);
 
-      changePage("#home");
+      changePage("#chat");
       console.log("Login successful");
     } catch (error) {
       showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
