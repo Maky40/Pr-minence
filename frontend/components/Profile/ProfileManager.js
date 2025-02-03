@@ -25,7 +25,7 @@ class ProfileManager extends Component {
     this.edit.on("save", (profile) => {
       if (pong42.player.updatePlayerInformations(profile))
         this.setState({ isEditing: false });
-      console.log(pong42.player);
+      pong42.player.notifyListeners("update", pong42.player);
       this.render(this.container);
     });
   }

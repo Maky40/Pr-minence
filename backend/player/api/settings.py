@@ -21,6 +21,9 @@ PLAYER_DIR = BASE_DIR.parent  # backend/player/
 BACKEND_DIR = PLAYER_DIR.parent  # backend/
 PROJECT_ROOT = BACKEND_DIR.parent  # Racine du projet
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
 

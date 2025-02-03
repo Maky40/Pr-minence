@@ -1,8 +1,10 @@
 import api from "./api.js";
 import Toast from "../components/toast.js";
+import EventEmitter from "../utils/EventEmitter.js";
 
-class Player {
+class Player extends EventEmitter {
   constructor() {
+    super();
     this.id = null;
     this.email = null;
     this.first_name = null;
@@ -83,7 +85,7 @@ class Player {
         true,
         "POST",
         formData,
-        true // isFile = true
+        true
       );
       if (result.avatar_url) {
         // Set avatar to the returned URL (a string), not the file object
@@ -105,9 +107,17 @@ class Player {
         "error"
       );
       toast.show();
-      return false;
+      throw error;
     }
   };
+
+  addListener(event, callback) {
+    return this.on(event, callback);
+  }
+
+  notifyListeners(event, data) {
+    this.emit(event, data);
+  }
 
   updatePlayerInformations = async (data) => {
     try {

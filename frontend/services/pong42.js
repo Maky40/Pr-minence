@@ -36,7 +36,6 @@ class Pong42 {
   getCurrentPage() {
     return this.currentPage;
   }
-
   addMessageListener() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message)

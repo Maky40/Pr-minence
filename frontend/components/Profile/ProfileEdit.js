@@ -67,44 +67,52 @@ class ProfileEdit extends Component {
     const uploadButton = this.container.querySelector("#uploadButton");
 
     uploadButton?.addEventListener("click", async () => {
-      const result = await pong42.player.updateAvatar(this.avatarFile);
-      if (!result) {
-        console.error("Error uploading avatar");
-        return;
+      try {
+        const result = await pong42.player.updateAvatar(this.avatarFile);
+        if (!result) {
+          console.error("Error uploading avatar");
+          return;
+        }
+        // Update state correctly - spread first, then override
+        this.setState({
+          ...this.state,
+          hasFile: false,
+          avatar: this.defaultAvatar, // If you have a default avatar
+        });
+        this.emit("save", pong42.player);
+      } catch (error) {
+        const AlerteContainer = document.getElementById("alert-container");
+        const alert = new AlertInfo("Error uploading avatar", "danger");
+        alert.render(AlerteContainer);
       }
-      // Update state correctly - spread first, then override
-      this.setState({
-        ...this.state,
-        hasFile: false,
-        avatar: this.defaultAvatar, // If you have a default avatar
-      });
-      if (!result) {
-        const container = document.getElementById("alert-container");
-        const alert = new AlertInfo("Avatar upload error", "danger");
-        return;
-      }
-      const container = document.getElementById("alert-container");
-      const alert = new AlertInfo("Avatar uploaded", "success");
-      alert.render(container);
     });
 
     avatarInput?.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
+      // Check file size (ex: 5MB max)
+      const maxSize = 1 * 1024 * 1024; // 2MB in bytes
+      const fileSize = file.size;
+      if (parseInt(file.size) > parseInt(maxSize)) {
+        const AlerteContainer = document.getElementById("alert-container");
+        const alert = new AlertInfo(
+          "Le fichier est trop volumineux (max 1MB)",
+          "danger"
+        );
+        alert.render(AlerteContainer);
+        avatarInput.value = "";
+        return;
+      }
+
       this.avatarFile = file;
       const reader = new FileReader();
-
       reader.onload = (e) => {
         this.setState({
           avatar: e.target.result,
-          hasFile: true, // Add flag to track file presence
+          hasFile: true,
         });
       };
-
-      reader.onerror = () => {
-        console.error("Error reading file");
-      };
-
       reader.readAsDataURL(file);
     });
 
