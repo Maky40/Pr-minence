@@ -110,7 +110,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = PLAYER_DIR / "static/"
 MEDIA_URL = "/player/media/"
-MEDIA_ROOT = PLAYER_DIR / "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 
 
 

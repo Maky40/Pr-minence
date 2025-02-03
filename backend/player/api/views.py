@@ -160,6 +160,17 @@ class TwoFactorActivation(APIView):
 
 
 
+
+import os
+import uuid
+import urllib.parse
+from io import BytesIO
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.utils.decorators import method_decorator
+from PIL import Image
+
 class PlayerAvatarUpload(APIView):
     """
     Met à jour l'avatar du joueur avec des vérifications de sécurité.
@@ -169,29 +180,27 @@ class PlayerAvatarUpload(APIView):
     def post(self, request):
         try:
             id = request.decoded_token['id']
-            
-            # Vérifier si un fichier est bien envoyé
+
             if 'avatar' not in request.FILES:
                 return Response({"status": 400, "message": "No avatar file provided"}, status=400)
 
             file = request.FILES['avatar']
 
-            # Vérifier la taille du fichier (max 2MB)
+            # Vérifier la taille du fichier
             MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
             if file.size > MAX_FILE_SIZE:
                 return Response({"status": 400, "message": "Image file too large (max 2MB)"}, status=400)
 
-            # Ouvrir l'image et vérifier son format
+            # Ouvrir et valider l'image
             try:
                 image = Image.open(file)
                 image_format = image.format
             except IOError:
                 return Response({"status": 400, "message": "Invalid image file"}, status=400)
 
-            # Vérifier les formats autorisés
             ALLOWED_FORMATS = ['JPEG', 'PNG']
             if image_format not in ALLOWED_FORMATS:
-                return Response({"status": 400, "message": f"Unsupported image format: {image_format}. Allowed formats: {ALLOWED_FORMATS}"}, status=400)
+                return Response({"status": 400, "message": f"Unsupported format: {image_format}"}, status=400)
 
             # Redimensionner si nécessaire
             MAX_WIDTH = 640
@@ -206,24 +215,25 @@ class PlayerAvatarUpload(APIView):
             image.save(buffer, format=image_format)
             buffer.seek(0)
 
-            # Nom unique de fichier
+            # Nom unique
             extension = file.name.split('.')[-1].lower()
             filename = f"{uuid.uuid4().hex}.{extension}"
 
-            # ✅ Correction : Sauvegarde dans /player/media/avatars/
-            absolute_path = os.path.join(settings.MEDIA_ROOT, "avatars", filename)
+            # ✅ Création du dossier avatars/ si nécessaire
+            avatars_path = os.path.join(settings.MEDIA_ROOT, "avatars")
+            os.makedirs(avatars_path, exist_ok=True)
 
-            # Vérifier que le dossier avatars existe
-            os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
 
-            # Sauvegarder l'image localement
+
+            # ✅ Écriture manuelle du fichier
+            absolute_path = os.path.join(avatars_path, filename)
             with open(absolute_path, "wb") as f:
                 f.write(buffer.getvalue())
 
-            # ✅ Génération de l'URL publique correcte
+            # ✅ Génération de l'URL publique
             file_url = urllib.parse.urljoin(settings.PUBLIC_PLAYER_URL, settings.MEDIA_URL + f"avatars/{filename}")
 
-            # Mise à jour de l'avatar du joueur
+            # Mise à jour du joueur
             player = Player.objects.get(id=id)
             player.avatar = file_url
             player.save()
@@ -233,7 +243,12 @@ class PlayerAvatarUpload(APIView):
         except Player.DoesNotExist:
             return Response({"status": 404, "message": "User not found"}, status=404)
         except Exception as e:
+            print(f"❌ Erreur serveur : {str(e)}")
             return Response({"status": 500, "message": str(e)}, status=500)
+
+
+
+
 
 
 
