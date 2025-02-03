@@ -110,7 +110,6 @@ class Player {
       }
       this.first_name = data.first_name;
       this.last_name = data.last_name;
-      this.username = data.username;
       if (data.avatar) {
         this.avatar = data.avatar;
         this.updateAvatar({ avatar: data.avatar });
