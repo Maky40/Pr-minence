@@ -159,18 +159,6 @@ class TwoFactorActivation(APIView):
             return Response({"status": 500, "message": str(e)})
 
 
-
-
-import os
-import uuid
-import urllib.parse
-from io import BytesIO
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.utils.decorators import method_decorator
-from PIL import Image
-
 class PlayerAvatarUpload(APIView):
     """
     Met à jour l'avatar du joueur avec des vérifications de sécurité.
@@ -218,19 +206,19 @@ class PlayerAvatarUpload(APIView):
             extension = file.name.split('.')[-1].lower()
             filename = f"{uuid.uuid4().hex}.{extension}"
 
-            # ✅ Création du dossier avatars/ si nécessaire
-            avatars_path = os.path.join(settings.MEDIA_ROOT, "avatars")
-            os.makedirs(avatars_path, exist_ok=True)
-
-
+            # ✅ Création automatique des dossiers `media/` et `avatars/` si nécessaire
+            media_path = settings.MEDIA_ROOT
+            avatars_path = os.path.join(media_path, "avatars")
+            os.makedirs(avatars_path, exist_ok=True)  # Création des dossiers
 
             # ✅ Écriture manuelle du fichier
             absolute_path = os.path.join(avatars_path, filename)
             with open(absolute_path, "wb") as f:
                 f.write(buffer.getvalue())
 
-            # ✅ Génération de l'URL publique
-            file_url = urllib.parse.urljoin(settings.PUBLIC_PLAYER_URL, settings.MEDIA_URL + f"avatars/{filename}")
+            # ✅ Correction de l'URL publique pour correspondre à Nginx
+            file_url = f"{settings.PUBLIC_PLAYER_URL}{settings.MEDIA_URL}avatars/{filename}"
+            print(f"✅ URL publique générée : {file_url}")
 
             # Mise à jour du joueur
             player = Player.objects.get(id=id)
@@ -244,10 +232,6 @@ class PlayerAvatarUpload(APIView):
         except Exception as e:
             print(f"❌ Erreur serveur : {str(e)}")
             return Response({"status": 500, "message": str(e)}, status=500)
-
-
-
-
 
 
 

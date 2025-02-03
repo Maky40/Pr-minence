@@ -11,6 +11,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Configuration générée
       - ./nginx/certs:/etc/nginx/certs:ro # Certificats SSL
       - ./frontend:/usr/share/nginx/html:ro # Fichiers frontend
+      - ./backend/player/media:/usr/src/app/media
     networks:
       - app_network
     restart: always
@@ -33,7 +34,7 @@ services:
       context: ./backend/player
     container_name: player
     volumes:
-      - ./backend/player:/usr/src/app # Volume pour la synchronisation des fichiers
+      - ./backend/player/media:/usr/src/app/media # Volume pour la synchronisation des fichiers
     env_file:
       - .env
     environment:
