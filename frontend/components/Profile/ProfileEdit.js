@@ -46,7 +46,6 @@ class ProfileEdit extends Component {
                 </div>
             </div>`;
   }
-
   attachEventListeners() {
     const form = this.container.querySelector("#profileForm");
     const cancelButton = this.container.querySelector("#cancelButton");
@@ -54,8 +53,10 @@ class ProfileEdit extends Component {
 
     avatarInput?.addEventListener("change", (e) => {
       const file = e.target.files[0];
+      if (!file) return;
       const reader = new FileReader();
       reader.onload = (e) => {
+        // Pour prévisualisation
         this.setState({ avatar: e.target.result });
       };
       reader.readAsDataURL(file);
@@ -66,12 +67,18 @@ class ProfileEdit extends Component {
       const formData = new FormData(form);
       const data = {};
 
+      // Construire un objet à partir du FormData
       for (let [key, value] of formData.entries()) {
         data[key] = value;
       }
-      if (!data.avatar) {
-        delete data.avatar;
+
+      // Extraire le fichier directement de l'input
+      const avatarFile = avatarInput?.files[0];
+      if (avatarFile) {
+        data.avatarFile = avatarFile; // On envoie le File sous la clé "avatarFile"
       }
+
+      console.log(data);
       this.emit("save", data);
     });
 

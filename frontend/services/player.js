@@ -74,22 +74,42 @@ class Player {
     }
     return true;
   };
-
-  updateAvatar = async (data) => {
+  updateAvatar = async (avatarFile) => {
     try {
-      const response = await api.apiFetch("/player/", true, "POST", data);
-      const updateToast = new Toast(
-        "Success",
-        "votre avatar a été mis à jour",
-        "success"
+      const formData = new FormData();
+      formData.append("avatar", avatarFile);
+
+      // Use endpoint without trailing slash if needed.
+      console.log("Request sent to:", api.makeUrl("/player/avatar"));
+      console.log("FormData content:", [...formData.entries()]);
+      const result = await api.apiFetch(
+        "/player/avatar/",
+        true,
+        "POST",
+        formData,
+        true // isFile = true
       );
-      updateToast.show();
-      return true;
+
+      console.log("Request sent to:", api.makeUrl("/player/avatar"));
+      console.log("FormData content:", [...formData.entries()]);
+
+      if (result.avatar_url) {
+        // Set avatar to the returned URL (a string), not the file object
+        this.avatar = result.avatar_url;
+        const updateToast = new Toast(
+          "Success",
+          "Votre avatar a été mis à jour",
+          "success"
+        );
+        updateToast.show();
+        return true;
+      }
+      throw new Error("No avatar URL in response");
     } catch (error) {
       console.error("Failed to update player avatar:", error);
       const toast = new Toast(
         "Error",
-        "Failed to update player avatar",
+        "Échec de la mise à jour de l'avatar",
         "error"
       );
       toast.show();
@@ -110,9 +130,11 @@ class Player {
       }
       this.first_name = data.first_name;
       this.last_name = data.last_name;
+      console.log("AVATAR DEUX", data.avatar);
       if (data.avatar) {
+        console.log("AVATAR UN");
         this.avatar = data.avatar;
-        this.updateAvatar({ avatar: data.avatar });
+        this.updateAvatar(data.avatar);
       }
       const updateToast = new Toast(
         "Success",

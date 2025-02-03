@@ -5,32 +5,40 @@ class Api {
     this.baseUrl = "https://localhost";
     this.authentificatHeader = {
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
     };
-    this.simpleHeader = {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
+    this.simpleHeader = {};
   }
   makeUrl(path) {
     return `${this.baseUrl}${path}`;
   }
-  makeHeader(data, auth, method) {
-    const baseHeader = {
-      ...(auth ? this.authentificatHeader : this.simpleHeader),
+  makeHeader(data, auth, method, isFile = false) {
+    let baseHeader = {
       method,
+      credentials: auth ? "include" : undefined,
     };
 
-    return data ? { ...baseHeader, body: JSON.stringify(data) } : baseHeader;
+    if (!isFile && data) {
+      baseHeader.headers = { "Content-Type": "application/json" };
+      baseHeader.body = JSON.stringify(data);
+    } else if (isFile && data) {
+      // Remove Content-Type header for FormData.
+      // The browser will set it with the proper boundary.
+      baseHeader.body = data;
+    }
+
+    return baseHeader;
   }
 
-  async apiFetch(url, auth = false, method = "GET", data = null) {
+  async apiFetch(
+    url,
+    auth = false,
+    method = "GET",
+    data = null,
+    isFile = false
+  ) {
     try {
       const fetchUrl = this.makeUrl(url);
-      const headers = this.makeHeader(data, auth, method);
+      const headers = this.makeHeader(data, auth, method, isFile);
       const response = await fetch(fetchUrl, headers);
 
       // For logout, accept any successful response
@@ -40,6 +48,7 @@ class Api {
 
       // Check if response is ok
       if (!response.ok) {
+        console.error("HTTP error!", response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       if (response.status === 401) {

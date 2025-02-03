@@ -1,5 +1,5 @@
 <!-- Section utilisateur non authentifié -->
-<section id="logged" class="container py-5">
+<section id="logged" class="container-fluid">
   <div class="auth-message text-center bg-white p-5 rounded shadow-lg">
     <div class="card shadow-sm mx-auto" style="max-width: 600px">
       <div class="card-body p-5">
@@ -10,10 +10,7 @@
         <p class="text-muted mb-4">
           Rejoignez notre communauté de joueurs dès maintenant! 🚀
         </p>
-        <a
-          href="#connexion"
-          class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm"
-        >
+        <a href="#connexion" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm">
           Se connecter
         </a>
       </div>
@@ -21,10 +18,7 @@
   </div>
 </section>
 <!-- Utilisateur Authentifier -->
-<section
-  id="not-logged"
-  class="container py-5 animate__animated animate__fadeIn d-none bg-white rounded shadow-lg"
->
+<div id="not-logged" class="container py-5 animate__animated animate__fadeIn d-none bg-white rounded shadow-lg">
   <div class="row justify-content-center">
     <div class="col-md-8 text-center">
       <h1 class="display-4 mb-4">Prêt pour le Challenge ? 🏓</h1>
@@ -37,12 +31,7 @@
       </p>
 
       <div class="card shadow-lg mb-5">
-        <img
-          src="../assets/giphy.webp"
-          alt="Gif_Pong"
-          class="img-fluid rounded"
-          id="gif-pong"
-        />
+        <img src="../assets/giphy.webp" alt="Gif_Pong" class="img-fluid rounded" id="gif-pong" />
         <div class="card-body">
           <p class="card-text">
             Le classique des classiques, réinventé pour toi ! 🎮
@@ -51,14 +40,11 @@
       </div>
 
       <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-        <button
-          class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm"
-          onclick="changePage('#game')"
-        >
+        <button class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-sm" onclick="changePage('#game')">
           <i class="fas fa-gamepad me-2"></i>Jouer Maintenant !
         </button>
       </div>
     </div>
   </div>
-</section>
+</div>
 <script src="../scripts/home.js" type="module" />
