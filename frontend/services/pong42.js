@@ -26,11 +26,15 @@ class Pong42 {
   }
 
   setCurrentPage(page) {
+    if (page === "connexion" && page === "signup") return;
     this.beforePage = this.currentPage;
     this.currentPage = page;
   }
   getPreviousPage() {
     return this.beforePage;
+  }
+  getCurrentPage() {
+    return this.currentPage;
   }
 
   addMessageListener() {

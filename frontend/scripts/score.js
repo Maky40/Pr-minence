@@ -51,11 +51,13 @@ const players = [
 
 function initDashboard() {
   const tbody = document.getElementById("leaderboard-body");
+
   if (!tbody) {
     console.error("Tableau non trouvé");
     return;
   }
-  console.log("Tableau trouvé");
+  //clean le tableau avant de le recharger
+  tbody.innerHTML = "";
   players.forEach((player) => {
     const avatar = new Avatar(player.image, player.name, {
       size: "30",

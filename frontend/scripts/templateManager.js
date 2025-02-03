@@ -1,8 +1,10 @@
 import pong42 from "../services/pong42.js";
+import auth from "../services/auth.js";
 
 export default class TemplateManager {
-  constructor(contentElement) {
+  constructor(contentElement, routes) {
     this.contentElement = contentElement;
+    this.routes = routes;
     this.loadedScripts = new Set();
   }
 
@@ -18,6 +20,18 @@ export default class TemplateManager {
   async loadTemplate(templateFile) {
     try {
       this.cleanup();
+      const templateName = templateFile.replace(".html", "");
+      if (!auth.authenticated) {
+        await auth.initFromAPI();
+      }
+      if (this.routes[templateName]?.authRequired ?? false) {
+        if (!auth.authenticated) {
+          if (pong42.currentPage !== "connexion")
+            pong42.setCurrentPage(templateName);
+          changePage("connexion");
+          return;
+        }
+      }
       const response = await fetch(`pages/${templateFile}`);
       if (!response.ok) throw new Error("Template non trouvé");
 
@@ -44,9 +58,10 @@ export default class TemplateManager {
       await Promise.all(scripts.map((script) => this.executeScript(script)));
 
       // Charger le module JavaScript associé au template (s'il existe)
-      const templateName = templateFile.replace(".html", ""); // Ex: 'dashboard.html' -> 'dashboard'
+      // Ex: 'dashboard.html' -> 'dashboard'
       const modulePath = `../scripts/${templateName}.js`; // Chemin vers le module JS
-      pong42.setCurrentPage(templateName);
+      if (templateName !== "connexion" && templateName !== "signup")
+        pong42.setCurrentPage(templateName);
       try {
         // Vérifier si le fichier JS existe avant de l'importer
         const jsResponse = await fetch(modulePath);

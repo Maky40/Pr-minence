@@ -39,8 +39,7 @@ const loginFormHandler = async () => {
 
     try {
       await auth.login(username, password);
-      changePage(pong42.getPreviousPage() || "home");
-      console.log("Login successful");
+      changePage(pong42.getCurrentPage() || "home");
     } catch (error) {
       showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
     } finally {
@@ -50,6 +49,9 @@ const loginFormHandler = async () => {
 };
 
 const init = () => {
+  if (auth.authenticated) {
+    changePage(pong42.getCurrentPage() || "home");
+  }
   UIinit();
   loginFormHandler();
 };
