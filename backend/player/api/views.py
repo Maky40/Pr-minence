@@ -160,103 +160,87 @@ class TwoFactorActivation(APIView):
 
 
 
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from PIL import Image
+import uuid
+import os
+import urllib.parse
+from io import BytesIO
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.utils.decorators import method_decorator
+
 class PlayerAvatarUpload(APIView):
+    """
+    Met à jour l'avatar du joueur avec des vérifications de sécurité.
+    """
 
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
-            # 1) Récupérer l'ID du joueur depuis le token décodé
             id = request.decoded_token['id']
             
-            # 2) Extraire le fichier 'avatar' depuis la requête
+            # Vérifier si un fichier est bien envoyé
             if 'avatar' not in request.FILES:
-                return Response({
-                    "status": 400,
-                    "message": "No avatar file provided",
-                }, status=400)
-            
+                return Response({"status": 400, "message": "No avatar file provided"}, status=400)
+
             file = request.FILES['avatar']
-            
-            # 3) Vérifier la taille du fichier
+
+            # Vérifier la taille du fichier (max 2MB)
             MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
             if file.size > MAX_FILE_SIZE:
-                return Response({
-                    "status": 400,
-                    "message": "Image file too large (max 2MB)",
-                }, status=400)
-            
-            # 4) Ouvrir l'image avec Pillow
+                return Response({"status": 400, "message": "Image file too large (max 2MB)"}, status=400)
+
+            # Ouvrir l'image et vérifier son format
             try:
                 image = Image.open(file)
-                image_format = image.format  # e.g., 'JPEG', 'PNG'
+                image_format = image.format
             except IOError:
-                return Response({
-                    "status": 400,
-                    "message": "Invalid image file",
-                }, status=400)
-            
-            # 5) Vérifier le format de l'image
+                return Response({"status": 400, "message": "Invalid image file"}, status=400)
+
+            # Vérifier les formats autorisés
             ALLOWED_FORMATS = ['JPEG', 'PNG']
             if image_format not in ALLOWED_FORMATS:
-                return Response({
-                    "status": 400,
-                    "message": f"Unsupported image format: {image_format}. Allowed formats: {ALLOWED_FORMATS}",
-                }, status=400)
-            
-            # 6) Vérifier et redimensionner l'image si nécessaire
+                return Response({"status": 400, "message": f"Unsupported image format: {image_format}. Allowed formats: {ALLOWED_FORMATS}"}, status=400)
+
+            # Redimensionner si nécessaire
             MAX_WIDTH = 640
             MAX_HEIGHT = 480
             if image.width > MAX_WIDTH or image.height > MAX_HEIGHT:
-                # Calculer le facteur de redimensionnement tout en conservant le ratio
                 ratio = min(MAX_WIDTH / image.width, MAX_HEIGHT / image.height)
                 new_size = (int(image.width * ratio), int(image.height * ratio))
                 image = image.resize(new_size, Image.LANCZOS)
-            
-            # 7) Sauvegarder l'image redimensionnée dans un buffer BytesIO
+
+            # Sauvegarde en mémoire
             buffer = BytesIO()
             image.save(buffer, format=image_format)
             buffer.seek(0)
-            
-            # 8) Construire un nom de fichier unique pour éviter les conflits
-            # Optionnel : ajouter un timestamp ou un UUID
-            filename = f"{uuid.uuid4().hex}_{file.name}"
-            file_path = os.path.join(settings.MEDIA_ROOT, filename)
-            
-            # 9) Sauvegarder l'image via le storage par défaut
-            default_storage.save(file_path, ContentFile(buffer.read()))
-            
-            # 10) Construire l'URL publique de l'image
-            file_url = urllib.parse.urljoin(
-                settings.PUBLIC_PLAYER_URL,
-                os.path.join(settings.MEDIA_URL, filename)
-            )
-            
-            # 11) Mettre à jour le champ 'avatar' du joueur
+
+            # Nom unique de fichier
+            extension = file.name.split('.')[-1].lower()
+            filename = f"{uuid.uuid4().hex}.{extension}"
+
+            # ✅ Correction : Sauvegarde avec un chemin RELATIF dans `MEDIA_ROOT`
+            relative_path = os.path.join("avatars", filename)
+            default_storage.save(relative_path, ContentFile(buffer.read()))
+
+            # ✅ Génération de l'URL publique correcte
+            file_url = urllib.parse.urljoin(settings.PUBLIC_PLAYER_URL, settings.MEDIA_URL + relative_path)
+
+            # Mise à jour de l'avatar du joueur
             player = Player.objects.get(id=id)
             player.avatar = file_url
             player.save()
-            
-            # 12) Répondre avec succès
-            return Response({
-                "status": 200,
-                "message": "Avatar updated successfully",
-            }, status=200)
-        
+
+            return Response({"status": 200, "message": "Avatar updated successfully", "avatar_url": file_url}, status=200)
+
         except Player.DoesNotExist:
-            return Response({
-                "status": 404,
-                "message": "User not found",
-            }, status=404)
-        except ValidationError as ve:
-            return Response({
-                "status": 400,
-                "message": ve.message,
-            }, status=400)
+            return Response({"status": 404, "message": "User not found"}, status=404)
         except Exception as e:
-            return Response({
-                "status": 500,
-                "message": str(e),
-            }, status=500)
+            return Response({"status": 500, "message": str(e)}, status=500)
+
 
 
 class PlayerFriendship(APIView):
