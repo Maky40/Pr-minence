@@ -97,10 +97,9 @@ class PlayerInfo(APIView):
             })
 
 
-
 class TwoFactorActivation(APIView):
     """
-    Gère l'activation/désactivation du 2FA
+    Gère l'activation/désactivation du 2FA avec une gestion séparée du QR Code
     """
 
     @method_decorator(jwt_cookie_required)
@@ -109,16 +108,32 @@ class TwoFactorActivation(APIView):
             id = request.decoded_token['id']
             player = Player.objects.get(id=id)
 
-            # Vérifie si l'utilisateur souhaite activer ou désactiver le 2FA
+            # Récupérer les paramètres envoyés
             activate_2fa = request.data.get("activate_2fa", None)
+            show_qr_code = request.data.get("show_qr_code", False)  # Permet d'afficher le QR Code
 
-            if activate_2fa is None:
-                return Response({"status": 400, "message": "Missing 'activate_2fa' field."})
+            if activate_2fa is None and not show_qr_code:
+                return Response({"status": 400, "message": "Missing 'activate_2fa' or 'show_qr_code' field."})
 
-            if activate_2fa:  # Activation du 2FA
-                if not player.otp_secret:
-                    player.otp_secret = pyotp.random_base32()  # Générer une clé secrète
+            # Cas où l'on veut activer ou désactiver le 2FA
+            if activate_2fa is not None:
+                if activate_2fa:  # Activation du 2FA
+                    if not player.otp_secret:
+                        player.otp_secret = pyotp.random_base32()  # Générer une clé secrète
+                    player.two_factor = True
                     player.save()
+                    return Response({"status": 200, "message": "2FA activated. You can now scan the QR code."})
+
+                else:  # Désactivation du 2FA
+                    player.two_factor = False
+                    player.otp_secret = None  # Supprimer la clé secrète
+                    player.save()
+                    return Response({"status": 200, "message": "2FA disabled successfully."})
+
+            # Cas où l'on veut seulement afficher le QR Code
+            if show_qr_code:
+                if not player.two_factor or not player.otp_secret:
+                    return Response({"status": 400, "message": "2FA is not activated. Enable it first."})
 
                 # Générer l'URI pour Google Authenticator
                 otp_uri = pyotp.TOTP(player.otp_secret).provisioning_uri(name=player.email, issuer_name="MyApp")
@@ -135,17 +150,12 @@ class TwoFactorActivation(APIView):
                     "qr_code": f"data:image/png;base64,{qr_base64}"
                 })
 
-            else:  # Désactivation du 2FA
-                player.two_factor = False
-                player.otp_secret = None  # Supprimer la clé
-                player.save()
-                return Response({"status": 200, "message": "2FA disabled successfully."})
-
         except Player.DoesNotExist:
             return Response({"status": 404, "message": "User not found."})
 
         except Exception as e:
             return Response({"status": 500, "message": str(e)})
+
 
 
 class PlayerAvatarUpload(APIView):
