@@ -1,5 +1,5 @@
 import Component from "../utils/Component.js";
-
+import pong42 from "../services/pong42.js";
 class Button42 extends Component {
   constructor(text = "S'inscrire avec 42") {
     super();
@@ -26,6 +26,15 @@ class Button42 extends Component {
                 </div>
             </div>
         `;
+  }
+
+  attachEventListeners() {
+    const button = this.container.querySelector("button");
+    button?.addEventListener("click", (e) => {
+      e.preventDefault();
+      pong42.player.is42 = true;
+      window.location.href = "https://localhost/authentication/intra/";
+    });
   }
 }
 

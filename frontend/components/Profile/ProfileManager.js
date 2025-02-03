@@ -31,8 +31,8 @@ class ProfileManager extends Component {
     });
   }
   updateProfile = (newProfile) => {
-    pong42.player.updatePlayerInformations(newProfile);
-    this.setState({ isEditing: false, profile: newProfile });
+    const updateAPI = pong42.player.updatePlayerInformations(newProfile);
+    if (updateAPI) this.setState({ isEditing: false, profile: newProfile });
   };
   render(container) {
     this.container = container;

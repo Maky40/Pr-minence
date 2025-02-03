@@ -14,6 +14,7 @@ class Player {
     this.losses = 0;
     this.two_factor = false;
     this.status = "OF";
+    this.is42 = false;
   }
 
   async init() {
@@ -74,29 +75,68 @@ class Player {
     return true;
   };
 
-  updatePlayerInformations(data) {
-    if (this.checkUserInfos(data)) {
+  updateAvatar = async (data) => {
+    try {
+      const response = await api.apiFetch("/player/", true, "POST", data);
+      const updateToast = new Toast(
+        "Success",
+        "votre avatar a été mis à jour",
+        "success"
+      );
+      updateToast.show();
+      return true;
+    } catch (error) {
+      console.error("Failed to update player avatar:", error);
       const toast = new Toast(
         "Error",
-        "Veuillez remplir tous les champs",
+        "Failed to update player avatar",
         "error"
       );
       toast.show();
       return false;
     }
-    this.email = data.email;
-    this.first_name = data.first_name;
-    this.last_name = data.last_name;
-    this.username = data.username;
-    const updateToast = new Toast(
-      "Success",
-      "vos informations ont été mises à jour",
-      "success"
-    );
-    updateToast.show();
-    //api.apiFetch("/player/", true, "PATCH", data);
-    return true;
-  }
+  };
+
+  updatePlayerInformations = async (data) => {
+    try {
+      if (this.checkUserInfos(data)) {
+        const toast = new Toast(
+          "Error",
+          "Veuillez remplir tous les champs",
+          "error"
+        );
+        toast.show();
+        return false;
+      }
+      this.first_name = data.first_name;
+      this.last_name = data.last_name;
+      this.username = data.username;
+      if (data.avatar) {
+        this.avatar = data.avatar;
+        this.updateAvatar({ avatar: data.avatar });
+      }
+      const updateToast = new Toast(
+        "Success",
+        "vos informations ont été mises à jour",
+        "success"
+      );
+      updateToast.show();
+      const player = {
+        player: { first_name: this.first_name, last_name: this.last_name },
+      };
+      const response = await api.apiFetch("/player/", true, "POST", player);
+      return true;
+    } catch (error) {
+      console.error("Failed to update player informations:", error);
+      const toast = new Toast(
+        "Error",
+        "Failed to update player informations",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
 }
 
 export default Player;

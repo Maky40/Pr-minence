@@ -55,11 +55,6 @@ export default class Navbar extends Component {
                                         <i class="fas fa-comments text-info me-2"></i>Chat
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link px-3" href="#profile">
-                                        <i class="fas fa-user text-success me-2"></i>Profile
-                                    </a>
-                                </li>
                             `
                                 : ""
                             }
@@ -84,8 +79,12 @@ export default class Navbar extends Component {
                                 <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center btn btn-outline-info mx-2 px-4" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="${pong42.player.avatar}" alt="Avatar" class="rounded-circle me-2" width="35" height="35">
-                                <span id="userPseudo">${pong42.player.username}</span>
+                                <img src="${
+                                  pong42.player.avatar
+                                }" alt="Avatar" class="rounded-circle me-2" width="35" height="35">
+                                <span id="userPseudo">${
+                                  pong42.player.username
+                                }</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
@@ -93,11 +92,17 @@ export default class Navbar extends Component {
                                         <i class="fas fa-user me-2"></i>Mon profil
                                     </a>
                                 </li>
+                                ${
+                                  !pong42.player.is42
+                                    ? ""
+                                    : `
                                 <li>
                                     <a class="dropdown-item" href="#security" data-locallink>
                                        <i class="fas fa-lock me-2"></i></i>sécurité
                                     </a>
                                 </li>
+                                `
+                                }
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>

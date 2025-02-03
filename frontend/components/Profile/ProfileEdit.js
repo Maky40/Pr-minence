@@ -50,6 +50,16 @@ class ProfileEdit extends Component {
   attachEventListeners() {
     const form = this.container.querySelector("#profileForm");
     const cancelButton = this.container.querySelector("#cancelButton");
+    const avatarInput = this.container.querySelector("#avatar");
+
+    avatarInput?.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.setState({ avatar: e.target.result });
+      };
+      reader.readAsDataURL(file);
+    });
 
     form?.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -58,6 +68,9 @@ class ProfileEdit extends Component {
 
       for (let [key, value] of formData.entries()) {
         data[key] = value;
+      }
+      if (!data.avatar) {
+        delete data.avatar;
       }
       this.emit("save", data);
     });
