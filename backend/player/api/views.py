@@ -160,18 +160,6 @@ class TwoFactorActivation(APIView):
 
 
 
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from PIL import Image
-import uuid
-import os
-import urllib.parse
-from io import BytesIO
-from django.conf import settings
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.utils.decorators import method_decorator
-
 class PlayerAvatarUpload(APIView):
     """
     Met à jour l'avatar du joueur avec des vérifications de sécurité.
@@ -222,12 +210,18 @@ class PlayerAvatarUpload(APIView):
             extension = file.name.split('.')[-1].lower()
             filename = f"{uuid.uuid4().hex}.{extension}"
 
-            # ✅ Correction : Sauvegarde avec un chemin RELATIF dans `MEDIA_ROOT`
-            relative_path = os.path.join("avatars", filename)
-            default_storage.save(relative_path, ContentFile(buffer.read()))
+            # ✅ Correction : Sauvegarde dans /player/media/avatars/
+            absolute_path = os.path.join(settings.MEDIA_ROOT, "avatars", filename)
+
+            # Vérifier que le dossier avatars existe
+            os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+
+            # Sauvegarder l'image localement
+            with open(absolute_path, "wb") as f:
+                f.write(buffer.getvalue())
 
             # ✅ Génération de l'URL publique correcte
-            file_url = urllib.parse.urljoin(settings.PUBLIC_PLAYER_URL, settings.MEDIA_URL + relative_path)
+            file_url = urllib.parse.urljoin(settings.PUBLIC_PLAYER_URL, settings.MEDIA_URL + f"avatars/{filename}")
 
             # Mise à jour de l'avatar du joueur
             player = Player.objects.get(id=id)

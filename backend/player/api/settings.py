@@ -109,7 +109,7 @@ USE_TZ = True
 # === 9. Fichiers statiques et médias ===
 STATIC_URL = "/static/"
 STATIC_ROOT = PLAYER_DIR / "static/"
-MEDIA_URL = "/media/"
+MEDIA_URL = "/player/media/"
 MEDIA_ROOT = PLAYER_DIR / "media/"
 
 
