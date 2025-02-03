@@ -17,6 +17,8 @@ from django.core.exceptions import ValidationError
 import pyotp
 import qrcode
 import base64
+from PIL import Image, ImageResampling
+
 
 
 class PlayerInfo(APIView):
@@ -208,7 +210,7 @@ class PlayerAvatarUpload(APIView):
                 # Calculer le facteur de redimensionnement tout en conservant le ratio
                 ratio = min(MAX_WIDTH / image.width, MAX_HEIGHT / image.height)
                 new_size = (int(image.width * ratio), int(image.height * ratio))
-                image = image.resize(new_size, Image.ANTIALIAS)
+                image = image.resize(new_size, ImageResampling.LANCZOS)
             
             # 7) Sauvegarder l'image redimensionnée dans un buffer BytesIO
             buffer = BytesIO()
