@@ -78,10 +78,6 @@ class Player {
     try {
       const formData = new FormData();
       formData.append("avatar", avatarFile);
-
-      // Use endpoint without trailing slash if needed.
-      console.log("Request sent to:", api.makeUrl("/player/avatar"));
-      console.log("FormData content:", [...formData.entries()]);
       const result = await api.apiFetch(
         "/player/avatar/",
         true,
@@ -89,10 +85,6 @@ class Player {
         formData,
         true // isFile = true
       );
-
-      console.log("Request sent to:", api.makeUrl("/player/avatar"));
-      console.log("FormData content:", [...formData.entries()]);
-
       if (result.avatar_url) {
         // Set avatar to the returned URL (a string), not the file object
         this.avatar = result.avatar_url;
@@ -119,7 +111,14 @@ class Player {
 
   updatePlayerInformations = async (data) => {
     try {
-      if (this.checkUserInfos(data)) {
+      // Check if data is FormData
+      const first_name =
+        data instanceof FormData ? data.get("first_name") : data.first_name;
+      const last_name =
+        data instanceof FormData ? data.get("last_name") : data.last_name;
+
+      // Validate fields
+      if (!first_name || !last_name) {
         const toast = new Toast(
           "Error",
           "Veuillez remplir tous les champs",
@@ -128,30 +127,34 @@ class Player {
         toast.show();
         return false;
       }
-      this.first_name = data.first_name;
-      this.last_name = data.last_name;
-      console.log("AVATAR DEUX", data.avatar);
-      if (data.avatar) {
-        console.log("AVATAR UN");
-        this.avatar = data.avatar;
-        this.updateAvatar(data.avatar);
-      }
-      const updateToast = new Toast(
-        "Success",
-        "vos informations ont été mises à jour",
-        "success"
-      );
-      updateToast.show();
-      const player = {
+
+      // Update local state
+      this.first_name = first_name;
+      this.last_name = last_name;
+
+      // Prepare API data
+      const playerData = {
         player: { first_name: this.first_name, last_name: this.last_name },
       };
-      const response = await api.apiFetch("/player/", true, "POST", player);
-      return true;
+      // Send to API
+      const response = await api.apiFetch("/player/", true, "POST", playerData);
+
+      if (response) {
+        const updateToast = new Toast(
+          "Success",
+          "Vos informations ont été mises à jour",
+          "success"
+        );
+        updateToast.show();
+        return true;
+      }
+
+      throw new Error("API update failed");
     } catch (error) {
       console.error("Failed to update player informations:", error);
       const toast = new Toast(
         "Error",
-        "Failed to update player informations",
+        "Échec de la mise à jour des informations",
         "error"
       );
       toast.show();

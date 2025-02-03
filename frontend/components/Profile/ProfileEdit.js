@@ -1,10 +1,14 @@
+import pong42 from "../../services/pong42.js";
 import Component from "../../utils/Component.js";
+import AlertInfo from "../alertInfo.js";
 
 class ProfileEdit extends Component {
   template() {
     return `
             <div class="card shadow-lg mb-4">
                 <div class="card-body">
+                                            <div id="alert-container">
+                            </div>
                     <form id="profileForm">
                         <div class="row">
                             <div class="col-md-3 text-center">
@@ -14,7 +18,17 @@ class ProfileEdit extends Component {
                                 <div class="mb-3">
                                     <input type="file" class="form-control" name="avatar" id="avatar" accept="image/*">
                                 </div>
+                                       ${
+                                         this.state.hasFile
+                                           ? `
+                <button type="button" class="btn btn-primary mt-2" id="uploadButton">
+                    Téléverser
+                </button>
+            `
+                                           : ""
+                                       }
                             </div>
+
                             <div class="col-md-9">
                                 <div class="row">
                                     <div class="col-md-6">
@@ -50,36 +64,55 @@ class ProfileEdit extends Component {
     const form = this.container.querySelector("#profileForm");
     const cancelButton = this.container.querySelector("#cancelButton");
     const avatarInput = this.container.querySelector("#avatar");
+    const uploadButton = this.container.querySelector("#uploadButton");
+
+    uploadButton?.addEventListener("click", async () => {
+      const result = await pong42.player.updateAvatar(this.avatarFile);
+      if (!result) {
+        console.error("Error uploading avatar");
+        return;
+      }
+      // Update state correctly - spread first, then override
+      this.setState({
+        ...this.state,
+        hasFile: false,
+        avatar: this.defaultAvatar, // If you have a default avatar
+      });
+      if (!result) {
+        const container = document.getElementById("alert-container");
+        const alert = new AlertInfo("Avatar upload error", "danger");
+        return;
+      }
+      const container = document.getElementById("alert-container");
+      const alert = new AlertInfo("Avatar uploaded", "success");
+      alert.render(container);
+    });
 
     avatarInput?.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      this.avatarFile = file;
       const reader = new FileReader();
+
       reader.onload = (e) => {
-        // Pour prévisualisation
-        this.setState({ avatar: e.target.result });
+        this.setState({
+          avatar: e.target.result,
+          hasFile: true, // Add flag to track file presence
+        });
       };
+
+      reader.onerror = () => {
+        console.error("Error reading file");
+      };
+
       reader.readAsDataURL(file);
     });
 
-    form?.addEventListener("submit", (e) => {
+    form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
-      const data = {};
-
-      // Construire un objet à partir du FormData
-      for (let [key, value] of formData.entries()) {
-        data[key] = value;
-      }
-
-      // Extraire le fichier directement de l'input
-      const avatarFile = avatarInput?.files[0];
-      if (avatarFile) {
-        data.avatarFile = avatarFile; // On envoie le File sous la clé "avatarFile"
-      }
-
-      console.log(data);
-      this.emit("save", data);
+      await pong42.player.updatePlayerInformations(formData);
+      this.emit("save", pong42.player);
     });
 
     cancelButton?.addEventListener("click", () => {

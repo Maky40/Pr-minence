@@ -15,19 +15,18 @@ class ProfileManager extends Component {
 
     // Setup events immediately
     this.view.on("edit", () => {
-      console.log("Edit event received in manager");
       this.setState({ isEditing: true });
     });
 
     this.edit.on("cancel", () => {
-      console.log("Cancel event received in manager");
       this.setState({ isEditing: false });
     });
 
     this.edit.on("save", (profile) => {
-      console.log("Save event received in manager", profile);
       if (pong42.player.updatePlayerInformations(profile))
-        this.setState({ isEditing: false, profile });
+        this.setState({ isEditing: false });
+      console.log(pong42.player);
+      this.render(this.container);
     });
   }
   updateProfile = (newProfile) => {

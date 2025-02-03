@@ -180,7 +180,6 @@ class PlayerAvatarUpload(APIView):
     def post(self, request):
         try:
             id = request.decoded_token['id']
-
             if 'avatar' not in request.FILES:
                 return Response({"status": 400, "message": "No avatar file provided"}, status=400)
 
