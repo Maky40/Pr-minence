@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 
+
+
 class Player(AbstractBaseUser):
     STATUS_CHOICES = [
         ('ON', 'ONLINE'),
@@ -24,6 +26,8 @@ class Player(AbstractBaseUser):
     losses = models.IntegerField(blank=False, null=False, default=0)
     two_factor = models.BooleanField(default=False)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default='OF')
+    otp_secret = models.CharField(max_length=255, blank=True, null=True)
+    from_42 = models.BooleanField(default=False)
 
     # Champs requis pour l'authentification
     is_active = models.BooleanField(default=True)
