@@ -21,5 +21,6 @@ class PlayerInfoSerializer(serializers.ModelSerializer):
             'losses',
             'two_factor',
             'status',
+            'from_42',
         ]
         read_only_fields = ['id', 'champions', 'wins', 'losses', 'state']

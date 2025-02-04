@@ -84,6 +84,7 @@ def intra_callback_auth(request):
     if player is None:
         # Rediriger vers la page de connexion en cas d'échec
         return redirect(f"https://localhost/#connexion/", permanent=True)
+    player.from_42 = True
     player.save()
     # Générer un token JWT pour le joueur
     jwt_token = generate_jwt(player.id, player.two_factor)
