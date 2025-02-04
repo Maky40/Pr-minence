@@ -12,8 +12,6 @@ const friendsList = document.getElementById("friends-list");
 const chatFriendName = document.getElementById("chat-friend-name");
 const blockFriendButton = document.getElementById("block-friend");
 
-console.log("Chargement du script...");
-
 // Liste des amis et historique des messages
 let friends = [
     { name: "Alice", online: true, messages: [{ text: "Salut !", sender: "Alice" }], blocked: false },
@@ -100,15 +98,6 @@ function displayChatHistory(friend) {
     chatBox.appendChild(chatHistory);
 }
 
-// Ajout des événements aux boutons
-tournamentButton.addEventListener("click", function () {
-    showChat("tournament");
-});
-
-privateButton.addEventListener("click", function () {
-    showChat("private");
-});
-
 // Ajout d'un nouvel ami
 addFriendButton.addEventListener("click", function () {
     const friendName = searchFriendInput.value.trim();
@@ -160,4 +149,18 @@ function sendMessage() {
 }
 
 // Mise à jour initiale de la liste des amis
-updateFriendsList();
+
+
+export function init() {
+    console.log("Chargement du script...");
+    // Appel de la fonction pour attacher les événements
+    tournamentButton.addEventListener("click", function () {
+        showChat("tournament");
+    });
+
+    privateButton.addEventListener("click", function () {
+        console.log("clique bouton chat prive");
+        showChat("private");
+    });
+    console.log(friends);
+}
