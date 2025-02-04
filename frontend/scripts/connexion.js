@@ -1,5 +1,7 @@
 import Button42 from "../components/42button.js";
 import auth from "../services/auth.js";
+import pong42 from "../services/pong42.js";
+import AlertInfo from "../components/alertInfo.js";
 
 const UIinit = () => {
   //clean le ui avant de le recharger
@@ -18,17 +20,14 @@ const loading = (loading) => {
     document.getElementById("loginButton").classList.remove("d-none");
   }
 };
-
 const showErrorMessage = (message) => {
-  const errorDiv = document.getElementById("error-msg");
-  errorDiv.innerText = message;
-  errorDiv.classList.remove("d-none");
-  errorDiv.classList.add("animate__animated", "animate__shakeX");
-
-  // Remove animation classes after animation ends
-  errorDiv.addEventListener("animationend", () => {
-    errorDiv.classList.remove("animate__animated", "animate__shakeX");
-  });
+  const container = document.getElementById("alert-container");
+  if (!container) {
+    console.error("Alert container not found");
+    return;
+  }
+  const alert = new AlertInfo(message, "danger");
+  alert.render(container);
 };
 
 const loginFormHandler = async () => {
@@ -40,9 +39,8 @@ const loginFormHandler = async () => {
 
     try {
       await auth.login(username, password);
-
-      changePage("#home");
-      console.log("Login successful");
+      pong42.player.is42 = false;
+      changePage(pong42.getCurrentPage() || "home");
     } catch (error) {
       showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
     } finally {
@@ -52,6 +50,9 @@ const loginFormHandler = async () => {
 };
 
 const init = () => {
+  if (auth.authenticated) {
+    changePage(pong42.getCurrentPage() || "home");
+  }
   UIinit();
   loginFormHandler();
 };

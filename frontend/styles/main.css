@@ -71,6 +71,22 @@ body::before {
   background: var(--dark-bg);
 }
 
+.btn-outline-danger {
+  background-color: #ffebee !important; /* Light red background */
+  color: #dc3545 !important; /* Danger red text */
+  border-color: #dc3545 !important;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
+/* Optional: Add transition for smooth hover effect */
+.btn-outline-danger {
+  transition: all 0.3s ease;
+}
+
 .btn.btn-primary {
   background-color: transparent;
   border: 2px solid var(--neon-blue);

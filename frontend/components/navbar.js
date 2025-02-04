@@ -1,16 +1,11 @@
 import Component from "../utils/Component.js";
 import auth from "../services/auth.js";
 import ModalAlert from "./modal.js";
-import Avatar from "./avatar.js";
+import pong42 from "../services/pong42.js";
 
 export default class Navbar extends Component {
-  constructor() {
-    super();
-    this.state = {
-      isAuthenticated: auth.authenticated,
-    };
+  initListeners() {
     auth.addListener((event) => {
-      console.log("isAuthenticated:", auth.authenticated, auth.authenticated);
       if (event === "login" || event === "logout")
         if (auth.authenticated) {
           this.setState({ isAuthenticated: true });
@@ -18,6 +13,18 @@ export default class Navbar extends Component {
           this.setState({ isAuthenticated: false });
         }
     });
+    pong42.player.addListener("update", (player) => {
+      this.setState({ player: player });
+      this.render(this.container);
+    });
+  }
+
+  constructor() {
+    super();
+    this.state = {
+      isAuthenticated: auth.authenticated,
+    };
+    this.initListeners();
   }
 
   template() {
@@ -56,11 +63,6 @@ export default class Navbar extends Component {
                                         <i class="fas fa-comments text-info me-2"></i>Chat
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link px-3" href="#profile">
-                                        <i class="fas fa-user text-success me-2"></i>Profile
-                                    </a>
-                                </li>
                             `
                                 : ""
                             }
@@ -82,10 +84,43 @@ export default class Navbar extends Component {
                             `
                                 : `
 
-                                <li class="nav-item">
-                                    <button class="nav-link btn btn-outline-danger mx-2 px-4" id="logoutBtn">
+                                <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center btn btn-outline-info mx-2 px-4" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="${
+                                  pong42.player.avatar
+                                }" alt="Avatar" class="rounded-circle me-2" width="35" height="35">
+                                <span id="userPseudo">${
+                                  pong42.player.username
+                                }</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="#profile" data-locallink>
+                                        <i class="fas fa-user me-2"></i>Mon profil
+                                    </a>
+                                </li>
+                                ${
+                                  !pong42.player.is42
+                                    ? ""
+                                    : `
+                                <li>
+                                    <a class="dropdown-item" href="#security" data-locallink>
+                                       <i class="fas fa-lock me-2"></i></i>sécurité
+                                    </a>
+                                </li>
+                                `
+                                }
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+
+                                <li>
+                                    <button class="nav-link btn btn-outline-danger mx-2 px-4 custom-danger" id="logoutBtn">
                                         <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
                                     </button>
+                                </li>
+                                </ul>
                                 </li>
                             `
                             }

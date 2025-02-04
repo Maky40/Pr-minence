@@ -1,4 +1,4 @@
-version: '3.3'
+version: "3.3"
 
 services:
   nginx:
@@ -8,22 +8,23 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # Configuration générée
-      - ./nginx/certs:/etc/nginx/certs:ro           # Certificats SSL
-      - ./frontend:/usr/share/nginx/html:ro         # Fichiers frontend
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Configuration générée
+      - ./nginx/certs:/etc/nginx/certs:ro # Certificats SSL
+      - ./frontend:/usr/share/nginx/html:ro # Fichiers frontend
+      - ./backend/player/media:/usr/src/app/media
     networks:
       - app_network
     restart: always
 
   db:
-    image: postgres:latest  # Utilisation de l'image officielle PostgreSQL
+    image: postgres:latest # Utilisation de l'image officielle PostgreSQL
     container_name: db
     env_file:
       - .env
     volumes:
-      - pgdata:/var/lib/postgresql/data  # Volume pour persister les données
+      - pgdata:/var/lib/postgresql/data # Volume pour persister les données
     ports:
-      - "5433:5432"  # Port de la base de données accessible depuis l'hôte
+      - "5433:5432" # Port de la base de données accessible depuis l'hôte
     networks:
       - app_network
     restart: always
@@ -33,11 +34,11 @@ services:
       context: ./backend/player
     container_name: player
     volumes:
-      - ./backend/player:/usr/src/app  # Volume pour la synchronisation des fichiers
+      - ./backend/player/media:/usr/src/app/media # Volume pour la synchronisation des fichiers
     env_file:
       - .env
     environment:
-      - DJANGO_SETTINGS_MODULE=api.settings  # Variable d'environnement explicite
+      - DJANGO_SETTINGS_MODULE=api.settings # Variable d'environnement explicite
     ports:
       - "8000:8000"
     depends_on:
@@ -51,11 +52,11 @@ services:
       context: ./backend/authentication
     container_name: authentication
     volumes:
-      - ./backend/authentication:/usr/src/app  # Volume pour la synchronisation des fichiers
+      - ./backend/authentication:/usr/src/app # Volume pour la synchronisation des fichiers
     env_file:
       - .env
     environment:
-      - DJANGO_SETTINGS_MODULE=api.settings  # Variable d'environnement explicite
+      - DJANGO_SETTINGS_MODULE=api.settings # Variable d'environnement explicite
     ports:
       - "8001:8001"
     depends_on:
@@ -65,7 +66,7 @@ services:
     restart: always
 
 volumes:
-  pgdata:  # Volume pour persister les données de la base de données
+  pgdata: # Volume pour persister les données de la base de données
 
 networks:
   app_network:

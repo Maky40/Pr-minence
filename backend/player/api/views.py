@@ -5,6 +5,7 @@ from .serializers import PlayerInfoSerializer
 from .models import Player, Friendship, PlayerMatch, Match
 from .decorators import jwt_cookie_required
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import os
@@ -13,6 +14,11 @@ from io import BytesIO
 import urllib.parse
 import uuid
 from django.core.exceptions import ValidationError
+import pyotp
+import qrcode
+import base64
+from PIL import Image
+
 
 
 class PlayerInfo(APIView):
@@ -57,15 +63,6 @@ class PlayerInfo(APIView):
             id = request.decoded_token['id']
             player_data = request.data.get('player')
             player = Player.objects.get(id=id)
-            if "username" in player_data:
-                username = ' '.join(player_data["username"].split())
-                if not username or len(player_data['username']) > 8 :
-                    return Response({
-                        "status": 400,
-                        "message": "Invalid username",
-                    })
-                player.username = username
-                changed = True
             if "first_name" in player_data:
                 first_name = ' '.join(player_data['first_name'].split())
                 if not first_name or len(first_name) > 20 :
@@ -83,9 +80,6 @@ class PlayerInfo(APIView):
                         "message": "Invalid last name",
                     })
                 player.last_name = last_name
-                changed = True
-            if "two_factor" in player_data and player_data['two_factor'] is False:
-                player.two_factor = player_data['two_factor']
                 changed = True
             player.save()
             message = "User updated successfully" if changed else "No changes detected"
@@ -105,103 +99,140 @@ class PlayerInfo(APIView):
             })
 
 
-class PlayerAvatarUpload(APIView):
+class TwoFactorActivation(APIView):
+    """
+    Gère l'activation/désactivation du 2FA avec une gestion séparée du QR Code
+    """
 
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
-            # 1) Récupérer l'ID du joueur depuis le token décodé
             id = request.decoded_token['id']
-            
-            # 2) Extraire le fichier 'avatar' depuis la requête
-            if 'avatar' not in request.FILES:
+            player = Player.objects.get(id=id)
+
+            # Récupérer les paramètres envoyés
+            activate_2fa = request.data.get("activate_2fa", None)
+            show_qr_code = request.data.get("show_qr_code", False)  # Permet d'afficher le QR Code
+
+            if activate_2fa is None and not show_qr_code:
+                return Response({"status": 400, "message": "Missing 'activate_2fa' or 'show_qr_code' field."})
+
+            # Cas où l'on veut activer ou désactiver le 2FA
+            if activate_2fa is not None:
+                if activate_2fa:  # Activation du 2FA
+                    if not player.otp_secret:
+                        player.otp_secret = pyotp.random_base32()  # Générer une clé secrète
+                    player.two_factor = True
+                    player.save()
+                    return Response({"status": 200, "message": "2FA activated. You can now scan the QR code."})
+
+                else:  # Désactivation du 2FA
+                    player.two_factor = False
+                    player.otp_secret = None  # Supprimer la clé secrète
+                    player.save()
+                    return Response({"status": 200, "message": "2FA disabled successfully."})
+
+            # Cas où l'on veut seulement afficher le QR Code
+            if show_qr_code:
+                if not player.two_factor or not player.otp_secret:
+                    return Response({"status": 400, "message": "2FA is not activated. Enable it first."})
+
+                # Générer l'URI pour Google Authenticator
+                otp_uri = pyotp.TOTP(player.otp_secret).provisioning_uri(name=player.email, issuer_name="MyApp")
+
+                # Générer le QR Code
+                qr = qrcode.make(otp_uri)
+                buffer = BytesIO()
+                qr.save(buffer, format="PNG")
+                qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
                 return Response({
-                    "status": 400,
-                    "message": "No avatar file provided",
-                }, status=400)
-            
+                    "status": 200,
+                    "message": "Scan this QR code with Google Authenticator.",
+                    "qr_code": f"data:image/png;base64,{qr_base64}"
+                })
+
+        except Player.DoesNotExist:
+            return Response({"status": 404, "message": "User not found."})
+
+        except Exception as e:
+            return Response({"status": 500, "message": str(e)})
+
+
+class PlayerAvatarUpload(APIView):
+    """
+    Met à jour l'avatar du joueur avec des vérifications de sécurité.
+    """
+
+    @method_decorator(jwt_cookie_required)
+    def post(self, request):
+        try:
+            id = request.decoded_token['id']
+            if 'avatar' not in request.FILES:
+                return Response({"status": 400, "message": "No avatar file provided"}, status=400)
+
             file = request.FILES['avatar']
-            
-            # 3) Vérifier la taille du fichier
+
+            # Vérifier la taille du fichier
             MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
             if file.size > MAX_FILE_SIZE:
-                return Response({
-                    "status": 400,
-                    "message": "Image file too large (max 2MB)",
-                }, status=400)
-            
-            # 4) Ouvrir l'image avec Pillow
+                return Response({"status": 400, "message": "Image file too large (max 2MB)"}, status=400)
+
+            # Ouvrir et valider l'image
             try:
                 image = Image.open(file)
-                image_format = image.format  # e.g., 'JPEG', 'PNG'
+                image_format = image.format
             except IOError:
-                return Response({
-                    "status": 400,
-                    "message": "Invalid image file",
-                }, status=400)
-            
-            # 5) Vérifier le format de l'image
+                return Response({"status": 400, "message": "Invalid image file"}, status=400)
+
             ALLOWED_FORMATS = ['JPEG', 'PNG']
             if image_format not in ALLOWED_FORMATS:
-                return Response({
-                    "status": 400,
-                    "message": f"Unsupported image format: {image_format}. Allowed formats: {ALLOWED_FORMATS}",
-                }, status=400)
-            
-            # 6) Vérifier et redimensionner l'image si nécessaire
+                return Response({"status": 400, "message": f"Unsupported format: {image_format}"}, status=400)
+
+            # Redimensionner si nécessaire
             MAX_WIDTH = 640
             MAX_HEIGHT = 480
             if image.width > MAX_WIDTH or image.height > MAX_HEIGHT:
-                # Calculer le facteur de redimensionnement tout en conservant le ratio
                 ratio = min(MAX_WIDTH / image.width, MAX_HEIGHT / image.height)
                 new_size = (int(image.width * ratio), int(image.height * ratio))
-                image = image.resize(new_size, Image.ANTIALIAS)
-            
-            # 7) Sauvegarder l'image redimensionnée dans un buffer BytesIO
+                image = image.resize(new_size, Image.LANCZOS)
+
+            # Sauvegarde en mémoire
             buffer = BytesIO()
             image.save(buffer, format=image_format)
             buffer.seek(0)
-            
-            # 8) Construire un nom de fichier unique pour éviter les conflits
-            # Optionnel : ajouter un timestamp ou un UUID
-            filename = f"{uuid.uuid4().hex}_{file.name}"
-            file_path = os.path.join(settings.MEDIA_ROOT, filename)
-            
-            # 9) Sauvegarder l'image via le storage par défaut
-            default_storage.save(file_path, ContentFile(buffer.read()))
-            
-            # 10) Construire l'URL publique de l'image
-            file_url = urllib.parse.urljoin(
-                settings.PUBLIC_PLAYER_URL,
-                os.path.join(settings.MEDIA_URL, filename)
-            )
-            
-            # 11) Mettre à jour le champ 'avatar' du joueur
+
+            # Nom unique
+            extension = file.name.split('.')[-1].lower()
+            filename = f"{uuid.uuid4().hex}.{extension}"
+
+            # ✅ Création automatique des dossiers `media/` et `avatars/` si nécessaire
+            media_path = settings.MEDIA_ROOT
+            avatars_path = os.path.join(media_path, "avatars")
+            os.makedirs(avatars_path, exist_ok=True)  # Création des dossiers
+
+            # ✅ Écriture manuelle du fichier
+            absolute_path = os.path.join(avatars_path, filename)
+            with open(absolute_path, "wb") as f:
+                f.write(buffer.getvalue())
+
+            # ✅ Correction de l'URL publique pour correspondre à Nginx
+            file_url = f"{settings.PUBLIC_PLAYER_URL}{settings.MEDIA_URL}avatars/{filename}"
+            print(f"✅ URL publique générée : {file_url}")
+
+            # Mise à jour du joueur
             player = Player.objects.get(id=id)
             player.avatar = file_url
             player.save()
-            
-            # 12) Répondre avec succès
-            return Response({
-                "status": 200,
-                "message": "Avatar updated successfully",
-            }, status=200)
-        
+
+            return Response({"status": 200, "message": "Avatar updated successfully", "avatar_url": file_url}, status=200)
+
         except Player.DoesNotExist:
-            return Response({
-                "status": 404,
-                "message": "User not found",
-            }, status=404)
-        except ValidationError as ve:
-            return Response({
-                "status": 400,
-                "message": ve.message,
-            }, status=400)
+            return Response({"status": 404, "message": "User not found"}, status=404)
         except Exception as e:
-            return Response({
-                "status": 500,
-                "message": str(e),
-            }, status=500)
+            print(f"❌ Erreur serveur : {str(e)}")
+            return Response({"status": 500, "message": str(e)}, status=500)
+
 
 
 class PlayerFriendship(APIView):
@@ -336,3 +367,49 @@ class PlayerFriendship(APIView):
                     "status": 500,
                     "message": str(e),
                 })
+
+
+class ChangePasswordView(APIView):
+    """
+    Vue permettant à un utilisateur de changer son mot de passe.
+    """
+    @method_decorator(jwt_cookie_required)
+    def post(self, request):
+        try:
+            # 1️⃣ Récupérer l'utilisateur authentifié via le token JWT
+            user_id = request.decoded_token['id']
+            player = Player.objects.get(id=user_id)
+
+            # 2️⃣ Extraire les données de la requête
+            data = request.data
+            current_password = data.get('current_password')
+            new_password = data.get('new_password')
+            confirm_password = data.get('confirm_password')
+
+            # 3️⃣ Vérifier que tous les champs sont fournis
+            if not current_password or not new_password or not confirm_password:
+                return Response({"status": 400, "message": "Tous les champs sont requis."}, status=400)
+
+            # 4️⃣ Vérifier que le mot de passe actuel est correct
+            if not check_password(current_password, player.password):
+                return Response({"status": 400, "message": "Mot de passe actuel incorrect."}, status=400)
+
+            # 5️⃣ Vérifier que le nouveau mot de passe et la confirmation sont identiques
+            if new_password != confirm_password:
+                return Response({"status": 400, "message": "Les nouveaux mots de passe ne correspondent pas."}, status=400)
+
+            # 6️⃣ Vérifier la force du mot de passe (optionnel mais recommandé)
+            if len(new_password) < 8:
+                return Response({"status": 400, "message": "Le mot de passe doit contenir au moins 8 caractères."}, status=400)
+
+            # 7️⃣ Modifier le mot de passe et sauvegarder
+            player.set_password(new_password)
+            player.save()
+
+            return Response({"status": 200, "message": "Mot de passe mis à jour avec succès."}, status=200)
+
+        except Player.DoesNotExist:
+            return Response({"status": 404, "message": "Utilisateur non trouvé."}, status=404)
+
+        except Exception as e:
+            return Response({"status": 500, "message": str(e)}, status=500)

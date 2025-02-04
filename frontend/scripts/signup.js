@@ -1,5 +1,6 @@
 import Button42 from "../components/42button.js";
 import auth from "../services/auth.js";
+import pong42 from "../services/pong42.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -69,6 +70,10 @@ const singupHandler = async (event) => {
 };
 
 const init = () => {
+  if (auth.authenticated) {
+    pong42.player.is42 = false;
+    changePage(pong42.getCurrentPage() || "home");
+  }
   UIinit();
   document
     .getElementById("signupForm")

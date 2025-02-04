@@ -21,6 +21,9 @@ PLAYER_DIR = BASE_DIR.parent  # backend/player/
 BACKEND_DIR = PLAYER_DIR.parent  # backend/
 PROJECT_ROOT = BACKEND_DIR.parent  # Racine du projet
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
 
@@ -109,8 +112,9 @@ USE_TZ = True
 # === 9. Fichiers statiques et médias ===
 STATIC_URL = "/static/"
 STATIC_ROOT = PLAYER_DIR / "static/"
-MEDIA_URL = "/media/"
-MEDIA_ROOT = PLAYER_DIR / "media/"
+MEDIA_URL = "/player/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 
 
 
