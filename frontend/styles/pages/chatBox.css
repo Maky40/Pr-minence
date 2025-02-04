@@ -69,3 +69,19 @@
 #block-friend {
     padding: 5px 10px;
 }
+
+.friends-list-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 310px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+#friends-list li .friend-name {
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}

@@ -1,17 +1,3 @@
-// Référence aux boutons et éléments
-const tournamentButton = document.getElementById("tournament-room");
-const privateButton = document.getElementById("private-chat");
-const chatContainer = document.getElementById("chat-container");
-const privateChatContainer = document.getElementById("private-chat-container");
-const chatBox = document.getElementById("chat-box");
-const messageInput = document.getElementById("message-input");
-const sendMessageButton = document.getElementById("send-message");
-const searchFriendInput = document.getElementById("search-friend");
-const addFriendButton = document.getElementById("add-friend");
-const friendsList = document.getElementById("friends-list");
-const chatFriendName = document.getElementById("chat-friend-name");
-const blockFriendButton = document.getElementById("block-friend");
-
 // Liste des amis et historique des messages
 let friends = [
     { name: "Alice", online: true, messages: [{ text: "Salut !", sender: "Alice" }], blocked: false },
@@ -20,8 +6,16 @@ let friends = [
 
 let currentChatFriend = null;
 
-// Fonction pour afficher le chat
 function showChat(chatType) {
+    const chatContainer = document.getElementById("chat-container");
+    const privateChatContainer = document.getElementById("private-chat-container");
+    const chatBox = document.getElementById("chat-box");
+
+    if (!chatContainer || !privateChatContainer || !chatBox) {
+        console.error("Chat elements not found");
+        return;
+    }
+
     chatContainer.style.display = "block";
     if (chatType === "tournament") {
         privateChatContainer.style.display = "none";
@@ -33,30 +27,49 @@ function showChat(chatType) {
     }
 }
 
-// Fonction pour mettre à jour la liste des amis
 function updateFriendsList() {
-    friendsList.innerHTML = "";
-    friends.forEach((friend) => {
+    const friendsList = document.getElementById("friends-list");
+
+    if (!friendsList) {
+        console.error("Friends list element not found");
+        return;
+    }
+
+    friendsList.innerHTML = ""; // On réinitialise la liste pour ne pas avoir de doublons
+
+    // On parcourt chaque ami de la liste 'friends'
+	friends.forEach((friend) => {
         const friendItem = document.createElement("li");
         friendItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
-        friendItem.textContent = friend.name;
-        if (friend.online) {
-            friendItem.innerHTML += '<span class="badge bg-success">En ligne</span>';
-        } else {
-            friendItem.innerHTML += '<span class="badge bg-secondary">Hors ligne</span>';
-        }
-        friendItem.addEventListener("click", () => openPrivateChat(friend));
+
+        // Créer l'élément pour le prénom
+        const friendName = document.createElement("span");
+        friendName.classList.add("friend-name");  // Classe pour styliser le prénom
+        friendName.textContent = friend.name;
+
+        // Ajouter le badge "En ligne" ou "Hors ligne"
+        const onlineStatus = document.createElement("span");
+        onlineStatus.classList.add("badge", friend.online ? "bg-success" : "bg-secondary");
+        onlineStatus.textContent = friend.online ? "En ligne" : "Hors ligne";
+
+        // Ajouter les éléments au li
+        friendItem.appendChild(friendName);
+        friendItem.appendChild(onlineStatus);
+
+        // Ajouter l'élément li à la liste
         friendsList.appendChild(friendItem);
+		friendItem.addEventListener("click", () => openPrivateChat(friend));
     });
 }
 
-// Fonction pour ouvrir le chat avec un ami
 function openPrivateChat(friend) {
+    const chatFriendName = document.getElementById("chat-friend-name");
+    const blockFriendButton = document.getElementById("block-friend");
+
     currentChatFriend = friend;
     chatFriendName.textContent = friend.name;
     chatFriendName.style.color = "black";
 
-    // Configurer le bouton de blocage
     blockFriendButton.textContent = friend.blocked ? "Débloquer" : "Bloquer";
     blockFriendButton.classList.toggle("btn-danger", !friend.blocked);
     blockFriendButton.classList.toggle("btn-secondary", friend.blocked);
@@ -64,11 +77,10 @@ function openPrivateChat(friend) {
     displayChatHistory(friend);
 }
 
-// Fonction pour afficher l'historique des messages
 function displayChatHistory(friend) {
+    const chatBox = document.getElementById("chat-box");
     chatBox.innerHTML = "";
 
-    // Si l'ami est bloqué, n'afficher aucun message
     if (friend.blocked) {
         const blockedMessage = document.createElement("div");
         blockedMessage.classList.add("text-center", "text-muted", "mt-3");
@@ -82,15 +94,7 @@ function displayChatHistory(friend) {
 
     friend.messages.forEach((msg) => {
         const messageDiv = document.createElement("div");
-        messageDiv.classList.add("message");
-
-        // Messages envoyés (alignés à gauche)
-        if (msg.sender === "me") {
-            messageDiv.classList.add("sent");
-        } else {
-            messageDiv.classList.add("received");
-        }
-
+        messageDiv.classList.add("message", msg.sender === "me" ? "sent" : "received");
         messageDiv.textContent = msg.text;
         chatHistory.appendChild(messageDiv);
     });
@@ -98,69 +102,58 @@ function displayChatHistory(friend) {
     chatBox.appendChild(chatHistory);
 }
 
-// Ajout d'un nouvel ami
-addFriendButton.addEventListener("click", function () {
-    const friendName = searchFriendInput.value.trim();
-    if (friendName) {
-        friends.push({
-            name: friendName,
-            online: Math.random() > 0.5,
-            messages: [],
-            blocked: false
-        });
-        searchFriendInput.value = "";
-        updateFriendsList();
+export function init() {
+    const tournamentButton = document.getElementById("tournament-room");
+    const privateButton = document.getElementById("private-chat");
+    const addFriendButton = document.getElementById("add-friend");
+    const blockFriendButton = document.getElementById("block-friend");
+    const messageInput = document.getElementById("message-input");
+    const sendMessageButton = document.getElementById("send-message");
+
+    if (tournamentButton && privateButton) {
+        tournamentButton.addEventListener("click", () => showChat("tournament"));
+        privateButton.addEventListener("click", () => showChat("private"));
     }
-});
 
-// Gestion du bouton de blocage
-blockFriendButton.addEventListener("click", function() {
-    if (currentChatFriend) {
-        currentChatFriend.blocked = !currentChatFriend.blocked;
-        openPrivateChat(currentChatFriend);
-    }
-});
+    addFriendButton.addEventListener("click", () => {
+        const searchFriendInput = document.getElementById("search-friend");
+        const friendName = searchFriendInput.value.trim();
+        if (friendName) {
+            friends.push({
+                name: friendName,
+                online: Math.random() > 0.5,
+                messages: [],
+                blocked: false
+            });
+            searchFriendInput.value = "";
+            updateFriendsList();
+        }
+    });
 
-// Envoi d'un message
-sendMessageButton.addEventListener("click", function () {
-    sendMessage();
-});
+    blockFriendButton.addEventListener("click", () => {
+        if (currentChatFriend) {
+            currentChatFriend.blocked = !currentChatFriend.blocked;
+            openPrivateChat(currentChatFriend);
+        }
+    });
 
-messageInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        sendMessage();
-    }
-});
+    sendMessageButton.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+}
 
-// Fonction pour envoyer un message
 function sendMessage() {
+    const messageInput = document.getElementById("message-input");
+    const chatBox = document.getElementById("chat-box");
     const message = messageInput.value.trim();
+
     if (message && currentChatFriend && !currentChatFriend.blocked) {
-        // Ajoute le message à l'historique de l'ami
         currentChatFriend.messages.push({ text: message, sender: "me" });
-
-        // Met à jour l'affichage du chat
         displayChatHistory(currentChatFriend);
-
-        // Réinitialise l'input
         messageInput.value = "";
         chatBox.scrollTop = chatBox.scrollHeight;
     }
-}
-
-// Mise à jour initiale de la liste des amis
-
-
-export function init() {
-    console.log("Chargement du script...");
-    // Appel de la fonction pour attacher les événements
-    tournamentButton.addEventListener("click", function () {
-        showChat("tournament");
-    });
-
-    privateButton.addEventListener("click", function () {
-        console.log("clique bouton chat prive");
-        showChat("private");
-    });
-    console.log(friends);
 }
