@@ -1,7 +1,17 @@
 // Liste des amis et historique des messages
 let friends = [
-    { name: "Alice", online: true, messages: [{ text: "Salut !", sender: "Alice" }], blocked: false },
-    { name: "Bob", online: false, messages: [{ text: "Hello", sender: "Bob" }], blocked: false },
+  {
+    name: "Alice",
+    online: true,
+    messages: [{ text: "Salut !", sender: "Alice" }],
+    blocked: false,
+  },
+  {
+    name: "Bob",
+    online: false,
+    messages: [{ text: "Hello", sender: "Bob" }],
+    blocked: false,
+  },
 ];
 const fakePlayersDB = [
     { name: "Alice" },
@@ -18,24 +28,26 @@ const fakePlayersDB = [
 let currentChatFriend = null;
 
 function showChat(chatType) {
-    const chatContainer = document.getElementById("chat-container");
-    const privateChatContainer = document.getElementById("private-chat-container");
-    const chatBox = document.getElementById("chat-box");
+  const chatContainer = document.getElementById("chat-container");
+  const privateChatContainer = document.getElementById(
+    "private-chat-container"
+  );
+  const chatBox = document.getElementById("chat-box");
 
-    if (!chatContainer || !privateChatContainer || !chatBox) {
-        console.error("Chat elements not found");
-        return;
-    }
+  if (!chatContainer || !privateChatContainer || !chatBox) {
+    console.error("Chat elements not found");
+    return;
+  }
 
-    chatContainer.style.display = "block";
-    if (chatType === "tournament") {
-        privateChatContainer.style.display = "none";
-        chatBox.innerHTML = "<h4>Tournament Chat</h4>";
-    } else {
-        privateChatContainer.style.display = "block";
-        chatBox.innerHTML = "";
-        updateFriendsList();
-    }
+  chatContainer.style.display = "block";
+  if (chatType === "tournament") {
+    privateChatContainer.style.display = "none";
+    chatBox.innerHTML = "<h4>Tournament Chat</h4>";
+  } else {
+    privateChatContainer.style.display = "block";
+    chatBox.innerHTML = "";
+    updateFriendsList();
+  }
 }
 
 function updateFriendsList() {
@@ -69,42 +81,45 @@ function updateFriendsList() {
 }
 
 function openPrivateChat(friend) {
-    const chatFriendName = document.getElementById("chat-friend-name");
-    const blockFriendButton = document.getElementById("block-friend");
+  const chatFriendName = document.getElementById("chat-friend-name");
+  const blockFriendButton = document.getElementById("block-friend");
 
     currentChatFriend = friend;
     chatFriendName.textContent = friend.name;
 
-    blockFriendButton.textContent = friend.blocked ? "Débloquer" : "Bloquer";
-    blockFriendButton.classList.toggle("btn-danger", !friend.blocked);
-    blockFriendButton.classList.toggle("btn-secondary", friend.blocked);
+  blockFriendButton.textContent = friend.blocked ? "Débloquer" : "Bloquer";
+  blockFriendButton.classList.toggle("btn-danger", !friend.blocked);
+  blockFriendButton.classList.toggle("btn-secondary", friend.blocked);
 
-    displayChatHistory(friend);
+  displayChatHistory(friend);
 }
 
 function displayChatHistory(friend) {
-    const chatBox = document.getElementById("chat-box");
-    chatBox.innerHTML = "";
+  const chatBox = document.getElementById("chat-box");
+  chatBox.innerHTML = "";
 
-    if (friend.blocked) {
-        const blockedMessage = document.createElement("div");
-        blockedMessage.classList.add("text-center", "text-muted", "mt-3");
-        blockedMessage.textContent = "Conversation bloquée";
-        chatBox.appendChild(blockedMessage);
-        return;
-    }
+  if (friend.blocked) {
+    const blockedMessage = document.createElement("div");
+    blockedMessage.classList.add("text-center", "text-muted", "mt-3");
+    blockedMessage.textContent = "Conversation bloquée";
+    chatBox.appendChild(blockedMessage);
+    return;
+  }
 
-    const chatHistory = document.createElement("div");
-    chatHistory.classList.add("chat-history");
+  const chatHistory = document.createElement("div");
+  chatHistory.classList.add("chat-history");
 
-    friend.messages.forEach((msg) => {
-        const messageDiv = document.createElement("div");
-        messageDiv.classList.add("message", msg.sender === "me" ? "sent" : "received");
-        messageDiv.textContent = msg.text;
-        chatHistory.appendChild(messageDiv);
-    });
+  friend.messages.forEach((msg) => {
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add(
+      "message",
+      msg.sender === "me" ? "sent" : "received"
+    );
+    messageDiv.textContent = msg.text;
+    chatHistory.appendChild(messageDiv);
+  });
 
-    chatBox.appendChild(chatHistory);
+  chatBox.appendChild(chatHistory);
 }
 
 export function init() {
@@ -176,9 +191,9 @@ export function init() {
 }
 
 function sendMessage() {
-    const messageInput = document.getElementById("message-input");
-    const chatBox = document.getElementById("chat-box");
-    const message = messageInput.value.trim();
+  const messageInput = document.getElementById("message-input");
+  const chatBox = document.getElementById("chat-box");
+  const message = messageInput.value.trim();
 
     if (message && currentChatFriend && !currentChatFriend.blocked) {
         currentChatFriend.messages.push({ text: message, sender: "me" });

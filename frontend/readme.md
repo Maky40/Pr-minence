@@ -192,13 +192,17 @@ This component system allows for:
 - 🔐 Authentication
   - Connected/Disconnected state management
 - ✅ Profile display (ui)
+- 👤 Profile Management
+  ✅ Profile picture management
+  ✅ Profile editing
+- 🔐 Authentication
+  - Protected routes
 
 ### In progress Features
 
 - 👤 Profile Management
-  - Profile picture management
   - Add password change (ui)
-  - Profile editing
+  - double authentification management.
 
 ### Todo List
 
@@ -208,7 +212,6 @@ This component system allows for:
   - Tournament listing/browsing
 - 🔐 Authentication
   - Connected/Disconnected state management
-  - Protected routes
   - Authorization levels
 
 ## Development Guidelines
