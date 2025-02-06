@@ -16,7 +16,7 @@ class Player extends EventEmitter {
     this.losses = 0;
     this.two_factor = false;
     this.status = "OF";
-    this.is42 = false;
+    this.from_42 = false;
   }
 
   async init() {
@@ -46,6 +46,7 @@ class Player extends EventEmitter {
     this.losses = data.losses;
     this.two_factor = data.two_factor;
     this.status = data.status;
+    this.from_42 = data.from_42;
   }
 
   loadPlayerAvatar() {

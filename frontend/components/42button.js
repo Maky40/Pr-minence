@@ -32,7 +32,6 @@ class Button42 extends Component {
     const button = this.container.querySelector("button");
     button?.addEventListener("click", (e) => {
       e.preventDefault();
-      pong42.player.is42 = true;
       window.location.href = "https://localhost/authentication/intra/";
     });
   }

@@ -21,6 +21,8 @@ const init = () => {
 
   const friendsList = new FriendsList();
   friendsList.render(profileFriendsContainer);
+  console.log("Profile initialized");
+  console.log(pong42.player);
 };
 
 export { init };

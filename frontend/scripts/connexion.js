@@ -39,7 +39,6 @@ const loginFormHandler = async () => {
 
     try {
       await auth.login(username, password);
-      pong42.player.is42 = false;
       changePage(pong42.getCurrentPage() || "home");
     } catch (error) {
       showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");

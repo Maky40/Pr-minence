@@ -101,7 +101,7 @@ export default class Navbar extends Component {
                                     </a>
                                 </li>
                                 ${
-                                  !pong42.player.is42
+                                  pong42.player.from_42
                                     ? ""
                                     : `
                                 <li>
