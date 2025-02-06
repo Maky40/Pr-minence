@@ -3,7 +3,18 @@ let friends = [
     { name: "Alice", online: true, messages: [{ text: "Salut !", sender: "Alice" }], blocked: false },
     { name: "Bob", online: false, messages: [{ text: "Hello", sender: "Bob" }], blocked: false },
 ];
-
+const fakePlayersDB = [
+    { name: "Alice" },
+    { name: "Alicia" },
+    { name: "Bob" },
+    { name: "Bobby" },
+    { name: "Charlie" },
+    { name: "Charlotte" },
+    { name: "David" },
+    { name: "Daniel" },
+    { name: "Eve" },
+    { name: "Evelyn" }
+];
 let currentChatFriend = null;
 
 function showChat(chatType) {
@@ -29,36 +40,31 @@ function showChat(chatType) {
 
 function updateFriendsList() {
     const friendsList = document.getElementById("friends-list");
-
     if (!friendsList) {
         console.error("Friends list element not found");
         return;
     }
 
-    friendsList.innerHTML = ""; // On réinitialise la liste pour ne pas avoir de doublons
+    friendsList.innerHTML = ""; // On réinitialise la liste pour éviter les doublons
 
-    // On parcourt chaque ami de la liste 'friends'
-	friends.forEach((friend) => {
+    friends.forEach((friend) => {
         const friendItem = document.createElement("li");
         friendItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
 
-        // Créer l'élément pour le prénom
         const friendName = document.createElement("span");
-        friendName.classList.add("friend-name");  // Classe pour styliser le prénom
+        friendName.classList.add("friend-name");
         friendName.textContent = friend.name;
 
-        // Ajouter le badge "En ligne" ou "Hors ligne"
         const onlineStatus = document.createElement("span");
         onlineStatus.classList.add("badge", friend.online ? "bg-success" : "bg-secondary");
         onlineStatus.textContent = friend.online ? "En ligne" : "Hors ligne";
 
-        // Ajouter les éléments au li
         friendItem.appendChild(friendName);
         friendItem.appendChild(onlineStatus);
-
-        // Ajouter l'élément li à la liste
         friendsList.appendChild(friendItem);
-		friendItem.addEventListener("click", () => openPrivateChat(friend));
+
+        // Ajout d'un seul écouteur d'événement
+        friendItem.addEventListener("click", () => openPrivateChat(friend));
     });
 }
 
@@ -68,7 +74,6 @@ function openPrivateChat(friend) {
 
     currentChatFriend = friend;
     chatFriendName.textContent = friend.name;
-    chatFriendName.style.color = "black";
 
     blockFriendButton.textContent = friend.blocked ? "Débloquer" : "Bloquer";
     blockFriendButton.classList.toggle("btn-danger", !friend.blocked);
@@ -103,37 +108,41 @@ function displayChatHistory(friend) {
 }
 
 export function init() {
+    console.log("init() called");
+
+    // Suppression des anciens boutons pour éviter les duplications
+    ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message", "search-friend", "suggestions-container"].forEach(id => {
+        const oldButton = document.getElementById(id);
+        if (oldButton) {
+            oldButton.replaceWith(oldButton.cloneNode(true)); // Remplace l'ancien bouton par un clone sans événements
+        }
+    });
+
+    // Récupération des nouveaux boutons sans anciens événements
     const tournamentButton = document.getElementById("tournament-room");
     const privateButton = document.getElementById("private-chat");
     const addFriendButton = document.getElementById("add-friend");
     const blockFriendButton = document.getElementById("block-friend");
-    const messageInput = document.getElementById("message-input");
     const sendMessageButton = document.getElementById("send-message");
+    const messageInput = document.getElementById("message-input");
+	const searchFriendInput = document.getElementById("search-friend");
+	const suggestionsContainer = document.getElementById("suggestions-container");
 
+    // Ajout des nouveaux événements
     if (tournamentButton && privateButton) {
         tournamentButton.addEventListener("click", () => showChat("tournament"));
         privateButton.addEventListener("click", () => showChat("private"));
     }
 
-    addFriendButton.addEventListener("click", () => {
-        const searchFriendInput = document.getElementById("search-friend");
-        const friendName = searchFriendInput.value.trim();
-        if (friendName) {
-            friends.push({
-                name: friendName,
-                online: Math.random() > 0.5,
-                messages: [],
-                blocked: false
-            });
-            searchFriendInput.value = "";
-            updateFriendsList();
-        }
-    });
-
     blockFriendButton.addEventListener("click", () => {
         if (currentChatFriend) {
             currentChatFriend.blocked = !currentChatFriend.blocked;
-            openPrivateChat(currentChatFriend);
+
+            blockFriendButton.textContent = currentChatFriend.blocked ? "Débloquer" : "Bloquer";
+            blockFriendButton.classList.toggle("btn-danger", !currentChatFriend.blocked);
+            blockFriendButton.classList.toggle("btn-secondary", currentChatFriend.blocked);
+
+            displayChatHistory(currentChatFriend);
         }
     });
 
@@ -143,6 +152,27 @@ export function init() {
             sendMessage();
         }
     });
+	// Ajout d'un écouteur d'événement pour la recherche
+	searchFriendInput.addEventListener("input", (event) => {
+		searchFriends(event.target.value, suggestionsContainer, searchFriendInput);
+	});
+
+	// Cacher la liste lorsqu'on clique ailleurs
+	document.addEventListener("click", (event) => {
+		if (!searchFriendInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+			suggestionsContainer.style.display = "none";
+		}
+	});
+
+	// ajout ami via bouton ajouter un ami
+	addFriendButton.addEventListener("click", () => addFriend(searchFriendInput));
+
+	// ajout ami en appuyant sur entrer dans la barre de recherche d'ami
+	document.addEventListener("keydown", (event) => {
+		if (event.key == "Enter"){
+			addFriend(searchFriendInput);
+		}
+	});
 }
 
 function sendMessage() {
@@ -156,4 +186,57 @@ function sendMessage() {
         messageInput.value = "";
         chatBox.scrollTop = chatBox.scrollHeight;
     }
+}
+
+function addFriend(searchFriendInput)
+{
+	const friendName = searchFriendInput.value.trim();
+	if (friendName) {
+		friends.push({
+			name: friendName,
+			online: Math.random() > 0.5,
+			messages: [],
+			blocked: false
+		});
+		searchFriendInput.value = "";
+		updateFriendsList();
+	}
+};
+// fonctions liste deroulante
+function searchFriends(query, suggestionsContainer, searchFriendInput) {
+    if (query.length < 3) {
+        suggestionsContainer.innerHTML = "";
+        suggestionsContainer.style.display = "none";
+        return;
+    }
+
+    // Filtrer les joueurs contenant les lettres saisies
+    const results = fakePlayersDB.filter(player =>
+        player.name.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 5); // Limiter à 5 résultats
+
+    showSuggestions(results, suggestionsContainer, searchFriendInput);
+}
+
+// Fonction pour afficher les suggestions
+function showSuggestions(suggestions, suggestionsContainer, searchFriendInput) {
+    suggestionsContainer.innerHTML = "";
+
+    if (suggestions.length === 0) {
+        suggestionsContainer.style.display = "none";
+        return;
+    }
+
+    suggestions.forEach(player => {
+        const item = document.createElement("li");
+        item.classList.add("dropdown-item");
+        item.textContent = player.name;
+        item.addEventListener("click", () => {
+            searchFriendInput.value = player.name;
+            suggestionsContainer.style.display = "none";
+        });
+        suggestionsContainer.appendChild(item);
+    });
+
+    suggestionsContainer.style.display = "block";
 }
