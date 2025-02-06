@@ -1,23 +1,35 @@
-export default class Router {
-  constructor(routes, templateManager) {
+export const routes = {
+  home: { template: "home.html" },
+  score: { template: "score.html" },
+  chat: { template: "chatBox.html", authRequired: true },
+  connexion: { template: "connexion.html" },
+  signup: { template: "signup.html" },
+  game: { template: "game.html", authRequired: true },
+  security: { template: "security.html", authRequired: true },
+  profile: { template: "profile.html", authRequired: true },
+  login42: { template: "login42.html" },
+};
+
+export class Router {
+  constructor(templateManager) {
     this.routes = routes;
     this.templateManager = templateManager;
-    this.init();
   }
 
   init() {
-    window.addEventListener('hashchange', () => this.handleRoute());
+    window.addEventListener("hashchange", () => this.handleRoute());
     this.handleRoute();
   }
 
   handleRoute() {
-    const hash = window.location.hash.substring(1) || 'home';
+    const hash = window.location.hash.substring(1) || "home";
     const route = this.routes[hash];
     if (route) {
+      console.log("Route trouvée :", this.templateManager);
       this.templateManager.loadTemplate(route.template);
     } else {
-      console.error('Route non trouvée :', hash);
-      this.templateManager.loadTemplate('404.html');
+      console.error("Route non trouvée :", hash);
+      this.templateManager.loadTemplate("404.html");
     }
   }
 }

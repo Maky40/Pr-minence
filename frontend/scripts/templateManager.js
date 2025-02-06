@@ -1,16 +1,20 @@
 import pong42 from "../services/pong42.js";
 import auth from "../services/auth.js";
+import { routes } from "./router.js";
+import { changePage } from "../utils/Page.js";
 
 export default class TemplateManager {
-  constructor(contentElement, routes) {
-    this.contentElement = contentElement;
+  constructor(contentElement = null) {
+    if (!contentElement)
+      this.contentElement = document.getElementById("content");
+    else this.contentElement = contentElement;
     this.routes = routes;
     this.loadedScripts = new Set();
   }
 
   cleanup() {
     // Supprimer tous les scripts existants
-    const scripts = this.contentElement.getElementsByTagName("script");
+    const scripts = this.contentElement.querySelectorAll("script");
     Array.from(scripts).forEach((script) => script.remove());
 
     // Réinitialiser la liste des scripts chargés
@@ -36,42 +40,40 @@ export default class TemplateManager {
       if (!response.ok) throw new Error("Template non trouvé");
 
       const html = await response.text();
-
-      // Créer un conteneur temporaire
       const temp = document.createElement("div");
       temp.innerHTML = html;
 
-      // Extraire les scripts avant de vider le contenu
-      const scripts = Array.from(temp.getElementsByTagName("script"));
-
-      // Vider le contenu actuel
+      // On ne récupère plus les scripts inline
       this.contentElement.innerHTML = "";
+      this.contentElement.textContent = "";
+      this.contentElement.className = "";
+      this.contentElement.classList.add("container");
 
-      // Copier le contenu HTML
+      // Copier uniquement le contenu HTML sans les scripts
       temp.childNodes.forEach((node) => {
         if (node.nodeName !== "SCRIPT") {
           this.contentElement.appendChild(node.cloneNode(true));
         }
       });
 
-      // Exécuter les scripts après que le DOM soit mis à jour
-      await Promise.all(scripts.map((script) => this.executeScript(script)));
-
-      // Charger le module JavaScript associé au template (s'il existe)
-      // Ex: 'dashboard.html' -> 'dashboard'
-      const modulePath = `../scripts/${templateName}.js`; // Chemin vers le module JS
-      if (templateName !== "connexion" && templateName !== "signup")
+      if (templateName !== "connexion" && templateName !== "signup") {
         pong42.setCurrentPage(templateName);
+      }
+
+      const modulePath = `../scripts/${templateName}.js`;
       try {
-        // Vérifier si le fichier JS existe avant de l'importer
         const jsResponse = await fetch(modulePath);
         if (jsResponse.ok) {
           const module = await import(modulePath);
-          if (module.init && typeof module.init === "function") {
-            module.init(); // Appeler la fonction init du module
+          if (
+            module.init &&
+            typeof module.init === "function" &&
+            !this.loadedScripts.has(modulePath)
+          ) {
+            console.log(`Initialisation du module ${templateName}`);
+            await module.init();
+            this.loadedScripts.add(modulePath);
           }
-        } else {
-          console.log(`Aucun JavaScript associé au template ${templateName}.`);
         }
       } catch (error) {
         console.error(
@@ -84,28 +86,5 @@ export default class TemplateManager {
       this.contentElement.innerHTML =
         "<p>Erreur lors du chargement de la page.</p>";
     }
-  }
-
-  executeScript(oldScript) {
-    return new Promise((resolve, reject) => {
-      const newScript = document.createElement("script");
-
-      // Copier les attributs
-      Array.from(oldScript.attributes).forEach((attr) => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-
-      // Si c'est un script externe
-      if (oldScript.src) {
-        newScript.onload = resolve;
-        newScript.onerror = reject;
-      } else {
-        // Si c'est un script inline
-        newScript.textContent = oldScript.textContent;
-        resolve();
-      }
-
-      this.contentElement.appendChild(newScript);
-    });
   }
 }
