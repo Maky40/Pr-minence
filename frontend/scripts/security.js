@@ -4,22 +4,30 @@ import AlertInfo from "../components/alertInfo.js";
 
 const initBtQrCode = () => {
   const button = document.getElementById("btn-qr-code");
-  button.addEventListener("click", () => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
     const divQrCode = document.getElementById("qr-code");
     divQrCode.classList.toggle("d-none");
   });
 };
 
+const updateTwoFactor = async (isChecked) => {
+  const data = {
+    activate_2fa: isChecked,
+  };
+  await pong42.player.changeTwoFactor(data);
+};
+
 const initSwitch = () => {
   const divDDauth = document.getElementById("double-auth");
   const switchElement = document.querySelector('[role="switch"]');
+  switchElement.checked = pong42.player.two_factor;
+  if (switchElement.checked) divDDauth.classList.remove("d-none");
   switchElement.addEventListener("change", (event) => {
     const isChecked = event.target.checked;
-    if (isChecked) {
-      divDDauth.classList.remove("d-none");
-    } else {
-      divDDauth.classList.add("d-none");
-    }
+    if (isChecked) divDDauth.classList.remove("d-none");
+    else divDDauth.classList.add("d-none");
+    updateTwoFactor(isChecked);
   });
 
   // Example with Bootstrap Form Switch

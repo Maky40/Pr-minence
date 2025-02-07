@@ -48,6 +48,7 @@ class Api {
 
       // Check if response is ok
       if (!response.ok) {
+        console.log("Response error:", response);
         const awaitResponse = await response.json();
         throw new Error(`${awaitResponse.message}`);
       }

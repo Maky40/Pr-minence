@@ -142,6 +142,36 @@ class Player extends EventEmitter {
     this.emit(event, data);
   }
 
+  changeTwoFactor = async (data) => {
+    try {
+      const response = await api.apiFetch(
+        "/player/2FAChange",
+        true,
+        "POST",
+        data
+      );
+      if (response) {
+        const updateToast = new Toast(
+          "Success",
+          "Votre double authentification a été mise à jour",
+          "success"
+        );
+        updateToast.show();
+        return true;
+      }
+      throw new Error("API update failed");
+    } catch (error) {
+      console.error("Failed to update two-factor authentication:", error);
+      const toast = new Toast(
+        "Error",
+        "Échec de la mise à jour de la double authentification",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
+
   updatePlayerInformations = async (data) => {
     try {
       // Check if data is FormData
