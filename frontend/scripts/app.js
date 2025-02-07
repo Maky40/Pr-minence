@@ -30,7 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("click", (e) => {
-  console.log("Changement de page vers", e);
   const link = e.target.closest("a[data-locallink]");
   if (link) {
     e.preventDefault();

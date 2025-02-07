@@ -112,6 +112,28 @@ class Player extends EventEmitter {
     }
   };
 
+  updatePassword = async (data) => {
+    try {
+      const resultat = await api.apiFetch(
+        "/player/change-password/",
+        true,
+        "POST",
+        data
+      );
+      const updateToast = new Toast(
+        "Success",
+        "Votre mot de passe a été mis à jour",
+        "success"
+      );
+      updateToast.show();
+      return true;
+    } catch (error) {
+      const toast = new Toast("Error", error.message, "error");
+      toast.show();
+      return false;
+    }
+  };
+
   addListener(event, callback) {
     return this.on(event, callback);
   }

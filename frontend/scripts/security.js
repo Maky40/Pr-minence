@@ -1,4 +1,5 @@
 // Handle switch toggle event
+import pong42 from "../services/pong42.js";
 
 const initBtQrCode = () => {
   const button = document.getElementById("btn-qr-code");
@@ -30,19 +31,28 @@ const initSwitch = () => {
   });
 };
 
+const submitForm = (form, event) => {
+  event.preventDefault();
+  const current_password = form.querySelector("#password").value;
+  const new_password = form.querySelector("#password").value;
+  const confirm_password = form.querySelector("#passwordConfirm").value;
+  const data = { current_password, new_password, confirm_password };
+  if (new_password !== confirm_password) {
+    alert("Passwords do not match");
+    return;
+  }
+  pong42.player.updatePassword(data);
+};
+
+const initForm = () => {
+  const form = document.querySelector("form");
+  form.addEventListener("submit", (e) => submitForm(form, e));
+};
+
 const init = () => {
   initSwitch();
   initBtQrCode();
-  const form = document.querySelector("form");
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const password = form.querySelector('input[type="password"]').value;
-    if (password === "admin") {
-      form.submit();
-    } else {
-      alert("Incorrect password");
-    }
-  });
+  initForm();
 };
 
 export { init };

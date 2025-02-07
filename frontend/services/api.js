@@ -48,8 +48,8 @@ class Api {
 
       // Check if response is ok
       if (!response.ok) {
-        console.error("HTTP error!", response.status);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const awaitResponse = await response.json();
+        throw new Error(`${awaitResponse.message}`);
       }
       if (response.status === 401) {
         const toast = new Toast(
@@ -72,7 +72,7 @@ class Api {
         throw new Error(`Invalid response type: ${contentType}, body: ${text}`);
       }
     } catch (error) {
-      console.error("Fetch error:", error);
+      console.log("Fetch error:", error.message);
       throw error;
     }
   }
