@@ -55,7 +55,7 @@ class PlayerInfo(APIView):
                 "status": 500,
                 "message": str(e),
             })
-        
+
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
@@ -244,7 +244,7 @@ class PlayerFriendship(APIView):
                 get_type = request.query_params.get('target')
                 if get_type == 'invites':
                     # Invitation recues
-                    friendships = Friendship.objects.filter(receiver=id, status='PN')
+                    friendships = Friendship.objects.filter(player_player_receiver=id, state='PN')
                     friendship_data = []
                     for friendship in friendships:
                         friend = friendship.sender
@@ -256,7 +256,7 @@ class PlayerFriendship(APIView):
                     })
                 elif get_type == 'friends':
                     # Liste d'Amis
-                    friendships = Friendship.objects.filter(Q(sender=id) | Q(receiver=id),status="AC")
+                    friendships = Friendship.objects.filter(Q(player_sender=id) | Q(player_player_receiver=id),state="AC")
                     friendship_data = []
                     for friendship in friendships:
                         friend = friendship.sender if friendship.sender.id != id else friendship.receiver
@@ -268,7 +268,7 @@ class PlayerFriendship(APIView):
                     })
                 elif get_type == 'requests':
                     # Demande d'amis envoyes
-                    friendships = Friendship.objects.filter(sender=id, status='PN')
+                    friendships = Friendship.objects.filter(player_sender=id, state='PN')
                     friendship_data = []
                     for friendship in friendships:
                         friend = friendship.receiver
@@ -302,23 +302,23 @@ class PlayerFriendship(APIView):
                         "message": "You can't send a friend request to yourself",
                     })
                 receiver = Player.objects.get(id=receiver_id)
-                if Friendship.objects.filter(sender=sender, receiver=receiver).exists():
+                if Friendship.objects.filter(player_sender=sender, player_receiver=receiver).exists():
                     # Requete deja envoye ou amitie deja existante
                     return Response({
                         "status": 400,
                         "message": "Friend request already sent",
                     })
-                elif Friendship.objects.filter(sender=receiver, receiver=sender).exists():
-                    # Acceptation de la demande d'ami si la personne m'avait demande egalement en ami 
-                    friendships = Friendship.objects.filter(sender=receiver, receiver=sender)
-                    friendships.update(status='AC')
+                elif Friendship.objects.filter(player_sender=receiver, player_receiver=sender).exists():
+                    # Acceptation de la demande d'ami si la personne m'avait demande egalement en ami
+                    friendships = Friendship.objects.filter(player_sender=receiver, player_receiver=sender)
+                    friendships.update(state='AC')
                     return Response({
                     "status": 200,
                     "message": "Friend requests accepted successfully"
                     })
                 else:
-                    # Envoyer une demande d'ami 
-                    friendship = Friendship.objects.create(sender=sender, receiver=receiver, status='PN')
+                    # Envoyer une demande d'ami
+                    friendship = Friendship.objects.create(player_sender=sender, player_receiver=receiver, state='PN')
                     friendship.save()
                     return Response({
                         "status": 200,
@@ -348,9 +348,9 @@ class PlayerFriendship(APIView):
                 sender = Player.objects.get(id=sender_id)
                 receiver = Player.objects.get(id=receiver_id)
                 try:
-                    friendship = Friendship.objects.get(sender=sender, receiver=receiver)
+                    friendship = Friendship.objects.get(player_sender=sender, player_receiver=receiver)
                 except Friendship.DoesNotExist:
-                    friendship = Friendship.objects.get(sender=receiver, receiver=sender)
+                    friendship = Friendship.objects.get(player_sender=receiver, player_receiver=sender)
                 if friendship:
                     friendship.delete()
                     return Response({
