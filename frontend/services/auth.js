@@ -28,6 +28,14 @@ class Auth {
     }
   }
 
+  getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    console.log("Cookies:", value);
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+  };
+
   async login(email, password) {
     try {
       const data = await api.apiFetch("/authentication/login/", false, "POST", {
@@ -41,12 +49,10 @@ class Auth {
         toast.show();
         throw new Error("Login failed");
       }
-      const toast = new Toast(
-        "Bienvenue",
-        "Bienvenue " + pong42.player.username,
-        "info"
-      );
-      toast.show();
+      const jwt_token = this.getCookie("jwt_token");
+      const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
+      if (decodedToken.twofa) changePage("#twofactor");
+      else changePage(pong42.getCurrentPage() || "home");
       return data;
     } catch (error) {
       console.error("Login error:", error);

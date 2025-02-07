@@ -138,7 +138,7 @@ class LoginView(APIView):
             response.set_cookie(
                 'jwt_token',
                 jwt_token,
-                httponly=True,
+                httponly=False,
                 secure=True,
                 samesite='Strict'  # Pour améliorer la sécurité des cookies
             )

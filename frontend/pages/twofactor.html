@@ -1,0 +1,25 @@
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4">Double Authentification</h2>
+                    <div id="alert-container"></div>
+
+                    <form id="twoFactorForm">
+                        <div class="mb-4">
+                            <label for="code" class="form-label">Code d'authentification</label>
+                            <input type="text" class="form-control form-control-lg" id="code" name="code"
+                                placeholder="Entrez le code à 6 chiffres" required maxlength="6" pattern="\d{6}">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Vérifier
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

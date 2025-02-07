@@ -8,6 +8,7 @@ export const routes = {
   security: { template: "security.html", authRequired: true },
   profile: { template: "profile.html", authRequired: true },
   login42: { template: "login42.html" },
+  twofactor: { template: "twofactor.html" },
 };
 
 export class Router {

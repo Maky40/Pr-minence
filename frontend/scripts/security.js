@@ -76,6 +76,22 @@ const initForm = () => {
   form.addEventListener("submit", (e) => submitForm(form, e));
 };
 
+const initTab = () => {
+  const tabList = document.querySelectorAll(".nav-link");
+  tabList.forEach((tab) => {
+    tab.addEventListener("click", (event) => {
+      event.preventDefault();
+      const tabId = event.target.getAttribute("aria-controls");
+      const tabPanel = document.getElementById(tabId);
+      const tabPanelList = document.querySelectorAll('[role="tabpanel"]');
+      tabPanelList.forEach((panel) => {
+        panel.classList.remove("show active");
+      });
+      tabPanel.classList.add("show active");
+    });
+  });
+};
+
 const init = () => {
   initSwitch();
   initBtQrCode();
