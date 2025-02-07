@@ -131,22 +131,28 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
             jwt_token = generate_jwt(user.id, user.two_factor)
+
+            # Déterminer si HttpOnly doit être activé ou non
+            http_only_value = not user.two_factor  # False si 2FA actif, True sinon
+
             response = Response({
                 "status": 200,
                 "message": "Connexion réussie",
             }, status=status.HTTP_200_OK)
+
             response.set_cookie(
                 'jwt_token',
                 jwt_token,
-                httponly=False,
+                httponly=http_only_value,  # Dynamique en fonction du 2FA
                 secure=True,
-                samesite='Strict'  # Pour améliorer la sécurité des cookies
+                samesite='Strict'
             )
             return response
+
         return Response({
             "status": 400,
             "errors": serializer.errors,
-        }, status=status.HTTP_200_OK)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Verify2FAView(APIView):
