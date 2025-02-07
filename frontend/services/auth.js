@@ -60,6 +60,29 @@ class Auth {
     }
   }
 
+  async login2FA(code) {
+    try {
+      const data = { otp_code: code };
+      const response = await api.apiFetch(
+        "/authentication/verify-2fa/",
+        true,
+        "POST",
+        data
+      );
+      console.log("2FA response:", response, data);
+      if (response.status !== 200) {
+        console.error("2FA failed:", response.errors);
+        const toast = new Toast("error", "Erreur de code 2fa", "error");
+        toast.show();
+        throw new Error("2FA failed");
+      }
+      changePage("#home");
+    } catch (error) {
+      console.error("2FA error:", error);
+      throw error;
+    }
+  }
+
   async registerUser(userData) {
     const data = await api.apiFetch("/authentication/signup/", false, "POST", {
       email: userData.email,
