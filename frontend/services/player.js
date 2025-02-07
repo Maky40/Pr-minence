@@ -172,6 +172,30 @@ class Player extends EventEmitter {
     }
   };
 
+  getQRCode = async () => {
+    try {
+      const data = {
+        show_qr_code: "true",
+      };
+      const response = await api.apiFetch(
+        "/player/2FAChange",
+        true,
+        "POST",
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error("Failed to get QR code:", error);
+      const toast = new Toast(
+        "Error",
+        "Échec de l'obtention du code QR",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
+
   updatePlayerInformations = async (data) => {
     try {
       // Check if data is FormData

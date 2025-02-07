@@ -4,10 +4,13 @@ import AlertInfo from "../components/alertInfo.js";
 
 const initBtQrCode = () => {
   const button = document.getElementById("btn-qr-code");
-  button.addEventListener("click", (event) => {
+  button.addEventListener("click", async (event) => {
     event.preventDefault();
     const divQrCode = document.getElementById("qr-code");
+    const qrCode = document.getElementById("qr-code-img");
+    const myQrcode = await pong42.player.getQRCode();
     divQrCode.classList.toggle("d-none");
+    qrCode.src = myQrcode.qr_code;
   });
 };
 
