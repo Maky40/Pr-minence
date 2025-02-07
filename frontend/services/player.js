@@ -130,7 +130,7 @@ class Player extends EventEmitter {
     } catch (error) {
       const toast = new Toast("Error", error.message, "error");
       toast.show();
-      return false;
+      throw error;
     }
   };
 

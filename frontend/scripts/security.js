@@ -1,5 +1,6 @@
 // Handle switch toggle event
 import pong42 from "../services/pong42.js";
+import AlertInfo from "../components/alertInfo.js";
 
 const initBtQrCode = () => {
   const button = document.getElementById("btn-qr-code");
@@ -31,17 +32,32 @@ const initSwitch = () => {
   });
 };
 
-const submitForm = (form, event) => {
+const submitForm = async (form, event) => {
   event.preventDefault();
-  const current_password = form.querySelector("#password").value;
-  const new_password = form.querySelector("#password").value;
-  const confirm_password = form.querySelector("#passwordConfirm").value;
+  const current_password = form.querySelector("#current_password").value;
+  const new_password = form.querySelector("#new_password").value;
+  const confirm_password = form.querySelector("#confirm_password").value;
   const data = { current_password, new_password, confirm_password };
+  const alertContainer = document.getElementById("alert-container");
   if (new_password !== confirm_password) {
-    alert("Passwords do not match");
+    const alert = new AlertInfo(
+      "Les mots de passe ne correspondent pas",
+      "danger"
+    );
+    alert.render(alertContainer);
     return;
   }
-  pong42.player.updatePassword(data);
+  try {
+    await pong42.player.updatePassword(data);
+    current_password.value = "";
+    new_password.value = "";
+    confirm_password.value = "";
+    const alert = new AlertInfo("Mot de passe mis à jour", "success");
+    alert.render(alertContainer);
+  } catch (error) {
+    const alert = new AlertInfo(error.message, "danger");
+    alert.render(alertContainer);
+  }
 };
 
 const initForm = () => {
