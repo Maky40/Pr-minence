@@ -90,3 +90,18 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
+.no-friends-message {
+    border-radius: 8px; /* Bordures arrondies */
+    border: 2px solid var(--neon-blue) !important; /* Bordure de 2px de couleur wheat */
+    font-size: 1.2rem;
+    text-align: center; /* Centrer le texte */
+    font-weight: bold;
+    white-space: normal; /* Permet au texte de passer à la ligne si nécessaire */
+    word-wrap: break-word; /* Permet de couper les mots longs pour éviter le débordement */
+    width: 100%; /* Assure que le conteneur occupe toute la largeur */
+}
+
+.no-friends-message .friend-name {
+    color: var(--neon-blue) !important;
+}

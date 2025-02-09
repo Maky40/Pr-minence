@@ -1,3 +1,5 @@
+import api from "../services/api.js";
+
 // Liste des amis et historique des messages
 let friends = [
   {
@@ -58,28 +60,60 @@ function updateFriendsList() {
     }
 
     friendsList.innerHTML = ""; // On réinitialise la liste pour éviter les doublons
+	Promise.all([
+        api.apiFetch("/player/friendship/?target=requests", true, "GET"),
+        api.apiFetch("/player/friendship/?target=friends", true, "GET")
+    ])
+    .then(([requestsResponse, friendsResponse]) => {
+        friend_list(friendsList, friendsResponse, "friends");
+		friend_list(friendsList, requestsResponse, "requests");
+        // Vérification si aucune invitation ni ami
+        if (requestsResponse.friendships.length === 0 && friendsResponse.friendships.length === 0) {
+			const noFriendDiv = document.createElement("div");
+			noFriendDiv.classList.add("no-friends-message");
 
-    friends.forEach((friend) => {
-        const friendItem = document.createElement("li");
-        friendItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
+			const friendName = document.createElement("span");
+			friendName.classList.add("friend-name");
+			friendName.textContent = "Pas encore d'ami ? Prends un Curly 🥜";
 
-        const friendName = document.createElement("span");
-        friendName.classList.add("friend-name");
-        friendName.textContent = friend.name;
-
-        const onlineStatus = document.createElement("span");
-        onlineStatus.classList.add("badge", friend.online ? "bg-success" : "bg-secondary");
-        onlineStatus.textContent = friend.online ? "En ligne" : "Hors ligne";
-
-        friendItem.appendChild(friendName);
-        friendItem.appendChild(onlineStatus);
-        friendsList.appendChild(friendItem);
-
-        // Ajout d'un seul écouteur d'événement
-        friendItem.addEventListener("click", () => openPrivateChat(friend));
+			noFriendDiv.appendChild(friendName);
+			friendsList.appendChild(noFriendDiv);
+		}
+    })
+    .catch(error => {
+        console.error("Erreur lors de la récupération des données : ", error);
     });
+
+    // événement pour le chat
+    friendItem.addEventListener("click", () => openPrivateChat(friend));
 }
 
+function friend_list(friendsList, data, api) {
+	console.log("Donnees recues :", data);
+	if (!data.friendships || data.friendships.length === 0) {
+		return;
+	}
+	data.friendships.forEach(friend => {
+	const friendItem = document.createElement("li");
+	friendItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
+
+	const friendName = document.createElement("span");
+	friendName.classList.add("friend-name");
+	friendName.textContent = friend.username;
+
+	const onlineStatus = document.createElement("span");
+	if (api === "requests"){
+		onlineStatus.classList.add("badge", "bg-secondary");
+		onlineStatus.textContent = "Pending"; }
+	else {
+		onlineStatus.classList.add("badge", friend.online ? "bg-success" : "bg-danger");
+        onlineStatus.textContent = friend.online ? "En ligne" : "Hors ligne";
+	}
+	friendItem.appendChild(friendName);
+	friendItem.appendChild(onlineStatus);
+	friendsList.appendChild(friendItem);
+	});
+}
 function openPrivateChat(friend) {
   const chatFriendName = document.getElementById("chat-friend-name");
   const blockFriendButton = document.getElementById("block-friend");
@@ -167,6 +201,17 @@ export function init() {
             sendMessage();
         }
     });
+	// Supprimer le placeholder quand l'utilisateur clique sur l'input
+	searchFriendInput.addEventListener("focus", () => {
+		searchFriendInput.placeholder = ""; // Efface le placeholder
+	});
+
+	// Remettre le placeholder si l'utilisateur ne tape rien et sort du champ
+	searchFriendInput.addEventListener("blur", () => {
+		if (searchFriendInput.value.trim() === "") {
+			searchFriendInput.placeholder = "Rechercher un ami...";
+		}
+	});
 	// Ajout d'un écouteur d'événement pour la recherche
 	searchFriendInput.addEventListener("input", (event) => {
 		searchFriends(event.target.value, suggestionsContainer, searchFriendInput);
@@ -185,6 +230,7 @@ export function init() {
 	// ajout ami en appuyant sur entrer dans la barre de recherche d'ami
 	document.addEventListener("keydown", (event) => {
 		if (event.key == "Enter"){
+			console.log("searchfriendinput = " + searchFriendInput);
 			addFriend(searchFriendInput);
 		}
 	});
@@ -203,20 +249,29 @@ function sendMessage() {
     }
 }
 
-function addFriend(searchFriendInput)
+async function addFriend(searchFriendInput)
 {
 	const friendName = searchFriendInput.value.trim();
-	if (friendName) {
-		friends.push({
-			name: friendName,
-			online: Math.random() > 0.5,
-			messages: [],
-			blocked: false
-		});
-		searchFriendInput.value = "";
+	console.log("lalala");
+	try {
+		console.log("la");
+		const response_id = await api.apiFetch("/player/?username="+friendName, true, "GET")
+		console.log(response_id);
+		if (response_id.status === 404 || response_id.status === 500){
+			console.log(response_id.message);
+			return;
+		}
+		console.log("ici");
+		const request_id = {"target_id": response_id.players[0].id};
+		console.log(request_id);
+		const response_add = await api.apiFetch("/player/friendship/", true, "POST", request_id);
+		console.log(response_add.message);
 		updateFriendsList();
 	}
-};
+	catch (error) {
+		console.error("Erreur API :", error);
+	};
+}
 // fonctions liste deroulante
 function searchFriends(query, suggestionsContainer, searchFriendInput) {
     if (query.length < 3) {

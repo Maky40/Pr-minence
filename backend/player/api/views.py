@@ -17,6 +17,7 @@ from django.core.exceptions import ValidationError
 import pyotp
 import qrcode
 import base64
+from django.db.models import Q
 from PIL import Image
 
 
@@ -244,10 +245,10 @@ class PlayerFriendship(APIView):
                 get_type = request.query_params.get('target')
                 if get_type == 'invites':
                     # Invitation recues
-                    friendships = Friendship.objects.filter(player_player_receiver=id, state='PN')
+                    friendships = Friendship.objects.filter(player_receiver=id, state='PN')
                     friendship_data = []
                     for friendship in friendships:
-                        friend = friendship.sender
+                        friend = friendship.player_sender
                         friend_data = PlayerInfoSerializer(friend).data
                         friendship_data.append(friend_data)
                     return Response({
@@ -256,10 +257,10 @@ class PlayerFriendship(APIView):
                     })
                 elif get_type == 'friends':
                     # Liste d'Amis
-                    friendships = Friendship.objects.filter(Q(player_sender=id) | Q(player_player_receiver=id),state="AC")
+                    friendships = Friendship.objects.filter(Q(player_sender=id) | Q(player_receiver=id),state="AC")
                     friendship_data = []
                     for friendship in friendships:
-                        friend = friendship.sender if friendship.sender.id != id else friendship.receiver
+                        friend = friendship.player_sender if friendship.player_sender.id != id else friendship.player_receiver
                         friend_data = PlayerInfoSerializer(friend).data
                         friendship_data.append(friend_data)
                     return Response({
@@ -271,7 +272,7 @@ class PlayerFriendship(APIView):
                     friendships = Friendship.objects.filter(player_sender=id, state='PN')
                     friendship_data = []
                     for friendship in friendships:
-                        friend = friendship.receiver
+                        friend = friendship.player_receiver
                         friend_data = PlayerInfoSerializer(friend).data
                         friendship_data.append(friend_data)
                     return Response({

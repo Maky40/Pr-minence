@@ -122,4 +122,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # === 10. Authentification ===
 AUTH_USER_MODEL = "api.Player"  # Modèle utilisateur personnalisé (Player)
 
-PUBLIC_PLAYER_URL = 'https://localhost' 
+PUBLIC_PLAYER_URL = 'https://localhost'
