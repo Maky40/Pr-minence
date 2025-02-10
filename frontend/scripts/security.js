@@ -22,24 +22,17 @@ const updateTwoFactor = async (isChecked) => {
 };
 
 const initSwitch = () => {
-  const divDDauth = document.getElementById("double-auth");
+  const divDDauth = document.getElementById("double-auth-info");
   const switchElement = document.querySelector('[role="switch"]');
   switchElement.checked = pong42.player.two_factor;
+
   if (switchElement.checked) divDDauth.classList.remove("d-none");
+  else divDDauth.classList.add("d-none");
   switchElement.addEventListener("change", (event) => {
     const isChecked = event.target.checked;
     if (isChecked) divDDauth.classList.remove("d-none");
     else divDDauth.classList.add("d-none");
     updateTwoFactor(isChecked);
-  });
-
-  // Example with Bootstrap Form Switch
-  const toggleSwitch = document.querySelector(
-    '.form-check-input[type="checkbox"]'
-  );
-  toggleSwitch.addEventListener("change", (event) => {
-    const isChecked = event.target.checked;
-    // Handle switch state
   });
 };
 
@@ -75,27 +68,41 @@ const initForm = () => {
   const form = document.querySelector("form");
   form.addEventListener("submit", (e) => submitForm(form, e));
 };
-
 const initTab = () => {
-  const tabList = document.querySelectorAll(".nav-link");
-  tabList.forEach((tab) => {
-    tab.addEventListener("click", (event) => {
-      event.preventDefault();
-      const tabId = event.target.getAttribute("aria-controls");
-      const tabPanel = document.getElementById(tabId);
-      const tabPanelList = document.querySelectorAll('[role="tabpanel"]');
-      tabPanelList.forEach((panel) => {
-        panel.classList.remove("show active");
+  // Get both tabs and content
+  const tabTriggers = document.querySelectorAll('[data-bs-toggle="tab"]');
+  const tabPanes = document.querySelectorAll(".tab-pane");
+
+  tabTriggers.forEach((trigger) => {
+    trigger.addEventListener("shown.bs.tab", (event) => {
+      const targetId = event.target.getAttribute("data-bs-target");
+      console.log("Tab shown:", targetId);
+
+      // Manually toggle content visibility
+      tabPanes.forEach((pane) => {
+        if (pane.id === targetId.replace("#", "")) {
+          pane.classList.add("show", "active");
+        } else {
+          pane.classList.remove("show", "active");
+        }
       });
-      tabPanel.classList.add("show active");
+    });
+
+    // Create and initialize Bootstrap tab
+    const bsTab = new bootstrap.Tab(trigger);
+
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      bsTab.show();
     });
   });
 };
 
 const init = () => {
-  initSwitch();
   initBtQrCode();
   initForm();
+  initTab();
+  initSwitch();
 };
 
 export { init };

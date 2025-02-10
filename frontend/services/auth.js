@@ -50,9 +50,9 @@ class Auth {
         throw new Error("Login failed");
       }
       const jwt_token = this.getCookie("jwt_token");
+      if (!jwt_token) changePage(pong42.getCurrentPage() || "home");
       const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
       if (decodedToken.twofa) changePage("#twofactor");
-      else changePage(pong42.getCurrentPage() || "home");
       return data;
     } catch (error) {
       console.error("Login error:", error);
