@@ -69,7 +69,6 @@ class Auth {
         "POST",
         data
       );
-      console.log("2FA response:", response, data);
       if (response.status !== 200) {
         console.error("2FA failed:", response.errors);
         const toast = new Toast("error", "Erreur de code 2fa", "error");
