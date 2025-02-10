@@ -63,7 +63,7 @@ services:
       - db
     networks:
       - app_network
-    restart: always
+    restart: alwaysx
 
 volumes:
   pgdata: # Volume pour persister les données de la base de données

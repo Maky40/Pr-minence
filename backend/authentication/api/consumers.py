@@ -1,6 +1,7 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Player
+import logging
 
 playersOpenTabs = {}
 
@@ -9,9 +10,11 @@ def set_player_status(player,  playerStatus):
     player.status = playerStatus
     player.save(update_fields=["status"])
 
+logger = logging.getLogger(__name__)
 
 class OnlineConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        logger.info("Tentative de connexion WebSocket")
         await self.accept()
         self.id = None
         if self.scope['status'] == 'Valid':

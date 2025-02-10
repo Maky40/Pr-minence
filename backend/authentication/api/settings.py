@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',  # Static files management
     "rest_framework",  # Django REST Framework for API development
 	"api",  # The specific app for this microservice
+    "channels",  # Channels for WebSockets
 ]
 
 # === 4. Middleware ===

@@ -2,6 +2,9 @@ import Navbar from "../components/navbar.js";
 import { changePage } from "../utils/Page.js";
 import { Router } from "./router.js";
 import TemplateManager from "./templateManager.js";
+import WebSocketAPI from "../services/websocket.js";
+
+const webSocket = new WebSocketAPI();
 
 const navbar = new Navbar();
 const content = document.getElementById("content");
