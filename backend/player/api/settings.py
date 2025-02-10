@@ -36,8 +36,6 @@ ALLOWED_HOSTS = [
     'player',     # Hôte utilisé dans votre conteneur Docker
 ]
 
-USE_X_FORWARDED_HOST = True
-
 # === 3. Applications Django ===
 INSTALLED_APPS = [
     "django.contrib.admin",

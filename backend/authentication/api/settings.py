@@ -38,6 +38,7 @@ ALLOWED_HOSTS = [
 # === 3. Applications Django ===
 # Installed apps required for the microservice.
 INSTALLED_APPS = [
+	'daphne',
     'django.contrib.admin',  # Admin panel
     'django.contrib.auth',  # Authentication framework
     'django.contrib.contenttypes',  # Content types for models
@@ -135,7 +136,7 @@ STATIC_ROOT = AUTH_DIR / 'static/'  # Directory where static files are collected
 # Use a custom user model (Player).
 AUTH_USER_MODEL = "api.Player"
 
-
+USE_X_FORWARDED_HOST = True
 PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
 
 DEFAULT_AVATAR_URL = getenv("DEFAULT_AVATAR_URL", "https://localhost/player/static/api/images/default_avatar.png")
