@@ -2,12 +2,35 @@
 import pong42 from "../services/pong42.js";
 import AlertInfo from "../components/alertInfo.js";
 
+const cleanup = () => {
+  // Remove event listeners from buttons
+  const qrButton = document.getElementById("btn-qr-code");
+  const switchElement = document.querySelector('[role="switch"]');
+  const form = document.querySelector("form");
+  const tabTriggers = document.querySelectorAll('[data-bs-toggle="tab"]');
+
+  // Clean up existing listeners
+  if (qrButton) {
+    qrButton.replaceWith(qrButton.cloneNode(true));
+  }
+  if (switchElement) {
+    switchElement.replaceWith(switchElement.cloneNode(true));
+  }
+  if (form) {
+    form.replaceWith(form.cloneNode(true));
+  }
+  tabTriggers.forEach((trigger) => {
+    trigger.replaceWith(trigger.cloneNode(true));
+  });
+};
+
 const initBtQrCode = () => {
   const button = document.getElementById("btn-qr-code");
   button.addEventListener("click", async (event) => {
     event.preventDefault();
-    const divQrCode = document.getElementById("qr-code");
-    const qrCode = document.getElementById("qr-code-img");
+    console.log("QR Code button clicked");
+    const divQrCode = document.getElementById("div-qr-code");
+    const qrCode = document.getElementById("qr-code-img-secu");
     const myQrcode = await pong42.player.getQRCode();
     divQrCode.classList.toggle("d-none");
     qrCode.src = myQrcode.qr_code;
@@ -99,8 +122,10 @@ const initTab = () => {
 };
 
 const init = () => {
-  initBtQrCode();
+  cleanup();
+
   initForm();
+  initBtQrCode();
   initTab();
   initSwitch();
 };

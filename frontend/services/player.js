@@ -145,7 +145,7 @@ class Player extends EventEmitter {
   changeTwoFactor = async (data) => {
     try {
       const response = await api.apiFetch(
-        "/player/2FAChange",
+        "/player/2FAChange/",
         true,
         "POST",
         data
@@ -178,7 +178,7 @@ class Player extends EventEmitter {
         show_qr_code: "true",
       };
       const response = await api.apiFetch(
-        "/player/2FAChange",
+        "/player/2FAChange/",
         true,
         "POST",
         data
