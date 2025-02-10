@@ -26,7 +26,6 @@ export class Router {
     const hash = window.location.hash.substring(1) || "home";
     const route = this.routes[hash];
     if (route) {
-      console.log("Route trouvée :", this.templateManager);
       this.templateManager.loadTemplate(route.template);
     } else {
       console.error("Route non trouvée :", hash);
