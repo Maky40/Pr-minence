@@ -20,6 +20,7 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8001
 
 # Commande par défaut pour démarrer Django après les migrations
-CMD ["sh", "-c", "python manage.py makemigrations api && python manage.py migrate && daphne -p 8001 api.asgi:application"]
+CMD ["sh", "-c", "python manage.py makemigrations api && python manage.py migrate && daphne -b 0.0.0.0 -p 8001 api.asgi:application"]
+
 
 

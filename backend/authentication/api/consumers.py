@@ -10,11 +10,9 @@ def set_player_status(player,  playerStatus):
     player.status = playerStatus
     player.save(update_fields=["status"])
 
-logger = logging.getLogger(__name__)
-
 class OnlineConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        logger.info("Tentative de connexion WebSocket")
+        print("Scope path:", self.scope.get("path"))
         await self.accept()
         self.id = None
         if self.scope['status'] == 'Valid':
