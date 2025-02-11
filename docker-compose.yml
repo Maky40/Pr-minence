@@ -65,6 +65,24 @@ services:
       - app_network
     restart: always
 
+  pong:
+    build:
+      context: ./backend/pong
+    container_name: pong
+    volumes:
+      - ./backend/pong:/usr/src/app # Volume pour la synchronisation des fichiers
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=api.settings # Variable d'environnement explicite
+    ports:
+      - "8003:8003"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    restart: always
+
 volumes:
   pgdata: # Volume pour persister les données de la base de données
 
