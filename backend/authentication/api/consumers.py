@@ -19,7 +19,7 @@ class OnlineConsumer(AsyncWebsocketConsumer):
             self.player = self.scope['player']
             self.id = self.player.id
             if self.id not in playersOpenTabs:
-                await set_player_status(self.player, Player.Status.ONLINE.value)
+                await set_player_status(self.player, 'ON')
                 playersOpenTabs[self.id] = 1 # Creer le joueur dans le dict python
             else:
                 playersOpenTabs[self.id] += 1 # Incrementer le nombre d'onglets du joueur
@@ -29,7 +29,7 @@ class OnlineConsumer(AsyncWebsocketConsumer):
         if self.id is None:
             return
         if playersOpenTabs[self.id] == 1:
-            await set_player_status(self.player, Player.Status.OFFLINE.value)
+            await set_player_status(self.player, 'OF')
             del playersOpenTabs[self.id]
         else:
             playersOpenTabs[self.id] -= 1
