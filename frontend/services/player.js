@@ -68,8 +68,9 @@ class Player extends EventEmitter {
     this.losses++;
   }
   updateStatus(status) {
+    console.log("status", status);
     this.status = status;
-    api.apiFetch("/player/", true, "PATCH", { status: status });
+    this.notifyListeners("updateStatus");
   }
   checkUserInfos = (data) => {
     if (data.first_name !== "" && data.last_name !== "") {

@@ -1,3 +1,5 @@
+import pong42 from "./pong42.js";
+
 class WebSocketAPI {
   constructor() {
     this.socket = null;
@@ -9,9 +11,9 @@ class WebSocketAPI {
     try {
       this.socket = new WebSocket("wss://localhost/authentication/ws/online/");
 
-      this.socket.addEventListener("open", (event) => {
-        console.log("WebSocket connexion établie");
-        this.socket.send("Coucou le serveur !");
+      this.socket.addEventListener("message", (event) => {
+        console.log("Message reçu:", event.data);
+        pong42.player.updateStatus("ON");
       });
 
       this.socket.addEventListener("error", (event) => {
