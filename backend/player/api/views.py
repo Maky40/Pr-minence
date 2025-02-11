@@ -246,7 +246,7 @@ class PlayerFriendship(APIView):
                     friendships = Friendship.objects.filter(player_receiver=id, state='PN')
                     friendship_data = []
                     for friendship in friendships:
-                        friend = friendship.sender
+                        friend = friendship.player_sender
                         friend_data = PlayerInfoSerializer(friend).data
                         friendship_data.append(friend_data)
                     return Response({
@@ -258,7 +258,7 @@ class PlayerFriendship(APIView):
                     friendships = Friendship.objects.filter(Q(player_sender=id) | Q(player_receiver=id),state="AC")
                     friendship_data = []
                     for friendship in friendships:
-                        friend = friendship.sender if friendship.sender.id != id else friendship.receiver
+                        friend = friendship.player_sender if friendship.player_sender.id != id else friendship.player_receiver
                         friend_data = PlayerInfoSerializer(friend).data
                         friendship_data.append(friend_data)
                     return Response({
@@ -270,7 +270,7 @@ class PlayerFriendship(APIView):
                     friendships = Friendship.objects.filter(player_sender=id, state='PN')
                     friendship_data = []
                     for friendship in friendships:
-                        friend = friendship.receiver
+                        friend = friendship.player_receiver
                         friend_data = PlayerInfoSerializer(friend).data
                         friendship_data.append(friend_data)
                     return Response({

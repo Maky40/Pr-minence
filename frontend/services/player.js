@@ -17,6 +17,7 @@ class Player extends EventEmitter {
     this.two_factor = false;
     this.status = "OF";
     this.from_42 = false;
+    this.friends = [];
   }
 
   async init() {
@@ -68,7 +69,6 @@ class Player extends EventEmitter {
     this.losses++;
   }
   updateStatus(status) {
-    console.log("status", status);
     this.status = status;
     this.notifyListeners("updateStatus");
   }
@@ -77,6 +77,23 @@ class Player extends EventEmitter {
       return false;
     }
     return true;
+  };
+
+  getFriends = async () => {
+    try {
+      const data = await api.apiFetch(
+        "/player/friendship/?target=friends",
+        true
+      );
+      console.log(data);
+      this.friends = data.friendships;
+      return this.friends;
+    } catch (error) {
+      console.error("Failed to get friends list:", error);
+      const toast = new Toast("Error", "Failed to get friends list", "error");
+      toast.show();
+      return false;
+    }
   };
   updateAvatar = async (avatarFile) => {
     try {

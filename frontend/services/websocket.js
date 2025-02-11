@@ -1,42 +1,49 @@
-import pong42 from "./pong42.js";
-
 class WebSocketAPI {
-  constructor() {
+  constructor(wsURL) {
     this.socket = null;
-    this.listeners = new Set();
+    this.status = "DISCONNECTED";
+    this.wsURL = wsURL;
+    this.messageListeners = new Map();
     this.init();
   }
 
   init() {
     try {
-      this.socket = new WebSocket("wss://localhost/authentication/ws/online/");
-
-      this.socket.addEventListener("message", (event) => {
-        console.log("Message reçu:", event.data);
-        pong42.player.updateStatus("ON");
-      });
-
-      this.socket.addEventListener("error", (event) => {
-        console.error("WebSocket erreur:", event);
-      });
-
-      this.socket.addEventListener("close", (event) => {
-        console.log(
-          "WebSocket fermé. Code:",
-          event.code,
-          "Raison:",
-          event.reason
-        );
-        // Tenter de reconnecter après un délai
-        setTimeout(() => this.init(), 5000);
-      });
+      this.socket = new WebSocket(this.wsURL);
+      this.setupEventListeners();
     } catch (error) {
-      console.error("Erreur d'initialisation WebSocket:", error);
+      console.error("WebSocket initialization error:", error);
     }
   }
 
-  onOpen(callback) {
-    this.socket.onopen = callback;
+  addMessageListener(type, callback) {
+    this.messageListeners.set(type, callback);
+  }
+
+  setupEventListeners() {
+    this.socket.addEventListener("open", () => {
+      console.log("WebSocket connection established");
+      this.status = "CONNECTED";
+    });
+
+    // Ajouter l'écouteur de message ici
+    this.socket.addEventListener("message", (event) => {
+      // Appeler tous les callbacks enregistrés avec le message
+      this.messageListeners.forEach((callback, type) => {
+        callback(event.data);
+      });
+    });
+
+    this.socket.addEventListener("close", (event) => {
+      console.log("WebSocket closed:", event.code);
+      this.status = "DISCONNECTED";
+      setTimeout(() => this.init(), 5000);
+    });
+
+    this.socket.addEventListener("error", (event) => {
+      console.error("WebSocket error:", event);
+      this.status = "ERROR";
+    });
   }
 }
 
