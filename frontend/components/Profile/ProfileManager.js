@@ -28,6 +28,13 @@ class ProfileManager extends Component {
       pong42.player.notifyListeners("update", pong42.player);
       this.render(this.container);
     });
+
+    pong42.player.addListener("updateStatus", () => {
+      console.log("Player updated");
+      this.setState({ profile: pong42.player });
+
+      this.render(this.container);
+    });
   }
   updateProfile = (newProfile) => {
     const updateAPI = pong42.player.updatePlayerInformations(newProfile);

@@ -14,7 +14,7 @@ class Toast extends Component {
       success: {
         icon: "check-circle",
         color: "text-success",
-        bgColor: "bg-danger",
+        bgColor: "bg-success",
       },
       error: {
         icon: "exclamation-circle",

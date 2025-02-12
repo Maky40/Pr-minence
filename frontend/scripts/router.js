@@ -8,6 +8,7 @@ export const routes = {
   security: { template: "security.html", authRequired: true },
   profile: { template: "profile.html", authRequired: true },
   login42: { template: "login42.html" },
+  twofactor: { template: "twofactor.html" },
 };
 
 export class Router {
@@ -25,7 +26,6 @@ export class Router {
     const hash = window.location.hash.substring(1) || "home";
     const route = this.routes[hash];
     if (route) {
-      console.log("Route trouvée :", this.templateManager);
       this.templateManager.loadTemplate(route.template);
     } else {
       console.error("Route non trouvée :", hash);

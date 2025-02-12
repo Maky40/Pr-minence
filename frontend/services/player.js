@@ -16,7 +16,8 @@ class Player extends EventEmitter {
     this.losses = 0;
     this.two_factor = false;
     this.status = "OF";
-    this.is42 = false;
+    this.from_42 = false;
+    this.friends = [];
   }
 
   async init() {
@@ -46,6 +47,7 @@ class Player extends EventEmitter {
     this.losses = data.losses;
     this.two_factor = data.two_factor;
     this.status = data.status;
+    this.from_42 = data.from_42;
   }
 
   loadPlayerAvatar() {
@@ -68,13 +70,30 @@ class Player extends EventEmitter {
   }
   updateStatus(status) {
     this.status = status;
-    api.apiFetch("/player/", true, "PATCH", { status: status });
+    this.notifyListeners("updateStatus");
   }
   checkUserInfos = (data) => {
     if (data.first_name !== "" && data.last_name !== "") {
       return false;
     }
     return true;
+  };
+
+  getFriends = async () => {
+    try {
+      const data = await api.apiFetch(
+        "/player/friendship/?target=friends",
+        true
+      );
+      console.log(data);
+      this.friends = data.friendships;
+      return this.friends;
+    } catch (error) {
+      console.error("Failed to get friends list:", error);
+      const toast = new Toast("Error", "Failed to get friends list", "error");
+      toast.show();
+      return false;
+    }
   };
   updateAvatar = async (avatarFile) => {
     try {
@@ -111,6 +130,28 @@ class Player extends EventEmitter {
     }
   };
 
+  updatePassword = async (data) => {
+    try {
+      const resultat = await api.apiFetch(
+        "/player/change-password/",
+        true,
+        "POST",
+        data
+      );
+      const updateToast = new Toast(
+        "Success",
+        "Votre mot de passe a été mis à jour",
+        "success"
+      );
+      updateToast.show();
+      return true;
+    } catch (error) {
+      const toast = new Toast("Error", error.message, "error");
+      toast.show();
+      throw error;
+    }
+  };
+
   addListener(event, callback) {
     return this.on(event, callback);
   }
@@ -118,6 +159,60 @@ class Player extends EventEmitter {
   notifyListeners(event, data) {
     this.emit(event, data);
   }
+
+  changeTwoFactor = async (data) => {
+    try {
+      const response = await api.apiFetch(
+        "/player/2FAChange/",
+        true,
+        "POST",
+        data
+      );
+      if (response) {
+        const updateToast = new Toast(
+          "Success",
+          "Votre double authentification a été mise à jour",
+          "success"
+        );
+        updateToast.show();
+        return true;
+      }
+      throw new Error("API update failed");
+    } catch (error) {
+      console.error("Failed to update two-factor authentication:", error);
+      const toast = new Toast(
+        "Error",
+        "Échec de la mise à jour de la double authentification",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
+
+  getQRCode = async () => {
+    try {
+      const data = {
+        show_qr_code: "true",
+      };
+      const response = await api.apiFetch(
+        "/player/2FAChange/",
+        true,
+        "POST",
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error("Failed to get QR code:", error);
+      const toast = new Toast(
+        "Error",
+        "Échec de l'obtention du code QR",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
 
   updatePlayerInformations = async (data) => {
     try {

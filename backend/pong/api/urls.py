@@ -1,5 +1,5 @@
 """
-URL configuration for authentication project.
+URL configuration for pong project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -16,17 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from . import views
-from django.conf import settings
-from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-	path('intra/', views.intra_auth, name='intraView'),
-    path('intra/callback/', views.intra_callback_auth, name='intracallbackView'),
-	path('logout/', views.logout_user, name='logoutView'),
-	path('signup/', views.SignupView.as_view(), name='signupView'),
-    path('login/', views.LoginView.as_view(), name='loginView'),
-	path('verify-2fa/', views.Verify2FAView.as_view(), name='verify2faView')
 ]
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

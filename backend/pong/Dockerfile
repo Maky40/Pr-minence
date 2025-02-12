@@ -17,10 +17,10 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 
 # Exposer le port 8000 pour le serveur Django
-EXPOSE 8001
+EXPOSE 8003
 
 # Commande par défaut pour démarrer Django après les migrations
-CMD ["sh", "-c", "python manage.py makemigrations api && python manage.py migrate && daphne -b 0.0.0.0 -p 8001 api.asgi:application"]
+CMD ["sh", "-c", "python manage.py makemigrations api && python manage.py migrate && daphne -b 0.0.0.0 -p 8003 api.asgi:application"]
 
 
 

@@ -138,9 +138,3 @@ AUTH_USER_MODEL = "api.Player"
 
 USE_X_FORWARDED_HOST = True
 PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
-
-DEFAULT_AVATAR_URL = getenv("DEFAULT_AVATAR_URL", "https://localhost/player/static/api/images/default_avatar.png")
-
-
-AUTHENTICATION_BACKENDS = ['api.backends.EmailBackend']
-

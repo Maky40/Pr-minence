@@ -71,7 +71,6 @@ const singupHandler = async (event) => {
 
 const init = () => {
   if (auth.authenticated) {
-    pong42.player.is42 = false;
     changePage(pong42.getCurrentPage() || "home");
   }
   UIinit();

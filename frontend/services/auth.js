@@ -1,7 +1,7 @@
 import pong42 from "./pong42.js";
 import api from "./api.js";
 import Toast from "../components/toast.js";
-
+import WebSocketAPI from "./websocket.js";
 class Auth {
   constructor() {
     this.authenticated = false;
@@ -28,6 +28,19 @@ class Auth {
     }
   }
 
+  getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+  };
+
+  checkCookie = (name) => {
+    return document.cookie
+      .split(";")
+      .some((item) => item.trim().startsWith(name + "="));
+  };
+
   async login(email, password) {
     try {
       const data = await api.apiFetch("/authentication/login/", false, "POST", {
@@ -36,20 +49,40 @@ class Auth {
       });
       console.log("======Login successful:", data);
       if (data.status !== 200) {
-        console.error("Login failed:", data.errors);
         const toast = new Toast("error", "Erreur de connexion", "error");
         toast.show();
         throw new Error("Login failed");
       }
-      const toast = new Toast(
-        "Bienvenue",
-        "Bienvenue " + pong42.player.username,
-        "info"
-      );
-      toast.show();
+      if (!this.checkCookie("jwt_token"))
+        changePage(pong42.getCurrentPage() || "home");
+      const jwt_token = this.getCookie("jwt_token");
+      const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
+      if (decodedToken.twofa) changePage("#twofactor");
       return data;
     } catch (error) {
       console.error("Login error:", error);
+      throw error;
+    }
+  }
+
+  async login2FA(code) {
+    try {
+      const data = { otp_code: code };
+      const response = await api.apiFetch(
+        "/authentication/verify-2fa/",
+        true,
+        "POST",
+        data
+      );
+      if (response.status !== 200) {
+        console.error("2FA failed:", response.errors);
+        const toast = new Toast("error", "Erreur de code 2fa", "error");
+        toast.show();
+        throw new Error("2FA failed");
+      }
+      changePage("#home");
+    } catch (error) {
+      console.error("2FA error:", error);
       throw error;
     }
   }
@@ -87,6 +120,12 @@ class Auth {
     this.user = player;
     pong42.player.setPlayerInformations(player);
     this.notifyListeners("login");
+    const webSocketStatus = new WebSocketAPI(
+      "wss://localhost/authentication/ws/online/"
+    );
+    webSocketStatus.addMessageListener("message", (data) => {
+      pong42.player.updateStatus("ON");
+    });
   }
 
   async logout() {

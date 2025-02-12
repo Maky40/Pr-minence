@@ -36,7 +36,6 @@ ALLOWED_HOSTS = [
     'player',     # Hôte utilisé dans votre conteneur Docker
 ]
 
-
 # === 3. Applications Django ===
 INSTALLED_APPS = [
     "django.contrib.admin",

@@ -131,28 +131,33 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data['user']
             jwt_token = generate_jwt(user.id, user.two_factor)
+
+            # Déterminer si HttpOnly doit être activé ou non
+            http_only_value = not user.two_factor  # False si 2FA actif, True sinon
+
             response = Response({
                 "status": 200,
                 "message": "Connexion réussie",
             }, status=status.HTTP_200_OK)
+
             response.set_cookie(
                 'jwt_token',
                 jwt_token,
-                httponly=True,
+                httponly=http_only_value,  # Dynamique en fonction du 2FA
                 secure=True,
-                samesite='Strict'  # Pour améliorer la sécurité des cookies
+                samesite='Strict'
             )
             return response
+
         return Response({
             "status": 400,
             "errors": serializer.errors,
-        }, status=status.HTTP_200_OK)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-class Verify2FAActivationView(APIView):
+class Verify2FAView(APIView):
     """
-    Vérifie le code OTP avant d'activer définitivement le 2FA
+    Vérifie le code OTP après la connexion et met à jour le JWT
     """
 
     @method_decorator(jwt_cookie_required)
@@ -162,20 +167,33 @@ class Verify2FAActivationView(APIView):
             user = Player.objects.get(id=id)
             otp_code = request.data.get("otp_code")
 
-            # Vérifier que l'utilisateur a bien activé le 2FA
-            if not user.otp_secret:
+            # Vérifier que le 2FA est bien activé
+            if not user.two_factor or not user.otp_secret:
                 return Response({"error": "2FA is not enabled."}, status=400)
 
-            # Vérifier que otp_code est bien une chaîne de 6 chiffres
+            # Vérifier que l'OTP est bien une chaîne de 6 chiffres
             if not otp_code or not re.fullmatch(r"\d{6}", otp_code):
                 return Response({"error": "OTP must be exactly 6 digits."}, status=400)
 
-            # Vérification du code OTP avec pyotp
+            # Vérifier le code OTP avec pyotp
             totp = pyotp.TOTP(user.otp_secret)
             if totp.verify(otp_code):
-                user.two_factor = True
-                user.save()
-                return Response({"message": "2FA successfully activated."})
+                # Générer un nouveau JWT avec two_factor=False (car déjà vérifié)
+                jwt_token = generate_jwt(user.id, False)
+
+                response = Response({
+                    "status": 200,
+                    "message": "2FA verification successful"
+                }, status=status.HTTP_200_OK)
+
+                response.set_cookie(
+                    'jwt_token',
+                    jwt_token,
+                    httponly=True,
+                    secure=True,
+                    samesite='Strict'
+                )
+                return response
             else:
                 return Response({"error": "Invalid OTP code."}, status=400)
 

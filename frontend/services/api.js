@@ -45,12 +45,6 @@ class Api {
       if (url === "/authentication/logout/") {
         return response.ok;
       }
-
-      // Check if response is ok
-      if (!response.ok) {
-        console.error("HTTP error!", response.status);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
       if (response.status === 401) {
         const toast = new Toast(
           "Session expired",
@@ -59,6 +53,17 @@ class Api {
         );
         toast.show();
         changePage("login");
+      }
+      if (response.status === 404) {
+        const toast = new Toast("API error", "Resource not found", "error");
+        toast.show();
+        throw new Error("Resource not found");
+      }
+      // Check if response is ok
+      if (!response.ok) {
+        console.log("Response error:", response);
+        const awaitResponse = await response.json();
+        throw new Error(`${awaitResponse.message}`);
       }
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -72,7 +77,7 @@ class Api {
         throw new Error(`Invalid response type: ${contentType}, body: ${text}`);
       }
     } catch (error) {
-      console.error("Fetch error:", error);
+      console.log("Fetch error:", error.message);
       throw error;
     }
   }
