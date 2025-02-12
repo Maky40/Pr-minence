@@ -17,17 +17,18 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from api import views  
+from api import views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  
+    path('admin/', admin.site.urls),
     path('', views.PlayerInfo.as_view(), name='playerInfoView'),
     path('avatar/', views.PlayerAvatarUpload.as_view(), name='playerAvatarUploadView'),
     path('friendship/', views.PlayerFriendship.as_view(), name='playerFriendshipView'),
     path('2FAChange', views.TwoFactorActivation.as_view(), name='TwoFactorChangeView'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
+    path('search-players/', views.PlayerSearch.as_view(), name='playerSearchView'),
 ]
 
 if settings.DEBUG:

@@ -1,4 +1,5 @@
 import api from "../services/api.js";
+import Toast from "../components/toast.js";
 
 // Liste des amis et historique des messages
 let friends = [
@@ -14,18 +15,6 @@ let friends = [
     messages: [{ text: "Hello", sender: "Bob" }],
     blocked: false,
   },
-];
-const fakePlayersDB = [
-    { name: "Alice" },
-    { name: "Alicia" },
-    { name: "Bob" },
-    { name: "Bobby" },
-    { name: "Charlie" },
-    { name: "Charlotte" },
-    { name: "David" },
-    { name: "Daniel" },
-    { name: "Eve" },
-    { name: "Evelyn" }
 ];
 let currentChatFriend = null;
 
@@ -160,7 +149,7 @@ export function init() {
     console.log("init() called");
 
     // Suppression des anciens boutons pour éviter les duplications
-    ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message", "search-friend", "suggestions-container"].forEach(id => {
+    ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message", "search-friend", "suggestions-container", "requests-list"].forEach(id => {
         const oldButton = document.getElementById(id);
         if (oldButton) {
             oldButton.replaceWith(oldButton.cloneNode(true)); // Remplace l'ancien bouton par un clone sans événements
@@ -176,7 +165,9 @@ export function init() {
     const messageInput = document.getElementById("message-input");
 	const searchFriendInput = document.getElementById("search-friend");
 	const suggestionsContainer = document.getElementById("suggestions-container");
+	const requestsList = document.getElementById('requests-list');
 
+	renderFriendRequests(requestsList)
     // Ajout des nouveaux événements
     if (tournamentButton && privateButton) {
         tournamentButton.addEventListener("click", () => showChat("tournament"));
@@ -234,6 +225,28 @@ export function init() {
 			addFriend(searchFriendInput);
 		}
 	});
+
+	requestsList.addEventListener('click', function(event) {
+        if (event.target.classList.contains("accept-request")) {
+            const friendshipUserID = event.target.getAttribute("data-username");
+            console.log("Accepté : ID =", friendshipUserID);
+            requestFriend(friendshipUserID);
+
+            const card = event.target.closest(".col-md-4");
+            if (card) {
+                card.remove();
+            }
+        }
+        else if (event.target.classList.contains("reject-request")) {
+            const friendshipUserID = event.target.getAttribute("data-username");
+            console.log("Rejeté : ID =", friendshipUserID);
+            deleteFriend(friendshipUserID);
+			const card = event.target.closest(".col-md-4");
+            if (card) {
+                card.remove();
+            }
+        }
+    });
 }
 
 function sendMessage() {
@@ -252,40 +265,62 @@ function sendMessage() {
 async function addFriend(searchFriendInput)
 {
 	const friendName = searchFriendInput.value.trim();
-	console.log("lalala");
 	try {
-		console.log("la");
 		const response_id = await api.apiFetch("/player/?username="+friendName, true, "GET")
 		console.log(response_id);
 		if (response_id.status === 404 || response_id.status === 500){
-			console.log(response_id.message);
+			const toast = new Toast("Error", "L'utilisateur n'existe pas", "error");
+			toast.show();
 			return;
 		}
-		console.log("ici");
-		const request_id = {"target_id": response_id.players[0].id};
-		console.log(request_id);
-		const response_add = await api.apiFetch("/player/friendship/", true, "POST", request_id);
-		console.log(response_add.message);
-		updateFriendsList();
+		requestFriend(response_id.players[0].id);
 	}
 	catch (error) {
 		console.error("Erreur API :", error);
 	};
 }
+
+async function requestFriend(id)
+{
+	const request_id = {"target_id": id};
+	console.log(request_id);
+	const response_add = await api.apiFetch("/player/friendship/", true, "POST", request_id);
+	if (response_add.status !== 200){
+		const toast = new Toast("Error", response_add.message, "error");
+		toast.show();
+		return ;
+	}
+	const toast = new Toast("Success", response_add.message, "success");
+	toast.show();
+	console.log(response_add.status);
+	updateFriendsList();
+}
+
+async function deleteFriend(id)
+{
+	const request_id = {"target_id": id};
+	console.log(request_id);
+	const response_add = await api.apiFetch("/player/friendship/", true, "DELETE", request_id);
+	if (response_add.status !== 200){
+		const toast = new Toast("Error", response_add.message, "error");
+		toast.show();
+		return ;
+	}
+	const toast = new Toast("Success", "Demande d'ajout refusee", "success");
+	toast.show();
+	console.log(response_add.status);
+}
 // fonctions liste deroulante
-function searchFriends(query, suggestionsContainer, searchFriendInput) {
+async function searchFriends(query, suggestionsContainer, searchFriendInput) {
     if (query.length < 3) {
         suggestionsContainer.innerHTML = "";
         suggestionsContainer.style.display = "none";
         return;
     }
-
     // Filtrer les joueurs contenant les lettres saisies
-    const results = fakePlayersDB.filter(player =>
-        player.name.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 5); // Limiter à 5 résultats
-
-    showSuggestions(results, suggestionsContainer, searchFriendInput);
+    const results = await api.apiFetch("/player/search-players/?username="+query, true, "GET");
+	console.log(results);
+	showSuggestions(results, suggestionsContainer, searchFriendInput);
 }
 
 // Fonction pour afficher les suggestions
@@ -297,16 +332,45 @@ function showSuggestions(suggestions, suggestionsContainer, searchFriendInput) {
         return;
     }
 
-    suggestions.forEach(player => {
+    suggestions.players.forEach(players => {
         const item = document.createElement("li");
         item.classList.add("dropdown-item");
-        item.textContent = player.name;
+        item.textContent = players.username;
         item.addEventListener("click", () => {
-            searchFriendInput.value = player.name;
+            searchFriendInput.value = players.username;
             suggestionsContainer.style.display = "none";
         });
         suggestionsContainer.appendChild(item);
     });
 
     suggestionsContainer.style.display = "block";
+}
+
+async function renderFriendRequests(requestsList) {
+	requestsList.innerHTML = ''; // Clear existing requests
+	try {
+		const responseFriendRequests = await api.apiFetch("/player/friendship/?target=invites", true, "GET");
+		console.log(responseFriendRequests);
+		if (responseFriendRequests.friendships.length > 0){
+			responseFriendRequests.friendships.forEach(friendships => {
+				const requestCard = `
+					<div class="col-md-4 mb-3">
+						<div class="card">
+						<div class="card-body">
+							<h5 class="card-title">${friendships.username}</h5>
+							<div style="display: flex; flex-direction: column; gap: 8px;">
+							<button class="btn btn-success btn-sm accept-request" data-username="${friendships.id}" style="width: 100%;">Accepter</button>
+							<button class="btn btn-danger btn-sm reject-request" data-username="${friendships.id}" style="width: 100%;">Refuser</button>
+							</div>
+						</div>
+						</div>
+					</div>
+				`;
+				requestsList.innerHTML += requestCard;
+			});
+		}
+	}
+	catch (error) {
+		console.error("Erreur API :", error);
+	};
 }

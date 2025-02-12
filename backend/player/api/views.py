@@ -21,6 +21,32 @@ from django.db.models import Q
 from PIL import Image
 
 
+class PlayerSearch(APIView):
+    @method_decorator(jwt_cookie_required)
+    def get(self, request):
+        try:
+            search_query = request.query_params.get('username', '').strip()
+            current_user_id = request.decoded_token['id']
+
+            # Combine le filtre de recherche et l'exclusion dans une seule requête SQL
+            players = Player.objects.filter(
+                username__icontains=search_query
+            ).exclude(
+                id=current_user_id
+            ).order_by('username')[:5]  # Limite à 5 résultats directement dans la requête
+
+            serializer = PlayerInfoSerializer(players, many=True)
+
+            return Response({
+                "status": 200,
+                "players": serializer.data,
+                "message": f"{len(serializer.data)} joueurs trouvés."
+            })
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": str(e)
+            }, status=500)
 
 class PlayerInfo(APIView):
 

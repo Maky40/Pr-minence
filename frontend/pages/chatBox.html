@@ -32,14 +32,22 @@
                             <!-- Historique des messages -->
                         </div>
                         <div class="chat-input-container">
-                            <input type="text" class="message-input" id="message-input"
-                                placeholder="Envoyer un message...">
-                            <button id="send-message" class="btn btn-primary">Envoyer</button>
-                        </div>
+							<input type="text" class="message-input form-control flex-grow-1" id="message-input" placeholder="Envoyer un message...">
+							<button id="send-message" class="btn btn-primary">Envoyer</button>
+						</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+	 <!-- Conteneur demande d'amis -->
+	<!-- Add this div inside the existing container, after the chat-container -->
+	<div id="friend-requests" class="mt-5">
+		<h3 class="text-center mb-3">📬 Vos demandes d'ajout</h3>
+		<div class="row" id="requests-list">
+			<!-- Friend requests will be dynamically populated here -->
+		</div>
+	</div>
 </div>
 <link rel="stylesheet" href="../styles/pages/chatBox.css">
