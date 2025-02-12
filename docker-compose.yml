@@ -65,6 +65,24 @@ services:
       - app_network
     restart: always
 
+  chat:
+    build:
+      context: ./backend/chat
+    container_name: chat
+    volumes:
+      - ./backend/chat:/usr/src/app # Volume pour la synchronisation des fichiers
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=api.settings # Variable d'environnement explicite
+    ports:
+      - "8002:8002"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    restart: always
+
   pong:
     build:
       context: ./backend/pong
