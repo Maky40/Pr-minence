@@ -18,7 +18,7 @@ let friends = [
 ];
 let currentChatFriend = null;
 
-function showChat(chatType) {
+function showChat(chatType, friendsList) {
   const chatContainer = document.getElementById("chat-container");
   const privateChatContainer = document.getElementById(
     "private-chat-container"
@@ -37,16 +37,11 @@ function showChat(chatType) {
   } else {
     privateChatContainer.style.display = "block";
     chatBox.innerHTML = "";
-    updateFriendsList();
+    updateFriendsList(friendsList);
   }
 }
 
-function updateFriendsList() {
-    const friendsList = document.getElementById("friends-list");
-    if (!friendsList) {
-        console.error("Friends list element not found");
-        return;
-    }
+function updateFriendsList(friendsList) {
 
     friendsList.innerHTML = ""; // On réinitialise la liste pour éviter les doublons
 	Promise.all([
@@ -74,7 +69,7 @@ function updateFriendsList() {
     });
 
     // événement pour le chat
-    friendItem.addEventListener("click", () => openPrivateChat(friend));
+    // friendItem.addEventListener("click", () => openPrivateChat(friend));
 }
 
 function friend_list(friendsList, data, api) {
@@ -82,27 +77,27 @@ function friend_list(friendsList, data, api) {
 	if (!data.friendships || data.friendships.length === 0) {
 		return;
 	}
+	friendsList.innerHTML = ''; // Clear existing friends list
+
 	data.friendships.forEach(friend => {
-	const friendItem = document.createElement("li");
-	friendItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center");
+		// Déterminer le statut de l'ami (en ligne ou hors ligne)
+		const isOnline = friend.status !== "OF";  // En ligne si status n'est pas "OF"
 
-	const friendName = document.createElement("span");
-	friendName.classList.add("friend-name");
-	friendName.textContent = friend.username;
+		// Créer l'élément HTML sous forme de chaîne
+		const friendItem = `
+			<li class="list-group-item d-flex justify-content-between align-items-center">
+				<span class="friend-name" data-username="${friend.id}">${friend.username}</span>
+				<span class="badge ${api === "requests" ? "bg-secondary" : (isOnline ? "bg-success" : "bg-danger")}">
+					${api === "requests" ? "Pending" : (isOnline ? "En ligne" : "Hors ligne")}
+				</span>
+			</li>
+		`;
 
-	const onlineStatus = document.createElement("span");
-	if (api === "requests"){
-		onlineStatus.classList.add("badge", "bg-secondary");
-		onlineStatus.textContent = "Pending"; }
-	else {
-		onlineStatus.classList.add("badge", friend.online ? "bg-success" : "bg-danger");
-        onlineStatus.textContent = friend.online ? "En ligne" : "Hors ligne";
-	}
-	friendItem.appendChild(friendName);
-	friendItem.appendChild(onlineStatus);
-	friendsList.appendChild(friendItem);
+		// Ajouter l'élément HTML à la liste
+		friendsList.innerHTML += friendItem;
 	});
 }
+
 function openPrivateChat(friend) {
   const chatFriendName = document.getElementById("chat-friend-name");
   const blockFriendButton = document.getElementById("block-friend");
@@ -147,9 +142,10 @@ function displayChatHistory(friend) {
 
 export function init() {
     console.log("init() called");
-
+	let socketActivate = {};
     // Suppression des anciens boutons pour éviter les duplications
-    ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message", "search-friend", "suggestions-container", "requests-list"].forEach(id => {
+    ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message", "search-friend", "suggestions-container", "requests-list", "friends-list"
+	].forEach(id => {
         const oldButton = document.getElementById(id);
         if (oldButton) {
             oldButton.replaceWith(oldButton.cloneNode(true)); // Remplace l'ancien bouton par un clone sans événements
@@ -166,12 +162,13 @@ export function init() {
 	const searchFriendInput = document.getElementById("search-friend");
 	const suggestionsContainer = document.getElementById("suggestions-container");
 	const requestsList = document.getElementById('requests-list');
+	const friendsList = document.getElementById('friends-list');
 
 	renderFriendRequests(requestsList)
     // Ajout des nouveaux événements
     if (tournamentButton && privateButton) {
-        tournamentButton.addEventListener("click", () => showChat("tournament"));
-        privateButton.addEventListener("click", () => showChat("private"));
+        tournamentButton.addEventListener("click", () => showChat("tournament", friendsList));
+        privateButton.addEventListener("click", () => showChat("private", friendsList));
     }
 
     blockFriendButton.addEventListener("click", () => {
@@ -216,13 +213,13 @@ export function init() {
 	});
 
 	// ajout ami via bouton ajouter un ami
-	addFriendButton.addEventListener("click", () => addFriend(searchFriendInput));
+	addFriendButton.addEventListener("click", () => addFriend(searchFriendInput, friendsList));
 
 	// ajout ami en appuyant sur entrer dans la barre de recherche d'ami
 	document.addEventListener("keydown", (event) => {
 		if (event.key == "Enter"){
 			console.log("searchfriendinput = " + searchFriendInput);
-			addFriend(searchFriendInput);
+			addFriend(searchFriendInput, friendsList);
 		}
 	});
 
@@ -230,7 +227,7 @@ export function init() {
         if (event.target.classList.contains("accept-request")) {
             const friendshipUserID = event.target.getAttribute("data-username");
             console.log("Accepté : ID =", friendshipUserID);
-            requestFriend(friendshipUserID);
+            requestFriend(friendshipUserID, friendsList);
 
             const card = event.target.closest(".col-md-4");
             if (card) {
@@ -247,6 +244,47 @@ export function init() {
             }
         }
     });
+	friendsList.addEventListener("click", function(event) {
+		// Vérifie si l'élément cliqué a la classe "friend-name"
+		if (event.target.classList.contains("friend-name")) {
+			const otherUserId = event.target.dataset.username; // Récupération de l'ID
+			try {
+
+				// Création d'une nouvelle connexion WebSocket
+				const socket = new WebSocket(`wss://localhost/chat/ws/chat/${otherUserId}/`);
+				socketId = otherUserId;
+				socket.onopen = function(event) {
+					console.log("Connexion WebSocket ouverte");
+				};
+
+				socket.onmessage = function(event) {
+					const data = JSON.parse(event.data);
+					const message = data.message;
+
+					// Affichage du message dans l'interface utilisateur
+					const messageContainer = document.getElementById("chat-box");
+					const newMessage = document.createElement("div");
+					newMessage.textContent = message;
+					newMessage.style.color = "black";
+					messageContainer.appendChild(newMessage);
+				};
+
+				socket.onclose = function(event) {
+					console.log("Connexion WebSocket fermée");
+				};
+
+
+				// Envoi de message
+				document.getElementById("send-message").addEventListener("click", function() {
+					const message = document.getElementById("message-input").value;
+					socket.send(JSON.stringify({ "message": message }));
+				});
+			} catch (error) {
+				console.error("Erreur :", error);
+			}
+		}
+	});
+
 }
 
 function sendMessage() {
@@ -262,7 +300,7 @@ function sendMessage() {
     }
 }
 
-async function addFriend(searchFriendInput)
+async function addFriend(searchFriendInput, friendsList)
 {
 	const friendName = searchFriendInput.value.trim();
 	try {
@@ -273,14 +311,14 @@ async function addFriend(searchFriendInput)
 			toast.show();
 			return;
 		}
-		requestFriend(response_id.players[0].id);
+		requestFriend(response_id.players[0].id, friendsList);
 	}
 	catch (error) {
 		console.error("Erreur API :", error);
 	};
 }
 
-async function requestFriend(id)
+async function requestFriend(id, friendsList)
 {
 	const request_id = {"target_id": id};
 	console.log(request_id);
@@ -293,7 +331,7 @@ async function requestFriend(id)
 	const toast = new Toast("Success", response_add.message, "success");
 	toast.show();
 	console.log(response_add.status);
-	updateFriendsList();
+	updateFriendsList(friendsList);
 }
 
 async function deleteFriend(id)
