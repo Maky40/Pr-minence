@@ -3,6 +3,7 @@ import { GameMovement } from "./GameMovement.js";
 import { GAME_CONFIG } from "./gameConfig.js";
 import pong42 from "../../services/pong42.js";
 import GameRenderer from "./GameRenderer.js";
+
 class GameComponent extends Component {
   constructor() {
     super();
@@ -18,36 +19,52 @@ class GameComponent extends Component {
       score2: 0,
     };
 
+    // Initialiser state avant de configurer l'audio
+    this.state = {
+      countdown: 5,
+      isGameStarted: false,
+    };
+
     this.gameObjects = this.initializeGameObjects();
     this.webSocket = pong42.player.socketMatch;
     this.movement = new GameMovement(this.gameObjects, this.gameConfig);
     this.renderer = null;
     this.animationFrameId = null;
+
     this.countdownAudio = new Audio("/assets/start.mp3");
-    this.isGameStarted = false;
-    this.state = {
-      countdown: 3,
-      isGameStarted: false,
-    };
+    this.themeAudio = new Audio("/assets/theme.mp3");
+    this.isMuted = false;
+    this.isCountdownStarted = false;
   }
 
   startCountdown() {
-    let count = 3;
-    const countInterval = setInterval(() => {
-      count--;
-      if (count >= 0 && !this.state.isGameStarted) {
-        this.state.countdown = count;
-        this.countdownAudio.play();
-        this.update(); // Use update instead of setState
-      }
+    if (!this.state.isGameStarted && !this.isCountdownStarted) {
+      this.isCountdownStarted = true;
+      this.countdownAudio.play();
 
-      if (count <= 0 && !this.state.isGameStarted) {
-        clearInterval(countInterval);
-        this.state.isGameStarted = true;
-        this.update(); // Use update instead of setState
-        this.gameLoop();
-      }
-    }, 1000);
+      const updateCountdown = () => {
+        const timeLeft = Math.ceil(
+          this.countdownAudio.duration - this.countdownAudio.currentTime
+        );
+        if (timeLeft !== this.state.countdown) {
+          this.state.countdown = timeLeft;
+          this.update();
+        }
+
+        if (timeLeft <= 0) {
+          this.state.isGameStarted = true;
+          this.update();
+          this.gameLoop();
+          this.themeAudio.play();
+          this.countdownAudio.removeEventListener(
+            "timeupdate",
+            updateCountdown
+          );
+        }
+      };
+
+      this.countdownAudio.addEventListener("timeupdate", updateCountdown);
+    }
   }
 
   initializeGameObjects() {
@@ -137,9 +154,35 @@ class GameComponent extends Component {
         this.gameState.keys[event.key] = false;
       }
     });
+
+    const btnLeaveGame = document.getElementById("btnLeaveGame");
+    if (btnLeaveGame) {
+      btnLeaveGame.addEventListener("click", () => {
+        window.location.href = "#game";
+      });
+    }
+
+    const btnSilence = document.getElementById("btnSilence");
+    if (btnSilence) {
+      btnSilence.addEventListener("click", () => {
+        this.isMuted = !this.isMuted;
+        this.themeAudio.muted = this.isMuted;
+        this.countdownAudio.muted = this.isMuted;
+
+        // Mettre à jour l'icône
+        btnSilence.innerHTML = this.isMuted
+          ? '<i class="fas fa-volume-mute"></i>'
+          : '<i class="fas fa-volume-up"></i>';
+
+        console.log("Sound is now", this.isMuted ? "muted" : "unmuted");
+      });
+    }
   }
 
   gameLoop = () => {
+    if (this.themeAudio) {
+      this.themeAudio.muted = this.isMuted; // Appliquer l'état du son
+    }
     this.movement.updatePaddlePosition(
       this.gameState.keys,
       pong42.player.paddle,
@@ -174,29 +217,90 @@ class GameComponent extends Component {
     }
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
+
+    // Stop audio when component is destroyed
+    if (this.themeAudio) {
+      this.themeAudio.pause();
+      this.themeAudio.currentTime = 0;
+    }
+    if (this.countdownAudio) {
+      this.countdownAudio.pause();
+      this.countdownAudio.currentTime = 0;
+    }
   }
 
   template() {
-    if (!this.isGameStarted) {
+    if (!this.state.isGameStarted) {
       return `
-        <div class="game-container">
-          <div class="countdown-overlay">
-            <div class="countdown">${this.state.countdown}</div>
+        <div class="game-container position-relative">
+          <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" id="gameOverlay"
+               style="background: rgba(0, 0, 0, 0.85); z-index: 1000;">
+            <div class="text-center">
+              <h2 class="text-warning mb-4 display-4 fw-bold">GET READY!</h2>
+              <div class="countdown-box border border-4 border-warning rounded-circle bg-dark 
+                          d-flex justify-content-center align-items-center mx-auto"
+                   style="width: 150px; height: 150px;">
+                <span class="display-1 text-warning fw-bold" 
+                      style="animation: bounce 0.5s infinite;">
+                  ${this.state.countdown}
+                </span>
+              </div>
+              <div class="mt-4">
+                <p class="text-warning mb-2">Controls:</p>
+                <div class="d-flex justify-content-center gap-4">
+                  <div class="text-white">
+                    <span class="badge bg-warning text-dark">W</span> Up
+                  </div>
+                  <div class="text-white">
+                    <span class="badge bg-warning text-dark">S</span> Down
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <canvas id="gameCanvas" width="${this.gameConfig.WIDTH}" height="${this.gameConfig.HEIGHT}"></canvas>
+          <canvas id="gameCanvas" 
+                  width="${this.gameConfig.WIDTH}" 
+                  height="${this.gameConfig.HEIGHT}"
+                  class="shadow-lg">
+          </canvas>
         </div>
       `;
     }
 
     return `
-      <div class="game-container">
-        <canvas id="gameCanvas" width="${this.gameConfig.WIDTH}" height="${this.gameConfig.HEIGHT}"></canvas>
+      <div class="game-container position-relative">
+        <canvas id="gameCanvas" 
+                width="${this.gameConfig.WIDTH}" 
+                height="${this.gameConfig.HEIGHT}"
+                class="shadow-lg">
+        </canvas>
+        
+        <!-- Controls overlay -->
+        <div class="position-absolute top-0 end-0 mt-3 me-3">
+          <div class="bg-dark bg-opacity-75 p-3 rounded">
+            <div class="d-flex flex-column gap-3">
+              <!-- Controls -->
+              <div class="text-white text-center">
+                <div><span class="badge bg-warning text-dark">W</span> Up</div>
+                <div class="mt-1"><span class="badge bg-warning text-dark">S</span> Down</div>
+              </div>
+              
+              <!-- Sound toggle -->
+              <button class="btn btn-warning w-100" id="btnSilence">
+                <i class="fas fa-volume-up"></i>
+              </button>
+          <button class="btn btn-danger" id="btnLeaveGame">
+            <i class="fas fa-door-open me-2"></i>Quitter
+          </button>
+          </div>
+        </div>
       </div>
     `;
   }
 
   afterRender() {
     this.init();
+    this.setupEventListeners(); // Ensure event listeners are set up after rendering
   }
 }
 
