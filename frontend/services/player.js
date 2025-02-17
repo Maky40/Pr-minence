@@ -16,6 +16,9 @@ class Player extends EventEmitter {
     this.losses = 0;
     this.two_factor = false;
     this.status = "OF";
+    this.match_id = null;
+    this.paddle = null;
+    this.socketMatch = null;
     this.from_42 = false;
     this.friends = [];
   }

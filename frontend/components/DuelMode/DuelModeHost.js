@@ -20,6 +20,9 @@ class DuelModeHost extends Component {
       if (!this.state.matchId) {
         const message = JSON.parse(data);
         const { match_id, paddle } = message;
+        pong42.player.match_id = match_id;
+        pong42.player.paddle = paddle;
+        pong42.player.socketMatch = webSocketMatch;
         this.setState({
           matchId: match_id,
           paddle: paddle,

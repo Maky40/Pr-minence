@@ -1,10 +1,13 @@
 import Component from "../../utils/Component.js";
+import WebSocketAPI from "../../services/websocket.js";
+import pong42 from "../../services/pong42.js";
+import GameRenderer from "./GameRenderer.js";
 
 class GameComponent extends Component {
   constructor() {
     super();
-    this.ws = null;  // WebSocket
-    this.matchId = null;
+    this.ws = null;
+    this.renderer = null;
     this.gameConfig = {
       WIDTH: 800,
       HEIGHT: 600,
@@ -21,52 +24,74 @@ class GameComponent extends Component {
       ballSpeedY: 4,
     };
     this.gameObjects = null;
-    this.ctx = null;
+    this.moveManager = null;
   }
 
   initializeGameObjects() {
-    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } = this.gameConfig;
+    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
+      this.gameConfig;
 
     this.gameObjects = {
-      paddle1: { x: 10, y: HEIGHT / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT },
-      paddle2: { x: WIDTH - PADDLE_WIDTH - 10, y: HEIGHT / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT },
-      ball: { x: WIDTH / 2 - BALL_SIZE / 2, y: HEIGHT / 2 - BALL_SIZE / 2, size: BALL_SIZE },
+      paddle1: {
+        x: 10,
+        y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+      },
+      paddle2: {
+        x: WIDTH - PADDLE_WIDTH - 10,
+        y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
+        width: PADDLE_WIDTH,
+        height: PADDLE_HEIGHT,
+      },
+      ball: {
+        x: WIDTH / 2 - BALL_SIZE / 2,
+        y: HEIGHT / 2 - BALL_SIZE / 2,
+        size: BALL_SIZE,
+      },
     };
   }
 
-  setupWebSocket(matchId) {
-    this.matchId = matchId;
-    let wsUrl = `ws://localhost:8000/ws/pong/${matchId}/`;
+  setupWebSocket() {
+    // Use the existing socket connection from pong42.player
+    const webSocket = pong42.player.socketMatch;
 
-    this.ws = new WebSocket(wsUrl);
+    webSocket.addMessageListener("open", () => {
+      console.log("Connexion WebSocket ouverte");
+    });
 
-    this.ws.onopen = () => {
-      console.log("Connexion WebSocket établie");
-    };
+    webSocket.addMessageListener("message", (data) => {
+      const message = JSON.parse(data);
 
-    this.ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "match_start") {
-        console.log("Match prêt ! Début du jeu.");
+      switch (message.type) {
+        case "match_start":
+          console.log("Match prêt ! Début du jeu.");
+          break;
+        case "move":
+          if (message.player === "left") {
+            this.gameObjects.paddle1.y = message.position;
+          }
+          if (message.player === "right") {
+            this.gameObjects.paddle2.y = message.position;
+          }
+          break;
+        case "score":
+          this.gameState.score1 = message.score1;
+          this.gameState.score2 = message.score2;
+          break;
+        case "ball":
+          this.gameObjects.ball.x = message.x;
+          this.gameObjects.ball.y = message.y;
+          break;
       }
-      if (data.type === "move") {
-        if (data.player === "left") this.gameObjects.paddle1.y = data.position;
-        if (data.player === "right") this.gameObjects.paddle2.y = data.position;
-      }
-      if (data.type === "score") {
-        this.gameState.score1 = data.score1;
-        this.gameState.score2 = data.score2;
-      }
-      if (data.type === "ball") {
-        this.gameObjects.ball.x = data.x;
-        this.gameObjects.ball.y = data.y;
-      }
-    };
+    });
 
-    this.ws.onclose = () => {
+    webSocket.addMessageListener("close", () => {
       console.log("Connexion WebSocket fermée");
-    };
+    });
+
+    // Store the WebSocket reference
+    this.ws = webSocket;
   }
 
   sendMove(player, position) {
@@ -87,91 +112,39 @@ class GameComponent extends Component {
     }
   }
 
-  movePaddles() {
-    const { PADDLE_SPEED } = this.gameConfig;
-    const { paddle1, paddle2 } = this.gameObjects;
-    const { keys } = this.gameState;
-
-    if (keys.w && paddle1.y > 0) {
-      paddle1.y -= PADDLE_SPEED;
-      this.sendMove("left", paddle1.y);
-    }
-    if (keys.s && paddle1.y < this.gameConfig.HEIGHT - paddle1.height) {
-      paddle1.y += PADDLE_SPEED;
-      this.sendMove("left", paddle1.y);
-    }
-    if (keys.ArrowUp && paddle2.y > 0) {
-      paddle2.y -= PADDLE_SPEED;
-      this.sendMove("right", paddle2.y);
-    }
-    if (keys.ArrowDown && paddle2.y < this.gameConfig.HEIGHT - paddle2.height) {
-      paddle2.y += PADDLE_SPEED;
-      this.sendMove("right", paddle2.y);
-    }
-  }
-
-  moveBall() {
-    const { ball } = this.gameObjects;
-    ball.x += this.gameState.ballSpeedX;
-    ball.y += this.gameState.ballSpeedY;
-    this.sendBallPosition(ball.x, ball.y);
-  }
-
   setupEventListeners() {
     document.addEventListener("keydown", (event) => {
-      if (event.key in this.gameState.keys) this.gameState.keys[event.key] = true;
+      if (event.key in this.gameState.keys)
+        this.gameState.keys[event.key] = true;
     });
 
     document.addEventListener("keyup", (event) => {
-      if (event.key in this.gameState.keys) this.gameState.keys[event.key] = false;
+      if (event.key in this.gameState.keys)
+        this.gameState.keys[event.key] = false;
     });
   }
-
-  draw() {
-    const { ctx } = this;
-    const { WIDTH, HEIGHT } = this.gameConfig;
-    const { paddle1, paddle2, ball } = this.gameObjects;
-    const { score1, score2 } = this.gameState;
-
-    // Clear canvas
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-    // Draw game objects
-    ctx.fillStyle = "white";
-    ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
-    ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
-    ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
-
-    // Draw center line
-    ctx.beginPath();
-    ctx.setLineDash([10, 15]);
-    ctx.moveTo(WIDTH / 2, 0);
-    ctx.lineTo(WIDTH / 2, HEIGHT);
-    ctx.strokeStyle = "white";
-    ctx.stroke();
-
-    // Draw scores
-    ctx.font = "36px Arial";
-    ctx.fillText(score1, WIDTH / 4, 50);
-    ctx.fillText(score2, (WIDTH / 4) * 3, 50);
-  }
-
-  gameLoop = () => {
-    this.movePaddles();
-    this.moveBall();
-    this.draw();
-    requestAnimationFrame(this.gameLoop);
-  };
-
-  init(matchId) {
-    this.setupWebSocket(matchId);
+  init() {
+    if (!pong42.player.match_id) {
+      changePage("home");
+    }
+    if (!pong42.player.socketMatch) {
+      changePage("home");
+    }
     const canvas = document.getElementById("gameCanvas");
-    this.ctx = canvas.getContext("2d");
+    this.renderer = new GameRenderer(canvas, this.gameConfig);
+    this.moveManager = new GameMove(this.gameConfig);
+    this.setupWebSocket();
     this.initializeGameObjects();
     this.setupEventListeners();
     this.gameLoop();
   }
+
+  gameLoop = () => {
+    this.moveManager.movePaddles(this.gameObjects, this.gameState);
+    this.moveManager.moveBall(this.gameObjects, this.gameState);
+    this.renderer.draw(this.gameObjects, this.gameState);
+    requestAnimationFrame(this.gameLoop);
+  };
 
   template() {
     return `
@@ -188,4 +161,3 @@ class GameComponent extends Component {
 }
 
 export default GameComponent;
-

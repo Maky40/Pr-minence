@@ -1,5 +1,7 @@
 import Component from "../../utils/Component.js";
 import WebSocketAPI from "../../services/websocket.js";
+import pong42 from "../../services/pong42.js";
+import { changePage } from "../../utils/Page.js";
 
 class DuelModeGuest extends Component {
   constructor(matchId) {
@@ -10,28 +12,110 @@ class DuelModeGuest extends Component {
       loading: false,
       error: null,
       waitingGuest: false,
+      isConnected: false,
     };
+    this.webSocketMatch = null;
   }
   async joinMatch() {
-    const webSocketMatch = new WebSocketAPI(
+    if (this.state.isConnected) return;
+    if (this.webSocketMatch) {
+      this.webSocketMatch.close();
+    }
+    this.setState({ loading: true, isConnected: true });
+    this.webSocketMatch = new WebSocketAPI(
       "wss://localhost/pong/ws/pong/" + this.state.matchId + "/"
     );
-    webSocketMatch.addMessageListener("message", (data) => {
-      const message = JSON.parse(data);
-      const { match_id, paddle } = message;
-      this.setState({
-        matchId: match_id,
-        paddle: paddle,
-        waitingGuest: true,
-      });
+
+    // Gestion des erreurs de connexion
+    this.webSocketMatch.addMessageListener("open", () => {
+      console.log("WebSocket connection established");
+      this.setState({ loading: true, isConnected: true });
     });
+
+    this.webSocketMatch.addMessageListener("error", () => {
+      this.setState({
+        error: "Une erreur de connexion est survenue",
+        loading: false,
+      });
+      this.webSocketMatch.close(); // Fermer la connexion en cas d'erreur
+      this.webSocketMatch = null;
+      this.render();
+      setTimeout(() => {
+        window.location.href = "#game";
+      }, 2000); // Rediriger après 2 secondes
+    });
+
+    this.webSocketMatch.addMessageListener("close", () => {
+      this.setState({
+        error: "La connexion au match a été perdue",
+        loading: false,
+        waitingGuest: false,
+      });
+      this.webSocketMatch = null;
+      setTimeout(() => {
+        window.location.href = "#game";
+      }, 2000); // Rediriger après 2 secondes
+    });
+
+    this.webSocketMatch.addMessageListener("message", (data) => {
+      try {
+        const message = JSON.parse(data);
+
+        // Vérifier si le message contient une erreur
+        if (message.error) {
+          this.setState({
+            error: message.error,
+            loading: false,
+          });
+          return;
+        }
+
+        // Traitement du message normal
+        const { match_id, paddle } = message;
+        pong42.player.match_id = match_id;
+        pong42.player.paddle = paddle;
+        pong42.player.socketMatch = webSocketMatch;
+
+        this.setState({
+          matchId: match_id,
+          paddle: paddle,
+          waitingGuest: true,
+          error: null,
+          loading: false,
+        });
+      } catch (error) {
+        console.error("Error parsing message:", error);
+        this.setState({
+          error: "Erreur lors du traitement des données",
+          loading: false,
+        });
+        this.render();
+      }
+    });
+  }
+  destroy() {
+    if (this.webSocketMatch) {
+      this.webSocketMatch.close();
+      this.webSocketMatch = null;
+    }
   }
 
   afterRender() {
-    if (this.state.matchId) this.joinMatch();
+    if (this.state.matchId && !this.state.isConnected) this.joinMatch();
   }
 
   template() {
+    if (this.state.error) {
+      return `
+            <div class="container mt-5">
+                <div class="d-flex flex-column align-items-center justify-content-center">
+                    <h3 class="text-danger mb-4">Erreur</h3>
+                    <p class="text-danger">${this.state.error}</p>
+                    <button class="btn btn-primary mt-3" onclick="changePage('#home')">Retour à l'accueil</button>
+                </div>
+            </div>
+            `;
+    }
     if (!this.state.matchId) {
       return `
             <div class="container mt-5">
