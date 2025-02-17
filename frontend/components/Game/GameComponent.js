@@ -3,6 +3,8 @@ import Component from "../../utils/Component.js";
 class GameComponent extends Component {
   constructor() {
     super();
+    this.ws = null;  // WebSocket
+    this.matchId = null;
     this.gameConfig = {
       WIDTH: 800,
       HEIGHT: 600,
@@ -23,39 +25,66 @@ class GameComponent extends Component {
   }
 
   initializeGameObjects() {
-    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
-      this.gameConfig;
+    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } = this.gameConfig;
 
     this.gameObjects = {
-      paddle1: {
-        x: 10,
-        y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT,
-      },
-      paddle2: {
-        x: WIDTH - PADDLE_WIDTH - 10,
-        y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT,
-      },
-      ball: {
-        x: WIDTH / 2 - BALL_SIZE / 2,
-        y: HEIGHT / 2 - BALL_SIZE / 2,
-        size: BALL_SIZE,
-      },
+      paddle1: { x: 10, y: HEIGHT / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT },
+      paddle2: { x: WIDTH - PADDLE_WIDTH - 10, y: HEIGHT / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT },
+      ball: { x: WIDTH / 2 - BALL_SIZE / 2, y: HEIGHT / 2 - BALL_SIZE / 2, size: BALL_SIZE },
     };
   }
 
-  setupEventListeners() {
-    document.addEventListener("keydown", (event) => {
-      if (event.key in this.gameState.keys)
-        this.gameState.keys[event.key] = true;
-    });
-    document.addEventListener("keyup", (event) => {
-      if (event.key in this.gameState.keys)
-        this.gameState.keys[event.key] = false;
-    });
+  setupWebSocket(matchId) {
+    this.matchId = matchId;
+    let wsUrl = `ws://localhost:8000/ws/pong/${matchId}/`;
+
+    this.ws = new WebSocket(wsUrl);
+
+    this.ws.onopen = () => {
+      console.log("Connexion WebSocket établie");
+    };
+
+    this.ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === "match_start") {
+        console.log("Match prêt ! Début du jeu.");
+      }
+      if (data.type === "move") {
+        if (data.player === "left") this.gameObjects.paddle1.y = data.position;
+        if (data.player === "right") this.gameObjects.paddle2.y = data.position;
+      }
+      if (data.type === "score") {
+        this.gameState.score1 = data.score1;
+        this.gameState.score2 = data.score2;
+      }
+      if (data.type === "ball") {
+        this.gameObjects.ball.x = data.x;
+        this.gameObjects.ball.y = data.y;
+      }
+    };
+
+    this.ws.onclose = () => {
+      console.log("Connexion WebSocket fermée");
+    };
+  }
+
+  sendMove(player, position) {
+    if (this.ws) {
+      this.ws.send(JSON.stringify({ type: "move", player, position }));
+    }
+  }
+
+  sendBallPosition(x, y) {
+    if (this.ws) {
+      this.ws.send(JSON.stringify({ type: "ball", x, y }));
+    }
+  }
+
+  sendScore(score1, score2) {
+    if (this.ws) {
+      this.ws.send(JSON.stringify({ type: "score", score1, score2 }));
+    }
   }
 
   movePaddles() {
@@ -63,67 +92,39 @@ class GameComponent extends Component {
     const { paddle1, paddle2 } = this.gameObjects;
     const { keys } = this.gameState;
 
-    if (keys.w && paddle1.y > 0) paddle1.y -= PADDLE_SPEED;
-    if (keys.s && paddle1.y < this.gameConfig.HEIGHT - paddle1.height)
+    if (keys.w && paddle1.y > 0) {
+      paddle1.y -= PADDLE_SPEED;
+      this.sendMove("left", paddle1.y);
+    }
+    if (keys.s && paddle1.y < this.gameConfig.HEIGHT - paddle1.height) {
       paddle1.y += PADDLE_SPEED;
-    if (keys.ArrowUp && paddle2.y > 0) paddle2.y -= PADDLE_SPEED;
-    if (keys.ArrowDown && paddle2.y < this.gameConfig.HEIGHT - paddle2.height)
+      this.sendMove("left", paddle1.y);
+    }
+    if (keys.ArrowUp && paddle2.y > 0) {
+      paddle2.y -= PADDLE_SPEED;
+      this.sendMove("right", paddle2.y);
+    }
+    if (keys.ArrowDown && paddle2.y < this.gameConfig.HEIGHT - paddle2.height) {
       paddle2.y += PADDLE_SPEED;
+      this.sendMove("right", paddle2.y);
+    }
   }
 
   moveBall() {
     const { ball } = this.gameObjects;
-    const { WIDTH, HEIGHT } = this.gameConfig;
-
     ball.x += this.gameState.ballSpeedX;
     ball.y += this.gameState.ballSpeedY;
-
-    this.checkCollisions();
-    this.checkScoring();
+    this.sendBallPosition(ball.x, ball.y);
   }
 
-  checkCollisions() {
-    const { ball, paddle1, paddle2 } = this.gameObjects;
+  setupEventListeners() {
+    document.addEventListener("keydown", (event) => {
+      if (event.key in this.gameState.keys) this.gameState.keys[event.key] = true;
+    });
 
-    // Bounce off walls
-    if (ball.y <= 0 || ball.y + ball.size >= this.gameConfig.HEIGHT) {
-      this.gameState.ballSpeedY = -this.gameState.ballSpeedY;
-    }
-
-    // Paddle collisions
-    if (
-      (ball.x <= paddle1.x + paddle1.width &&
-        ball.y + ball.size >= paddle1.y &&
-        ball.y <= paddle1.y + paddle1.height) ||
-      (ball.x + ball.size >= paddle2.x &&
-        ball.y + ball.size >= paddle2.y &&
-        ball.y <= paddle2.y + paddle2.height)
-    ) {
-      this.gameState.ballSpeedX = -this.gameState.ballSpeedX;
-    }
-  }
-
-  checkScoring() {
-    const { ball } = this.gameObjects;
-    const { WIDTH } = this.gameConfig;
-
-    if (ball.x < 0) {
-      this.gameState.score2++;
-      this.resetBall();
-    }
-    if (ball.x > WIDTH) {
-      this.gameState.score1++;
-      this.resetBall();
-    }
-  }
-
-  resetBall() {
-    const { WIDTH, HEIGHT, BALL_SIZE } = this.gameConfig;
-    const { ball } = this.gameObjects;
-
-    ball.x = WIDTH / 2 - BALL_SIZE / 2;
-    ball.y = HEIGHT / 2 - BALL_SIZE / 2;
-    this.gameState.ballSpeedX = -this.gameState.ballSpeedX;
+    document.addEventListener("keyup", (event) => {
+      if (event.key in this.gameState.keys) this.gameState.keys[event.key] = false;
+    });
   }
 
   draw() {
@@ -163,13 +164,9 @@ class GameComponent extends Component {
     requestAnimationFrame(this.gameLoop);
   };
 
-  init() {
+  init(matchId) {
+    this.setupWebSocket(matchId);
     const canvas = document.getElementById("gameCanvas");
-    if (!canvas) {
-      console.error("Canvas non trouvé");
-      return;
-    }
-
     this.ctx = canvas.getContext("2d");
     this.initializeGameObjects();
     this.setupEventListeners();
@@ -178,16 +175,17 @@ class GameComponent extends Component {
 
   template() {
     return `
-            <section id="game" class="container mt-5">
-                <div class="row justify-content-center">
-                    <div class="col-md-8 text-center">
-                        <canvas id="gameCanvas" width="${this.gameConfig.WIDTH}" height="${this.gameConfig.HEIGHT}"></canvas>
-                        <h1 class="mt-4">Le Jeu</h1>
-                    </div>
+        <section id="game" class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <canvas id="gameCanvas" width="${this.gameConfig.WIDTH}" height="${this.gameConfig.HEIGHT}"></canvas>
+                    <h1 class="mt-4">Le Jeu</h1>
                 </div>
-            </section>
-        `;
+            </div>
+        </section>
+    `;
   }
 }
 
 export default GameComponent;
+

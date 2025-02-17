@@ -138,3 +138,13 @@ AUTH_USER_MODEL = "api.Player"
 
 USE_X_FORWARDED_HOST = True
 PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # Assure-toi que Redis tourne bien
+        },
+    },
+}

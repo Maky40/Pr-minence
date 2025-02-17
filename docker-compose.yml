@@ -28,6 +28,13 @@ services:
     networks:
       - app_network
     restart: always
+  
+  redis:
+    image: redis:7
+    networks:
+      - app_network
+    ports:
+      - "6379:6379"
 
   player:
     build:
@@ -97,6 +104,7 @@ services:
       - "8003:8003"
     depends_on:
       - db
+      - redis
     networks:
       - app_network
     restart: always
