@@ -1,6 +1,7 @@
 import api from "../../services/api.js";
 import Toast from "../../components/toast.js";
 
+
 // Liste des amis et historique des messages
 // let friends = [
 //   {

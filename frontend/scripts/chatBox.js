@@ -1,20 +1,36 @@
 // main.js
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
-import { initWebSocket } from './chatServices/chatService.js';
+import { initWebSocket, closeAndOpenNew, sendMessage } from './chatServices/liveChatService.js';
 import { showChat, showSuggestions, renderFriendRequests } from './chatServices/uiService.js';
+import Toast from "../../components/toast.js";
+import api from "../../services/api.js";
 
-export function init() {
+export async function init() {
     console.log("init() called");
-    // let socketActivate = {};
+	let socketActivate = {};
+	let currentUser = {};
 
-    // Initialize UI elements
+	// Initialize currentUser
+	await initializeCurrentUser(currentUser);
+
+	// Initialize UI elements
     const elements = initializeUIElements();
 
     // Add event listeners
-    addEventListeners(elements);
+    addEventListeners(elements, socketActivate, currentUser);
 
     // Initial render
     renderFriendRequests(elements["requests-list"]);
+}
+
+async function initializeCurrentUser(currentUser) {
+	const response = await api.apiFetch("/player/", true, "GET")
+	if (response && response.player) {
+		currentUser.username = response.player.username;
+		currentUser.id = response.player.id;
+	} else {
+		console.error("Erreur : réponse API invalide", response);
+	}
 }
 
 function initializeUIElements() {
@@ -35,7 +51,8 @@ function initializeUIElements() {
     return elements;
 }
 
-function addEventListeners(elements) {
+function addEventListeners(elements, socketActivate, currentUser) {
+
     // Chat type buttons
     if (elements["tournament-room"] && elements["private-chat"]) {
         elements["tournament-room"].addEventListener("click", () => showChat("tournament", elements["friends-list"]));
@@ -54,8 +71,11 @@ function addEventListeners(elements) {
     // Handle friend requests
     elements["requests-list"].addEventListener("click", (event) => handleRequestsClick(event, elements));
 
-    // // Handle friends list clicks
-    // elements["friends-list"].addEventListener("click", handleFriendsListClick);
+    // Handle friends list clicks
+    elements["friends-list"].addEventListener("click", (event) => handleFriendsListClick(event, socketActivate, currentUser));
+
+	// Handle send message button
+	elements["send-message"].addEventListener("click", () => handleSendMessage(socketActivate, currentUser, elements["message-input"]))
 
 }
 
@@ -96,4 +116,28 @@ function handleRequestsClick(event, elements) {
         deleteFriend(userId);}
 	if (card) {
 		card.remove();}
+}
+
+function handleFriendsListClick(event, socketActivate, currentUser) {
+    try {
+        const friendName = event.target.closest('.friend-name');
+        const otherUserId = friendName.dataset.friendId;
+
+        if (Object.keys(socketActivate).length === 0)
+            initWebSocket(otherUserId, socketActivate, currentUser);
+        else if (socketActivate.otherUserId !== otherUserId)
+            closeAndOpenNew(otherUserId, socketActivate, currentUser)
+    } catch (error) {
+        console.error("Erreur API :", error);
+    }
+}
+
+function handleSendMessage(socketActivate, currentUser, messageInput) {
+	if (Object.keys(socketActivate). length === 0) {
+		const toast = new Toast("Error", "Veuillez selectionner un ami avant d'envoyer un message", "error");
+		toast.show();
+		return ;
+	}
+	const message = messageInput.value.trim();
+	sendMessage(socketActivate, currentUser, message);
 }

@@ -10,7 +10,17 @@ export default class TemplateManager {
     else this.contentElement = contentElement;
     this.routes = routes;
     this.loadedScripts = new Set();
+	this.activeWebSockets = [];
   }
+
+  closeAllWebSockets() {
+    this.activeWebSockets.forEach((socket) => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    });
+    this.activeWebSockets = []; // Vide la liste après fermeture
+}
 
   cleanup() {
     // Supprimer tous les scripts existants
@@ -19,6 +29,9 @@ export default class TemplateManager {
 
     // Réinitialiser la liste des scripts chargés
     this.loadedScripts.clear();
+
+	// Supprimer toutes les sockets
+	this.closeAllWebSockets();
   }
 
   async loadTemplate(templateFile) {
@@ -86,5 +99,8 @@ export default class TemplateManager {
       this.contentElement.innerHTML =
         "<p>Erreur lors du chargement de la page.</p>";
     }
+  }
+  addWebSocket(socket) {
+    this.activeWebSockets.push(socket);
   }
 }

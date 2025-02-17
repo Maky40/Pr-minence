@@ -13,7 +13,7 @@ webSocketGame.addMessageListener("message", (data) => {
 
 const navbar = new Navbar();
 const content = document.getElementById("content");
-const templateManager = new TemplateManager(content);
+export const templateManager = new TemplateManager(content);
 const router = new Router(templateManager);
 
 const loadComponent = async (componentName) =>

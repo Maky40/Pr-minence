@@ -101,7 +101,7 @@ function renderFriendList(friendsList, data, api) {
 		// Créer l'élément HTML sous forme de chaîne
 		const friendItem = `
 			<li class="list-group-item d-flex justify-content-between align-items-center">
-				<span class="friend-name" data-username="${friend.id}">${friend.username}</span>
+				<span class="friend-name" data-friend-id="${friend.id}">${friend.username}</span>
 				<span class="badge ${api === "requests" ? "bg-secondary" : (isOnline ? "bg-success" : "bg-danger")}">
 					${api === "requests" ? "Pending" : (isOnline ? "En ligne" : "Hors ligne")}
 				</span>
@@ -149,4 +149,23 @@ export function showSuggestions(suggestions, suggestionsContainer, searchFriendI
     });
 
     suggestionsContainer.style.display = "block";
+}
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                       CHAT BOX MESSAGE                     ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+export function displayMessage(senderName, senderId, message, otherUserId) {
+    const messageContainer = document.getElementById("chat-box");
+    const newMessage = document.createElement("div");
+
+    if (senderId != otherUserId) {
+        newMessage.textContent = "Moi: " + message;
+        newMessage.style.color = "blue";
+    } else {
+        newMessage.textContent = senderName + ": " + message;
+        newMessage.style.color = "black";
+    }
+
+    messageContainer.appendChild(newMessage);
 }
