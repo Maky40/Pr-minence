@@ -12,6 +12,9 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         self.player = self.scope["player"]
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
+        
+        # Toujours définir room_group_name, même si match_id est temporairement None
+        self.room_group_name = f"pong_{self.match_id}" if self.match_id else None
 
         if self.match_id:
             if await self.is_match_ready(self.match_id):
@@ -25,8 +28,12 @@ class PongConsumer(AsyncWebsocketConsumer):
         else:
             self.match_id = await self.create_match(self.player)
             self.paddle = "left"
+            self.room_group_name = f"pong_{self.match_id}"  # Redéfinir après la création du match
 
-        self.room_group_name = f"pong_{self.match_id}"
+        # Vérification finale : `room_group_name` ne doit jamais être None à ce stade
+        if not self.room_group_name:
+            await self.close()
+            return
 
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -44,19 +51,23 @@ class PongConsumer(AsyncWebsocketConsumer):
             await self.start_game()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        """Déconnexion du joueur"""
+        if self.room_group_name:
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
 
     @database_sync_to_async
     def create_match(self, player):
+        """Créer un match et assigner le premier joueur"""
         match = Match.objects.create()
         PlayerMatch.objects.create(player=player, match=match, score=0, is_winner=False)
         return match.id
 
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
+        """Assigner un joueur à 'left' ou 'right' selon l'ordre d'arrivée"""
         existing_players = PlayerMatch.objects.filter(match_id=match_id)
 
         if existing_players.count() == 0:
@@ -68,18 +79,22 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def is_match_ready(self, match_id):
+        """Vérifier si deux joueurs sont connectés"""
         return PlayerMatch.objects.filter(match_id=match_id).count() == 2
 
     async def start_game(self):
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "game_start",
-                "message": "La partie commence !"
-            }
-        )
+        """Lancer le jeu dès que les deux joueurs sont connectés"""
+        if self.room_group_name:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "game_start",
+                    "message": "La partie commence !"
+                }
+            )
 
     async def game_start(self, event):
+        """Envoyer le signal de démarrage aux joueurs"""
         await self.send(text_data=json.dumps({
             "type": "game_start",
             "message": event["message"]
@@ -87,6 +102,9 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         """Recevoir et diffuser les mises à jour des joueurs (mouvements, balle, scores)"""
+        if not self.room_group_name:
+            return  # Ne rien faire si `room_group_name` n'est pas défini
+
         data = json.loads(text_data)
         action_type = data.get("type")
 
@@ -121,6 +139,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
 
     async def update_position(self, event):
+        """Envoyer la mise à jour de la position de la raquette à l'autre joueur"""
         await self.send(text_data=json.dumps({
             "type": "move",
             "player": event["player"],
@@ -128,6 +147,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def update_ball(self, event):
+        """Envoyer la mise à jour de la position de la balle"""
         await self.send(text_data=json.dumps({
             "type": "ball",
             "x": event["x"],
@@ -135,6 +155,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def update_score(self, event):
+        """Envoyer la mise à jour du score"""
         await self.send(text_data=json.dumps({
             "type": "score",
             "score1": event["score1"],
