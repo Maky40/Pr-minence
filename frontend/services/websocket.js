@@ -4,6 +4,7 @@ class WebSocketAPI {
     this.status = "DISCONNECTED";
     this.wsURL = wsURL;
     this.messageListeners = new Map();
+    this.listeners = new Map();
     this.retryCount = 0; // Ajouter un compteur de tentatives
     this.maxRetries = 3; // Limiter à 3 tentatives
     this.init();
@@ -29,6 +30,7 @@ class WebSocketAPI {
 
   close() {
     if (this.socket) {
+      this.removeAllListeners();
       this.socket.close();
       this.socket = null;
       this.status = "DISCONNECTED";
@@ -36,13 +38,43 @@ class WebSocketAPI {
   }
 
   addMessageListener(type, callback) {
+    const listener =
+      type === "message"
+        ? (event) => callback(event.data)
+        : (event) => callback(event);
     this.messageListeners.set(type, callback);
+    this.listeners.set(type, listener);
+    if (this.socket) {
+      this.socket.addEventListener(type, listener);
+    }
+  }
+
+  removeAllListeners() {
+    if (this.socket) {
+      this.listeners.forEach((listener, type) => {
+        this.socket.removeEventListener(type, listener);
+      });
+      this.listeners.clear();
+      this.messageListeners.clear();
+    }
   }
 
   notifyListeners(type, data) {
     const callback = this.messageListeners.get(type);
     if (callback) {
       callback(data);
+    }
+  }
+
+  send(data) {
+    if (this.socket && this.status === "CONNECTED") {
+      try {
+        this.socket.send(
+          typeof data === "string" ? data : JSON.stringify(data)
+        );
+      } catch (error) {
+        console.error("Error sending WebSocket message:", error);
+      }
     }
   }
 

@@ -1,26 +1,24 @@
 import Component from "../../utils/Component.js";
 import WebSocketAPI from "../../services/websocket.js";
 import pong42 from "../../services/pong42.js";
-import { changePage } from "../../utils/Page.js";
+import GameComponent from "../Game/GameComponent.js";
 
 class DuelModeGuest extends Component {
   constructor(matchId) {
     super();
     this.state = {
       matchId: matchId,
-      paddle: null,
       loading: false,
       error: null,
-      waitingGuest: false,
+      waitingGuest: true,
       isConnected: false,
+      startingGame: false,
     };
     this.webSocketMatch = null;
   }
+
   async joinMatch() {
     if (this.state.isConnected) return;
-    if (this.webSocketMatch) {
-      this.webSocketMatch.close();
-    }
     this.setState({ loading: true, isConnected: true });
     this.webSocketMatch = new WebSocketAPI(
       "wss://localhost/pong/ws/pong/" + this.state.matchId + "/"
@@ -28,7 +26,9 @@ class DuelModeGuest extends Component {
 
     // Gestion des erreurs de connexion
     this.webSocketMatch.addMessageListener("open", () => {
-      console.log("WebSocket connection established");
+      pong42.player.match_id = this.state.matchId;
+      pong42.player.paddle = "right";
+      pong42.player.socketMatch = this.webSocketMatch;
       this.setState({ loading: true, isConnected: true });
     });
 
@@ -36,10 +36,8 @@ class DuelModeGuest extends Component {
       this.setState({
         error: "Une erreur de connexion est survenue",
         loading: false,
+        isConnected: false,
       });
-      this.webSocketMatch.close(); // Fermer la connexion en cas d'erreur
-      this.webSocketMatch = null;
-      this.render();
       setTimeout(() => {
         window.location.href = "#game";
       }, 2000); // Rediriger après 2 secondes
@@ -50,62 +48,55 @@ class DuelModeGuest extends Component {
         error: "La connexion au match a été perdue",
         loading: false,
         waitingGuest: false,
+        isConnected: false,
       });
-      this.webSocketMatch = null;
-      setTimeout(() => {
-        window.location.href = "#game";
-      }, 2000); // Rediriger après 2 secondes
     });
 
     this.webSocketMatch.addMessageListener("message", (data) => {
       try {
         const message = JSON.parse(data);
-
-        // Vérifier si le message contient une erreur
+        if (message.type === "game_start") {
+          this.setState({
+            loading: false,
+            startingGame: true,
+            isConnected: true,
+            waitingGuest: false,
+          });
+          console.log("Match prêt ! Début du jeu.");
+          //on remove tout les listeners
+          this.webSocketMatch.removeAllListeners();
+          const game = new GameComponent();
+          game.render(this.container);
+        }
         if (message.error) {
+          console.error("Error message:", message.error);
           this.setState({
             error: message.error,
             loading: false,
           });
           return;
         }
-
-        // Traitement du message normal
-        const { match_id, paddle } = message;
-        pong42.player.match_id = match_id;
-        pong42.player.paddle = paddle;
-        pong42.player.socketMatch = webSocketMatch;
-
-        this.setState({
-          matchId: match_id,
-          paddle: paddle,
-          waitingGuest: true,
-          error: null,
-          loading: false,
-        });
       } catch (error) {
         console.error("Error parsing message:", error);
         this.setState({
           error: "Erreur lors du traitement des données",
           loading: false,
         });
-        this.render();
       }
     });
   }
-  destroy() {
-    if (this.webSocketMatch) {
-      this.webSocketMatch.close();
-      this.webSocketMatch = null;
-    }
-  }
-
   afterRender() {
-    if (this.state.matchId && !this.state.isConnected) this.joinMatch();
+    if (
+      this.state.matchId &&
+      !this.state.isConnected &&
+      !this.state.error &&
+      !this.state.startingGame
+    )
+      this.joinMatch();
   }
 
   template() {
-    if (this.state.error) {
+    if (this.state.error && !this.state.waitingGuest) {
       return `
             <div class="container mt-5">
                 <div class="d-flex flex-column align-items-center justify-content-center">
