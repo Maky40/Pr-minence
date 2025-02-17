@@ -1,5 +1,6 @@
 import Component from "../../utils/Component.js";
 import GameSearchFriendComponent from "./GameSearchFriendComponents.js";
+import GameDuelMode from "./GameDuelMode.js";
 
 class GameSelectionComponent extends Component {
   constructor() {
@@ -11,8 +12,15 @@ class GameSelectionComponent extends Component {
   handleModeSelection(mode) {
     console.log("Selected mode:", mode);
     this.selectedMode = mode;
-    const searchFriend = new GameSearchFriendComponent();
-    searchFriend.render(this.container);
+
+    if (mode === "duelMode") {
+      const duelMode = new GameDuelMode();
+      duelMode.render(this.container);
+    }
+    if (mode === "TournoiMode") {
+      const searchFriend = new GameSearchFriendComponent();
+      searchFriend.render(this.container);
+    }
     // Ici vous pouvez ajouter la logique pour gérer la sélection du mode
   }
 
@@ -37,7 +45,7 @@ class GameSelectionComponent extends Component {
                 <div class="row justify-content-center g-4">
                     <!-- Mode Classique -->
                     <div class="col-md-4">
-                        <div class="card game-mode-card h-100" data-mode="classic">
+                        <div class="card game-mode-card h-100" data-mode="duelMode">
                             <div class="card-body text-center">
                                 <i class="fas fa-table-tennis fa-3x mb-3"></i>
                                 <h3 class="card-title">Mode Duel</h3>
@@ -51,7 +59,7 @@ class GameSelectionComponent extends Component {
 
                     <!-- Mode Spécial -->
                     <div class="col-md-4">
-                        <div class="card game-mode-card h-100" data-mode="special">
+                        <div class="card game-mode-card h-100" data-mode="TournoiMode">
                             <div class="card-body text-center">
                                 <i class="fas fa-star fa-3x mb-3"></i>
                                 <h3 class="card-title"> Mode Tournoi</h3>
