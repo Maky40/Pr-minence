@@ -1,5 +1,6 @@
 import Component from "../../utils/Component.js";
-import pong42 from "../../services/pong42.js";
+import DuelModeHost from "../DuelMode/DuelModeHost.js";
+import DuelModeGuest from "../DuelMode/DuelModeGuest.js";
 
 class GameDuelMode extends Component {
   constructor(container) {
@@ -13,7 +14,19 @@ class GameDuelMode extends Component {
   handleModeSelection(mode) {
     console.log("Selected mode:", mode);
     this.state.mode = mode;
-    this.render(this.container);
+    if (mode === "newGame") {
+      const duelModeHost = new DuelModeHost();
+      duelModeHost.render(this.container);
+    }
+    if (mode === "joinGame") {
+      console.log("Join game");
+      const match_id = document.getElementById("matchCode").value;
+      if (match_id) {
+        const duelModeGuest = new DuelModeGuest(match_id);
+        duelModeGuest.render(this.container);
+      }
+      return;
+    }
   }
 
   afterRender() {
@@ -55,7 +68,7 @@ class GameDuelMode extends Component {
                             <div class="card-body text-center">
                                 <i class="fas fa-star fa-3x mb-3"></i>
                                 <p class="card-text">Ton pote a déjà lancé le défi ! Viens le défier et lui faire regretter cet affront !!</p>
-                                <input type="text" class="form-control" placeholder="Code du match">
+                                <input type="text" class="form-control" placeholder="Code du match" id="matchCode">
                                 <button class="btn btn-primary mt-3">
                                     Rejoindre le match
                                 </button>
@@ -65,17 +78,6 @@ class GameDuelMode extends Component {
                 </div>
             </section>
         `;
-    if (this.state.mode === "newGame") {
-      return `
-        <section id="game" class="container mt-5">
-            <div class="row justify-content-center">
-                <div class="col-md-8 text-center">
-                    <h1 class="mt-4">Le Jeu</h1>
-                </div>
-            </div>
-        </section>
-    `;
-    }
     if (this.state.mode === "joinGame") {
       return `
           <section id="game" class="container mt-5">
