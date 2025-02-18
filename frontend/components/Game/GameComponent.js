@@ -19,57 +19,36 @@ class GameComponent extends Component {
       score2: 0,
     };
 
-    // Initialiser state avant de configurer l'audio
+    // Gère le compte à rebours et l'état "la partie a commencé"
     this.state = {
       countdown: 5,
       isGameStarted: false,
     };
 
+    // On définit "gameObjects" juste pour dessiner (paddle1, paddle2, ball...)
+    // On n'y stocke plus la logique de vitesse, collisions, etc.
     this.gameObjects = this.initializeGameObjects();
+
+    // WebSocket qui est déjà créé ailleurs
     this.webSocket = pong42.player.socketMatch;
-    this.movement = new GameMovement(this.gameObjects, this.gameConfig);
+
+    // Movement = module pour envoyer "move up/down/stop"
+    this.movement = new GameMovement(this.gameObjects, this.gameConfig, this.gameState);
+
     this.renderer = null;
     this.animationFrameId = null;
 
+    // Audio
     this.countdownAudio = new Audio("/assets/start.mp3");
     this.themeAudio = new Audio("/assets/theme.mp3");
     this.isMuted = false;
     this.isCountdownStarted = false;
   }
 
-  startCountdown() {
-    if (!this.state.isGameStarted && !this.isCountdownStarted) {
-      this.isCountdownStarted = true;
-      this.countdownAudio.play();
-
-      const updateCountdown = () => {
-        const timeLeft = Math.ceil(
-          this.countdownAudio.duration - this.countdownAudio.currentTime
-        );
-        if (timeLeft !== this.state.countdown) {
-          this.state.countdown = timeLeft;
-          this.update();
-        }
-
-        if (timeLeft <= 0) {
-          this.state.isGameStarted = true;
-          this.update();
-          this.gameLoop();
-          this.themeAudio.play();
-          this.countdownAudio.removeEventListener(
-            "timeupdate",
-            updateCountdown
-          );
-        }
-      };
-
-      this.countdownAudio.addEventListener("timeupdate", updateCountdown);
-    }
-  }
-
   initializeGameObjects() {
-    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
-      this.gameConfig;
+    // Positions initiales (arbitraires, purement visuelles ; 
+    // le serveur nous enverra vite la position "réelle")
+    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } = this.gameConfig;
 
     return {
       paddle1: {
@@ -88,9 +67,8 @@ class GameComponent extends Component {
         x: WIDTH / 2,
         y: HEIGHT / 2,
         size: BALL_SIZE,
-        speedX: this.gameConfig.BALL_SPEED,
-        speedY: this.gameConfig.BALL_SPEED,
       },
+      // On garde score1, score2 pour affichage
       score1: 0,
       score2: 0,
     };
@@ -102,42 +80,34 @@ class GameComponent extends Component {
       return;
     }
 
+    // Écoute des messages du serveur
     this.webSocket.addMessageListener("message", (data) => {
       try {
         const message = JSON.parse(data);
+
         switch (message.type) {
-          case "move":
-            this.handleMove(message);
+          case "game_start":
+            // Optionnel : on peut lancer/forcer le compte à rebours,
+            // ou afficher un message "La partie va commencer".
+            console.log("Game start message received");
             break;
-          case "ball":
-            this.handleBall(message);
-            break;
-          case "score":
-            this.handleScore(message);
+
+          case "game_state":
+            // Le serveur nous envoie l'état complet
+            // On met à jour nos objets pour dessiner
+            this.gameObjects.paddle1.y = message.paddle_left_y;
+            this.gameObjects.paddle2.y = message.paddle_right_y;
+            this.gameObjects.ball.x = message.ball_x;
+            this.gameObjects.ball.y = message.ball_y;
+
+            this.gameState.score1 = message.score_left;
+            this.gameState.score2 = message.score_right;
             break;
         }
       } catch (error) {
-        console.error("Error handling WebSocket message:", error);
+        console.error("Error parsing WebSocket message:", error);
       }
     });
-  }
-
-  handleMove(message) {
-    const paddle =
-      message.player === "left"
-        ? this.gameObjects.paddle1
-        : this.gameObjects.paddle2;
-    paddle.y = message.position;
-  }
-
-  handleBall(message) {
-    this.gameObjects.ball.x = message.x;
-    this.gameObjects.ball.y = message.y;
-  }
-
-  handleScore(message) {
-    this.gameState.score1 = message.score1;
-    this.gameState.score2 = message.score2;
   }
 
   setupEventListeners() {
@@ -179,23 +149,59 @@ class GameComponent extends Component {
     }
   }
 
+  startCountdown() {
+    if (!this.state.isGameStarted && !this.isCountdownStarted) {
+      this.isCountdownStarted = true;
+      this.countdownAudio.play();
+
+      const updateCountdown = () => {
+        const timeLeft = Math.ceil(
+          this.countdownAudio.duration - this.countdownAudio.currentTime
+        );
+        if (timeLeft !== this.state.countdown) {
+          this.state.countdown = timeLeft;
+          this.update(); // Met à jour le DOM (affiche le nouveau countdown)
+        }
+
+        if (timeLeft <= 0) {
+          // Le décompte est fini, on lance la partie
+          this.state.isGameStarted = true;
+          this.update();
+          this.gameLoop();
+
+          this.themeAudio.play();
+          this.countdownAudio.removeEventListener("timeupdate", updateCountdown);
+        }
+      };
+
+      this.countdownAudio.addEventListener("timeupdate", updateCountdown);
+    }
+  }
+
+  /**
+   * Boucle d'animation :
+   *  - Envoie la direction du paddle (up/down/stop) au serveur
+   *  - Dessine l'état actuel (ce que le serveur nous a envoyé)
+   *  - Reboucle avec requestAnimationFrame
+   */
   gameLoop = () => {
     if (this.themeAudio) {
-      this.themeAudio.muted = this.isMuted; // Appliquer l'état du son
+      this.themeAudio.muted = this.isMuted;
     }
+
+    // Envoyer l'input (paddle up/down/stop) au serveur
     this.movement.updatePaddlePosition(
       this.gameState.keys,
       pong42.player.paddle,
-      (position) => this.webSocket.send({ type: "move", position })
+      (direction) => {
+        this.webSocket.send({ type: "move", direction });
+      }
     );
 
-    this.movement.updateBallPosition(
-      pong42.player.paddle === "left",
-      (ballData) => this.webSocket.send(ballData),
-      (scoreData) => this.webSocket.send(scoreData)
-    );
-
+    // Dessiner l'état (positions ball, paddles, scores)
     this.renderer.draw(this.gameObjects, this.gameState);
+
+    // On continue la boucle
     this.animationFrameId = requestAnimationFrame(this.gameLoop);
   };
 
@@ -206,19 +212,24 @@ class GameComponent extends Component {
       return;
     }
     this.renderer = new GameRenderer(canvas, this.gameConfig);
+
+    // WebSocket + events
     this.setupWebSocket();
     this.setupEventListeners();
+
+    // Lancement compte à rebours
     this.startCountdown();
   }
 
   destroy() {
+    // Annule la boucle d'animation
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
 
-    // Stop audio when component is destroyed
+    // Stop audios
     if (this.themeAudio) {
       this.themeAudio.pause();
       this.themeAudio.currentTime = 0;
@@ -230,6 +241,7 @@ class GameComponent extends Component {
   }
 
   template() {
+    // Affichage du compte à rebours tant que la partie n'a pas commencé
     if (!this.state.isGameStarted) {
       return `
         <div class="game-container position-relative">
@@ -267,6 +279,7 @@ class GameComponent extends Component {
       `;
     }
 
+    // Partie en cours
     return `
       <div class="game-container position-relative">
         <canvas id="gameCanvas" 
@@ -289,9 +302,10 @@ class GameComponent extends Component {
               <button class="btn btn-warning w-100" id="btnSilence">
                 <i class="fas fa-volume-up"></i>
               </button>
-          <button class="btn btn-danger" id="btnLeaveGame">
-            <i class="fas fa-door-open me-2"></i>Quitter
-          </button>
+              <button class="btn btn-danger" id="btnLeaveGame">
+                <i class="fas fa-door-open me-2"></i>Quitter
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -300,8 +314,9 @@ class GameComponent extends Component {
 
   afterRender() {
     this.init();
-    this.setupEventListeners(); // Ensure event listeners are set up after rendering
+    this.setupEventListeners();
   }
 }
 
 export default GameComponent;
+
