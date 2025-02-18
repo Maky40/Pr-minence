@@ -7,6 +7,9 @@ class GameRenderer {
     // Définir les dimensions du canvas
     this.canvas.width = gameConfig.WIDTH;
     this.canvas.height = gameConfig.HEIGHT;
+    this.previousScores = { score1: 0, score2: 0 };
+    this.scoreAnimationStart = 0;
+    this.SCORE_ANIMATION_DURATION = 500;
   }
 
   draw(gameObjects, gameState) {
@@ -24,9 +27,6 @@ class GameRenderer {
 
     // Dessiner la balle
     this.drawBall(gameObjects.ball);
-
-    // Dessiner les scores
-    this.drawScore(gameState.score1, gameState.score2);
   }
 
   drawCenterLine() {
@@ -47,18 +47,6 @@ class GameRenderer {
   drawBall(ball) {
     this.ctx.fillStyle = "white";
     this.ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
-  }
-
-  drawScore(score1, score2) {
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "48px Arial";
-    this.ctx.textAlign = "center";
-
-    // Score gauche
-    this.ctx.fillText(score1.toString(), this.gameConfig.WIDTH / 4, 50);
-
-    // Score droite
-    this.ctx.fillText(score2.toString(), (this.gameConfig.WIDTH / 4) * 3, 50);
   }
 }
 

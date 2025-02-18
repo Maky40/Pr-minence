@@ -33,7 +33,11 @@ class GameComponent extends Component {
     this.webSocket = pong42.player.socketMatch;
 
     // Movement = module pour envoyer "move up/down/stop"
-    this.movement = new GameMovement(this.gameObjects, this.gameConfig, this.gameState);
+    this.movement = new GameMovement(
+      this.gameObjects,
+      this.gameConfig,
+      this.gameState
+    );
 
     this.renderer = null;
     this.animationFrameId = null;
@@ -46,9 +50,10 @@ class GameComponent extends Component {
   }
 
   initializeGameObjects() {
-    // Positions initiales (arbitraires, purement visuelles ; 
+    // Positions initiales (arbitraires, purement visuelles ;
     // le serveur nous enverra vite la position "réelle")
-    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } = this.gameConfig;
+    const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
+      this.gameConfig;
 
     return {
       paddle1: {
@@ -100,14 +105,32 @@ class GameComponent extends Component {
             this.gameObjects.ball.x = message.ball_x;
             this.gameObjects.ball.y = message.ball_y;
 
-            this.gameState.score1 = message.score_left;
-            this.gameState.score2 = message.score_right;
+            if (
+              message.score_left !== this.gameState.score1 ||
+              message.score_right !== this.gameState.score2
+            ) {
+              this.gameState.score1 = message.score_left;
+              this.gameState.score2 = message.score_right;
+              this.handleScore();
+            }
+
             break;
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
       }
     });
+  }
+
+  getControlsToDisplay() {
+    // Si le joueur utilise les flèches (vérifie les dernières touches utilisées)
+    const usesArrows = pong42.player.paddle === "right";
+    return {
+      up: usesArrows ? "↑" : "W",
+      down: usesArrows ? "↓" : "S",
+      upKey: usesArrows ? "ArrowUp" : "w",
+      downKey: usesArrows ? "ArrowDown" : "s",
+    };
   }
 
   setupEventListeners() {
@@ -131,6 +154,22 @@ class GameComponent extends Component {
         window.location.href = "#game";
       });
     }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key in this.gameState.keys) {
+        event.preventDefault();
+        this.gameState.keys[event.key] = true;
+        this.updateKeyDisplay(event.key, true);
+      }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      if (event.key in this.gameState.keys) {
+        event.preventDefault();
+        this.gameState.keys[event.key] = false;
+        this.updateKeyDisplay(event.key, false);
+      }
+    });
 
     const btnSilence = document.getElementById("btnSilence");
     if (btnSilence) {
@@ -170,7 +209,10 @@ class GameComponent extends Component {
           this.gameLoop();
 
           this.themeAudio.play();
-          this.countdownAudio.removeEventListener("timeupdate", updateCountdown);
+          this.countdownAudio.removeEventListener(
+            "timeupdate",
+            updateCountdown
+          );
         }
       };
 
@@ -200,7 +242,6 @@ class GameComponent extends Component {
 
     // Dessiner l'état (positions ball, paddles, scores)
     this.renderer.draw(this.gameObjects, this.gameState);
-
     // On continue la boucle
     this.animationFrameId = requestAnimationFrame(this.gameLoop);
   };
@@ -211,6 +252,7 @@ class GameComponent extends Component {
       console.error("Canvas element not found");
       return;
     }
+    //on stocke les keydown et keyup dans le gameState
     this.renderer = new GameRenderer(canvas, this.gameConfig);
 
     // WebSocket + events
@@ -219,6 +261,58 @@ class GameComponent extends Component {
 
     // Lancement compte à rebours
     this.startCountdown();
+  }
+  updateKeyDisplay(key, isPressed) {
+    const upKeyElement = document.getElementById("upKey");
+    const downKeyElement = document.getElementById("downKey");
+
+    if (key === "w" || key === "ArrowUp") {
+      if (upKeyElement) {
+        upKeyElement.textContent = isPressed ? "↑" : "W";
+        upKeyElement.classList.toggle("bg-info", isPressed);
+        upKeyElement.classList.toggle("bg-warning", !isPressed);
+      }
+    }
+
+    if (key === "s" || key === "ArrowDown") {
+      if (downKeyElement) {
+        downKeyElement.textContent = isPressed ? "↓" : "S";
+        downKeyElement.classList.toggle("bg-info", isPressed);
+        downKeyElement.classList.toggle("bg-warning", !isPressed);
+      }
+    }
+  }
+
+  handleScore() {
+    const score1Element = document.querySelector("#player1-score .score-value");
+    const score2Element = document.querySelector("#player2-score .score-value");
+
+    if (score1Element) {
+      score1Element.textContent = this.gameState.score1;
+      score1Element.parentElement.classList.add("score-changed");
+      setTimeout(
+        () => score1Element.parentElement.classList.remove("score-changed"),
+        500
+      );
+    }
+
+    if (score2Element) {
+      score2Element.textContent = this.gameState.score2;
+      score2Element.parentElement.classList.add("score-changed");
+      setTimeout(
+        () => score2Element.parentElement.classList.remove("score-changed"),
+        500
+      );
+    }
+    this.update();
+  }
+
+  animateScore(player) {
+    const scoreBox = document.querySelector(`#${player}-score`);
+    if (scoreBox) {
+      scoreBox.classList.add("score-changed");
+      setTimeout(() => scoreBox.classList.remove("score-changed"), 500);
+    }
   }
 
   destroy() {
@@ -241,6 +335,7 @@ class GameComponent extends Component {
   }
 
   template() {
+    const controls = this.getControlsToDisplay();
     // Affichage du compte à rebours tant que la partie n'a pas commencé
     if (!this.state.isGameStarted) {
       return `
@@ -261,10 +356,10 @@ class GameComponent extends Component {
                 <p class="text-warning mb-2">Controls:</p>
                 <div class="d-flex justify-content-center gap-4">
                   <div class="text-white">
-                    <span class="badge bg-warning text-dark">W</span> Up
+                    <span class="badge bg-warning text-dark"> ${controls.up}</span> Up
                   </div>
                   <div class="text-white">
-                    <span class="badge bg-warning text-dark">S</span> Down
+                    <span class="badge bg-warning text-dark">${controls.down}</span> Down
                   </div>
                 </div>
               </div>
@@ -278,64 +373,94 @@ class GameComponent extends Component {
         </div>
       `;
     }
-
     // Partie en cours
     return `
-    <div class="game-container position-relative">
-      <!-- Score Overlay -->
-      <div class="position-absolute w-100 top-0 mt-4" style="z-index: 1000;">
-        <div class="container">
-          <div class="row justify-content-center">
-            <div class="col-auto">
-              <div class="d-flex gap-4 bg-black bg-opacity-75 p-3 rounded-pill border border-2 border-info shadow-lg">
-                <div class="score-box text-center">
-                  <div class="h3 mb-0 text-info" style="font-family: 'Orbitron', sans-serif;">
-                    ${this.gameState.score1}
-                  </div>
-                  <small class="text-white-50">PLAYER 1</small>
-                </div>
-                <div class="score-divider border-end border-info"></div>
-                <div class="score-box text-center">
-                  <div class="h3 mb-0 text-info" style="font-family: 'Orbitron', sans-serif;">
-                    ${this.gameState.score2}
-                  </div>
-                  <small class="text-white-50">PLAYER 2</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Canvas et autres éléments existants -->
+    <div class="game-container position-relative vh-100 bg-dark">
+      <!-- Canvas Background -->
       <canvas id="gameCanvas" 
               width="${this.gameConfig.WIDTH}" 
               height="${this.gameConfig.HEIGHT}"
-              class="shadow-lg">
+              class="position-absolute top-50 start-50 translate-middle shadow-lg">
       </canvas>
-        
-        <!-- Controls overlay -->
-        <div class="position-absolute top-0 end-0 mt-3 me-3">
-          <div class="bg-dark bg-opacity-75 p-3 rounded">
-            <div class="d-flex flex-column gap-3">
-              <!-- Controls -->
-              <div class="text-white text-center">
-                <div><span class="badge bg-warning text-dark">W</span> Up</div>
-                <div class="mt-1"><span class="badge bg-warning text-dark">S</span> Down</div>
-              </div>
-              
-              <!-- Sound toggle -->
-              <button class="btn btn-warning w-100" id="btnSilence">
-                <i class="fas fa-volume-up"></i>
-              </button>
-              <button class="btn btn-danger" id="btnLeaveGame">
+
+      <!-- Top Bar with Scores -->
+      <div class="position-absolute w-100 top-0 py-3" style="z-index: 1000;">
+        <div class="container">
+          <div class="row align-items-center">
+            <!-- Leave Button -->
+            <div class="col-3">
+              <button class="btn btn-outline-danger" id="btnLeaveGame">
                 <i class="fas fa-door-open me-2"></i>Quitter
               </button>
+            </div>
+
+            <!-- Score Display -->
+            <div class="col-6">
+              <div class="d-flex justify-content-center">
+                <div class="bg-black bg-opacity-75 px-4 py-3 rounded-pill border border-2 border-info shadow-lg score-container">
+                  <div class="d-flex align-items-center gap-5">
+                    <!-- Player 1 Score -->
+                    <div class="score-box text-center position-relative">
+                      <div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">
+                        ${this.gameState.score1}
+                      </div>
+                      <div class="score-label">
+                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">Player 1</small>
+                      </div>
+                      <div class="score-glow"></div>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="score-divider border-end border-info opacity-75" style="height: 50px;"></div>
+                    
+                    <!-- Player 2 Score -->
+                    <div class="score-box text-center position-relative">
+                      <div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">
+                        ${this.gameState.score2}
+                      </div>
+                      <div class="score-label">
+                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">Player 2</small>
+                      </div>
+                      <div class="score-glow"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Controls & Sound -->
+            <div class="col-3">
+              <div class="d-flex justify-content-end me-3">
+                <div class="bg-black bg-opacity-75 p-3 rounded">
+                  <div class="d-flex flex-column gap-2">
+                  <div class="text-white text-center mb-2">
+                    <div><span class="badge ${
+                      this.gameState.keys[controls.upKey]
+                        ? "bg-info"
+                        : "bg-warning"
+                    } text-dark" id="upKey">
+                      ${controls.up}
+                    </span> Up</div>
+                    <div class="mt-1"><span class="badge ${
+                      this.gameState.keys[controls.downKey]
+                        ? "bg-info"
+                        : "bg-warning"
+                    } text-dark" id="downKey">
+                      ${controls.down}
+                    </span> Down</div>
+                  </div>
+                    <button class="btn btn-warning btn-sm" id="btnSilence">
+                      <i class="fas fa-volume-up"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    `;
+    </div>
+  `;
   }
 
   afterRender() {
@@ -345,4 +470,3 @@ class GameComponent extends Component {
 }
 
 export default GameComponent;
-
