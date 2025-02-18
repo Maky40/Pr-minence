@@ -2,6 +2,7 @@ import Component from "../../utils/Component.js";
 import { GameMovement } from "./GameMovement.js";
 import { GAME_CONFIG } from "./gameConfig.js";
 import pong42 from "../../services/pong42.js";
+import { changePage } from "../../utils/Page.js";
 import GameRenderer from "./GameRenderer.js";
 
 class GameComponent extends Component {
@@ -130,6 +131,8 @@ class GameComponent extends Component {
       down: usesArrows ? "↓" : "S",
       upKey: usesArrows ? "ArrowUp" : "w",
       downKey: usesArrows ? "ArrowDown" : "s",
+      player1: usesArrows ? "Player 1" : pong42.player.username,
+      player2: usesArrows ? pong42.player.username : "Player 2",
     };
   }
 
@@ -151,7 +154,12 @@ class GameComponent extends Component {
     const btnLeaveGame = document.getElementById("btnLeaveGame");
     if (btnLeaveGame) {
       btnLeaveGame.addEventListener("click", () => {
-        window.location.href = "#game";
+        console.log("Leaving game...");
+        this.webSocket.send({ type: "leave" });
+        this.webSocket.removeAllListeners();
+        this.webSocket.close();
+        pong42.player.socketMatch = null;
+        changePage("home");
       });
     }
 
@@ -307,14 +315,6 @@ class GameComponent extends Component {
     this.update();
   }
 
-  animateScore(player) {
-    const scoreBox = document.querySelector(`#${player}-score`);
-    if (scoreBox) {
-      scoreBox.classList.add("score-changed");
-      setTimeout(() => scoreBox.classList.remove("score-changed"), 500);
-    }
-  }
-
   destroy() {
     // Annule la boucle d'animation
     if (this.animationFrameId) {
@@ -405,7 +405,9 @@ class GameComponent extends Component {
                         ${this.gameState.score1}
                       </div>
                       <div class="score-label">
-                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">Player 1</small>
+                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
+                          controls.player1
+                        }</small>
                       </div>
                       <div class="score-glow"></div>
                     </div>
@@ -419,7 +421,9 @@ class GameComponent extends Component {
                         ${this.gameState.score2}
                       </div>
                       <div class="score-label">
-                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">Player 2</small>
+                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
+                          controls.player2
+                        }</small>
                       </div>
                       <div class="score-glow"></div>
                     </div>
