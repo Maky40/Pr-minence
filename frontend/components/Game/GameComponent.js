@@ -268,12 +268,38 @@ class GameComponent extends Component {
     }
 
     return `
-      <div class="game-container position-relative">
-        <canvas id="gameCanvas" 
-                width="${this.gameConfig.WIDTH}" 
-                height="${this.gameConfig.HEIGHT}"
-                class="shadow-lg">
-        </canvas>
+    <div class="game-container position-relative">
+      <!-- Score Overlay -->
+      <div class="position-absolute w-100 top-0 mt-4" style="z-index: 1000;">
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-auto">
+              <div class="d-flex gap-4 bg-black bg-opacity-75 p-3 rounded-pill border border-2 border-info shadow-lg">
+                <div class="score-box text-center">
+                  <div class="h3 mb-0 text-info" style="font-family: 'Orbitron', sans-serif;">
+                    ${this.gameState.score1}
+                  </div>
+                  <small class="text-white-50">PLAYER 1</small>
+                </div>
+                <div class="score-divider border-end border-info"></div>
+                <div class="score-box text-center">
+                  <div class="h3 mb-0 text-info" style="font-family: 'Orbitron', sans-serif;">
+                    ${this.gameState.score2}
+                  </div>
+                  <small class="text-white-50">PLAYER 2</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas et autres éléments existants -->
+      <canvas id="gameCanvas" 
+              width="${this.gameConfig.WIDTH}" 
+              height="${this.gameConfig.HEIGHT}"
+              class="shadow-lg">
+      </canvas>
         
         <!-- Controls overlay -->
         <div class="position-absolute top-0 end-0 mt-3 me-3">
