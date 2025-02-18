@@ -1,7 +1,15 @@
 import json
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import Match, PlayerMatch
 from channels.db import database_sync_to_async
+from .models import Match, PlayerMatch
+
+# On stocke l'état du jeu en mémoire (dict Python).
+# match_id -> dict (positions, scores, etc.)
+game_states = {}
+# match_id -> asyncio.Task (la boucle de jeu)
+game_tasks = {}
+
 
 class PongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -13,40 +21,40 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.player = self.scope["player"]
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
         
-        # Toujours définir room_group_name, même si match_id est temporairement None
-        self.room_group_name = f"pong_{self.match_id}" if self.match_id else None
+        self.room_group_name = None
 
+        # Vérification match_id (création ou rejoint)
         if self.match_id:
+            # On rejoint un match existant
             if await self.is_match_ready(self.match_id):
+                # Si déjà 2 joueurs, match complet => on refuse
                 await self.close()
                 return
-            
             self.paddle = await self.assign_player_side(self.match_id, self.player)
             if not self.paddle:
                 await self.close()
                 return
         else:
+            # Création d'un nouveau match
             self.match_id = await self.create_match(self.player)
             self.paddle = "left"
-            self.room_group_name = f"pong_{self.match_id}"  # Redéfinir après la création du match
 
-        # Vérification finale : `room_group_name` ne doit jamais être None à ce stade
-        if not self.room_group_name:
-            await self.close()
-            return
+        self.room_group_name = f"pong_{self.match_id}"
 
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-
         await self.accept()
+
+        # Message d'info initial
         await self.send(text_data=json.dumps({
             "message": "Connexion WebSocket établie",
             "match_id": self.match_id,
             "paddle": self.paddle
         }))
 
+        # Si on a 2 joueurs, on lance la partie
         if await self.is_match_ready(self.match_id):
             await self.start_game()
 
@@ -58,109 +66,230 @@ class PongConsumer(AsyncWebsocketConsumer):
                 self.channel_name
             )
 
+    #
+    # ----- Méthodes DB sync -> async -----
+    #
     @database_sync_to_async
     def create_match(self, player):
         """Créer un match et assigner le premier joueur"""
         match = Match.objects.create()
-        PlayerMatch.objects.create(player=player, match=match, score=0, is_winner=False)
+        PlayerMatch.objects.create(
+            player=player,
+            match=match,
+            score=0,
+            is_winner=False
+        )
         return match.id
 
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
-        """Assigner un joueur à 'left' ou 'right' selon l'ordre d'arrivée"""
+        """Assigner 'left' ou 'right' selon l'ordre d'arrivée"""
         existing_players = PlayerMatch.objects.filter(match_id=match_id)
-
         if existing_players.count() == 0:
             return "left"
         elif existing_players.count() == 1:
-            PlayerMatch.objects.create(player=player, match_id=match_id, score=0, is_winner=False)
+            PlayerMatch.objects.create(
+                player=player,
+                match_id=match_id,
+                score=0,
+                is_winner=False
+            )
             return "right"
         return None  # Match déjà plein
 
     @database_sync_to_async
     def is_match_ready(self, match_id):
-        """Vérifier si deux joueurs sont connectés"""
+        """Vérifier si on a 2 joueurs dans ce match"""
         return PlayerMatch.objects.filter(match_id=match_id).count() == 2
 
+    #
+    # ----- Gestion de la partie -----
+    #
     async def start_game(self):
-        """Lancer le jeu dès que les deux joueurs sont connectés"""
-        if self.room_group_name:
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "game_start",
-                    "message": "La partie commence !"
-                }
-            )
+        """Signale aux clients que la partie commence et (ré)initialise l'état du jeu."""
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "game_start",
+                "message": "La partie commence !"
+            }
+        )
+
+        # ***** Important : on réinitialise l'état peu importe la situation *****
+        if self.match_id in game_states:
+            del game_states[self.match_id]  # Nettoyer l'ancien état, s'il existe
+
+        await self.init_game_state()
+        await self.start_game_loop()
 
     async def game_start(self, event):
-        """Envoyer le signal de démarrage aux joueurs"""
+        """Reçu par les clients pour indiquer le démarrage de la partie"""
         await self.send(text_data=json.dumps({
             "type": "game_start",
             "message": event["message"]
         }))
 
-    async def receive(self, text_data):
-        """Recevoir et diffuser les mises à jour des joueurs (mouvements, balle, scores)"""
-        if not self.room_group_name:
-            return  # Ne rien faire si `room_group_name` n'est pas défini
+    async def init_game_state(self):
+        """Initialise l'état du jeu (positions, scores, etc.) pour ce match_id."""
+        game_states[self.match_id] = {
+            "width": 800,
+            "height": 600,
+            "ball_x": 400,
+            "ball_y": 300,
+            "ball_vx": 5,
+            "ball_vy": 5,
+            "paddle_left_y": 250,
+            "paddle_right_y": 250,
+            "paddle_speed_left": 0,
+            "paddle_speed_right": 0,
+            "paddle_width": 10,
+            "paddle_height": 100,
+            "score_left": 0,
+            "score_right": 0,
+            "running": True,
+        }
 
+    async def start_game_loop(self):
+        """Crée la tâche asynchrone pour la boucle de jeu."""
+        task = asyncio.create_task(self.game_loop(self.match_id))
+        game_tasks[self.match_id] = task
+
+    async def game_loop(self, match_id):
+        """Boucle principale, mise à jour 60 fois par seconde."""
+        while True:
+            state = game_states.get(match_id)
+            if not state or not state["running"]:
+                break
+
+            await self.update_positions(state)
+            await self.check_collisions_and_score(state)
+            await self.broadcast_game_state(state)
+
+            await asyncio.sleep(1 / 60)
+
+    async def update_positions(self, state):
+        """Déplace les raquettes et la balle."""
+        # Raquettes
+        state["paddle_left_y"] += state["paddle_speed_left"]
+        state["paddle_right_y"] += state["paddle_speed_right"]
+
+        # Limites verticales
+        if state["paddle_left_y"] < 0:
+            state["paddle_left_y"] = 0
+        if state["paddle_left_y"] > state["height"] - state["paddle_height"]:
+            state["paddle_left_y"] = state["height"] - state["paddle_height"]
+
+        if state["paddle_right_y"] < 0:
+            state["paddle_right_y"] = 0
+        if state["paddle_right_y"] > state["height"] - state["paddle_height"]:
+            state["paddle_right_y"] = state["height"] - state["paddle_height"]
+
+        # Balle
+        state["ball_x"] += state["ball_vx"]
+        state["ball_y"] += state["ball_vy"]
+
+    async def check_collisions_and_score(self, state):
+        """Gère les collisions murs/raquettes et incrémente le score en cas de but."""
+        bx = state["ball_x"]
+        by = state["ball_y"]
+        vx = state["ball_vx"]
+        vy = state["ball_vy"]
+        w = state["width"]
+        h = state["height"]
+
+        ball_size = 15
+        paddle_left_x = 50
+        paddle_right_x = w - 50 - state["paddle_width"]
+
+        # Haut / Bas
+        if by <= 0 or by >= h - ball_size:
+            state["ball_vy"] = -vy
+
+        # Raquette gauche ?
+        if bx <= paddle_left_x + state["paddle_width"]:
+            if (by >= state["paddle_left_y"] and
+                by <= state["paddle_left_y"] + state["paddle_height"]):
+                state["ball_vx"] = -vx
+            else:
+                # But pour la droite
+                state["score_right"] += 1
+                await self.reset_ball(state)
+
+        # Raquette droite ?
+        elif bx + ball_size >= paddle_right_x:
+            if (by >= state["paddle_right_y"] and
+                by <= state["paddle_right_y"] + state["paddle_height"]):
+                state["ball_vx"] = -vx
+            else:
+                # But pour la gauche
+                state["score_left"] += 1
+                await self.reset_ball(state)
+
+    async def reset_ball(self, state):
+        """Remet la balle au centre après un but, direction aléatoire."""
+        import random
+        state["ball_x"] = state["width"] // 2
+        state["ball_y"] = state["height"] // 2
+        dir_x = 1 if random.random() > 0.5 else -1
+        dir_y = 1 if random.random() > 0.5 else -1
+        state["ball_vx"] = 5 * dir_x
+        state["ball_vy"] = 5 * dir_y
+
+    async def broadcast_game_state(self, state):
+        """Envoie l'état du jeu à tous les joueurs de ce match."""
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "update_game_state",
+                "state": {
+                    "ball_x": state["ball_x"],
+                    "ball_y": state["ball_y"],
+                    "paddle_left_y": state["paddle_left_y"],
+                    "paddle_right_y": state["paddle_right_y"],
+                    "score_left": state["score_left"],
+                    "score_right": state["score_right"],
+                }
+            }
+        )
+
+    async def update_game_state(self, event):
+        """Reçoit le message group_send et l'envoie aux clients en JSON."""
+        await self.send(text_data=json.dumps({
+            "type": "game_state",
+            "ball_x": event["state"]["ball_x"],
+            "ball_y": event["state"]["ball_y"],
+            "paddle_left_y": event["state"]["paddle_left_y"],
+            "paddle_right_y": event["state"]["paddle_right_y"],
+            "score_left": event["state"]["score_left"],
+            "score_right": event["state"]["score_right"],
+        }))
+
+    #
+    # ----- Messages reçus du client -----
+    #
+    async def receive(self, text_data):
         data = json.loads(text_data)
         action_type = data.get("type")
 
         if action_type == "move":
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "update_position",
-                    "player": self.paddle,  # "left" ou "right"
-                    "position": data["position"]
-                }
-            )
-
-        elif action_type == "ball":
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "update_ball",
-                    "x": data["x"],
-                    "y": data["y"]
-                }
-            )
-
-        elif action_type == "score":
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    "type": "update_score",
-                    "score1": data["score1"],
-                    "score2": data["score2"]
-                }
-            )
-
-    async def update_position(self, event):
-        """Envoyer la mise à jour de la position de la raquette à l'autre joueur"""
-        await self.send(text_data=json.dumps({
-            "type": "move",
-            "player": event["player"],
-            "position": event["position"]
-        }))
-
-    async def update_ball(self, event):
-        """Envoyer la mise à jour de la position de la balle"""
-        await self.send(text_data=json.dumps({
-            "type": "ball",
-            "x": event["x"],
-            "y": event["y"]
-        }))
-
-    async def update_score(self, event):
-        """Envoyer la mise à jour du score"""
-        await self.send(text_data=json.dumps({
-            "type": "score",
-            "score1": event["score1"],
-            "score2": event["score2"]
-        }))
+            direction = data.get("direction")  # "up", "down" ou "stop"
+            state = game_states.get(self.match_id)
+            if not state:
+                return
+            if self.paddle == "left":
+                if direction == "up":
+                    state["paddle_speed_left"] = -5
+                elif direction == "down":
+                    state["paddle_speed_left"] = 5
+                else:
+                    state["paddle_speed_left"] = 0
+            else:
+                if direction == "up":
+                    state["paddle_speed_right"] = -5
+                elif direction == "down":
+                    state["paddle_speed_right"] = 5
+                else:
+                    state["paddle_speed_right"] = 0
 
 
 
