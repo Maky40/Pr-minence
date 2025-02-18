@@ -4,12 +4,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Match, PlayerMatch
 
-# On stocke l'état du jeu en mémoire (dict Python).
-# match_id -> dict (positions, scores, etc.)
 game_states = {}
-# match_id -> asyncio.Task (la boucle de jeu)
 game_tasks = {}
-
+countdown_tasks = {}  # match_id -> asyncio.Task pour le compte à rebours
 
 class PongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -20,14 +17,12 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         self.player = self.scope["player"]
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
-        
         self.room_group_name = None
 
-        # Vérification match_id (création ou rejoint)
+        # Vérification match_id
         if self.match_id:
-            # On rejoint un match existant
             if await self.is_match_ready(self.match_id):
-                # Si déjà 2 joueurs, match complet => on refuse
+                # match déjà complet => refuse
                 await self.close()
                 return
             self.paddle = await self.assign_player_side(self.match_id, self.player)
@@ -35,7 +30,6 @@ class PongConsumer(AsyncWebsocketConsumer):
                 await self.close()
                 return
         else:
-            # Création d'un nouveau match
             self.match_id = await self.create_match(self.player)
             self.paddle = "left"
 
@@ -47,19 +41,17 @@ class PongConsumer(AsyncWebsocketConsumer):
         )
         await self.accept()
 
-        # Message d'info initial
         await self.send(text_data=json.dumps({
             "message": "Connexion WebSocket établie",
             "match_id": self.match_id,
             "paddle": self.paddle
         }))
 
-        # Si on a 2 joueurs, on lance la partie
+        # Si on a 2 joueurs => démarrer
         if await self.is_match_ready(self.match_id):
             await self.start_game()
 
     async def disconnect(self, close_code):
-        """Déconnexion du joueur"""
         if self.room_group_name:
             await self.channel_layer.group_discard(
                 self.room_group_name,
@@ -67,23 +59,16 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
 
     #
-    # ----- Méthodes DB sync -> async -----
+    # --- Méthodes DB ---
     #
     @database_sync_to_async
     def create_match(self, player):
-        """Créer un match et assigner le premier joueur"""
         match = Match.objects.create()
-        PlayerMatch.objects.create(
-            player=player,
-            match=match,
-            score=0,
-            is_winner=False
-        )
+        PlayerMatch.objects.create(player=player, match=match, score=0, is_winner=False)
         return match.id
 
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
-        """Assigner 'left' ou 'right' selon l'ordre d'arrivée"""
         existing_players = PlayerMatch.objects.filter(match_id=match_id)
         if existing_players.count() == 0:
             return "left"
@@ -95,42 +80,45 @@ class PongConsumer(AsyncWebsocketConsumer):
                 is_winner=False
             )
             return "right"
-        return None  # Match déjà plein
+        return None
 
     @database_sync_to_async
     def is_match_ready(self, match_id):
-        """Vérifier si on a 2 joueurs dans ce match"""
         return PlayerMatch.objects.filter(match_id=match_id).count() == 2
 
     #
-    # ----- Gestion de la partie -----
+    # --- Lancement de la partie ---
     #
     async def start_game(self):
-        """Signale aux clients que la partie commence et (ré)initialise l'état du jeu."""
+        # On envoie "game_start" (le front peut déclencher son timer local)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 "type": "game_start",
-                "message": "La partie commence !"
+                "message": "La partie va commencer dans 5 secondes..."
             }
         )
 
-        # ***** Important : on réinitialise l'état peu importe la situation *****
+        # Réinitialise l'état s'il y en avait un
         if self.match_id in game_states:
-            del game_states[self.match_id]  # Nettoyer l'ancien état, s'il existe
+            del game_states[self.match_id]
 
-        await self.init_game_state()
+        await self.init_game_state()  # running=False
         await self.start_game_loop()
 
+        # Créer la task asynchrone qui fait un compte à rebours 5s côté serveur
+        countdown_task = asyncio.create_task(self.do_countdown(self.match_id))
+        countdown_tasks[self.match_id] = countdown_task
+
     async def game_start(self, event):
-        """Reçu par les clients pour indiquer le démarrage de la partie"""
+        """Reçu par le front : 'La partie va commencer dans 5s...' """
         await self.send(text_data=json.dumps({
             "type": "game_start",
             "message": event["message"]
         }))
 
     async def init_game_state(self):
-        """Initialise l'état du jeu (positions, scores, etc.) pour ce match_id."""
+        """running=False => le jeu est figé tant qu'on n'a pas fini le countdown"""
         game_states[self.match_id] = {
             "width": 800,
             "height": 600,
@@ -146,39 +134,48 @@ class PongConsumer(AsyncWebsocketConsumer):
             "paddle_height": 100,
             "score_left": 0,
             "score_right": 0,
-            "running": True,
+            "running": False
         }
 
     async def start_game_loop(self):
-        """Crée la tâche asynchrone pour la boucle de jeu."""
         task = asyncio.create_task(self.game_loop(self.match_id))
         game_tasks[self.match_id] = task
 
+    async def do_countdown(self, match_id):
+        """Attend 5s puis met running=True, sans bloquer le connect"""
+        await asyncio.sleep(5)
+        state = game_states.get(match_id)
+        if state:
+            state["running"] = True
+
+    #
+    # --- Boucle de jeu ---
+    #
     async def game_loop(self, match_id):
-        """Boucle principale, mise à jour 60 fois par seconde."""
         while True:
             state = game_states.get(match_id)
-            if not state or not state["running"]:
-                break
+            if not state:
+                break  # plus d'état => on arrête
 
+            if not state["running"]:
+                # En "pause" => attend un peu
+                await asyncio.sleep(0.1)
+                continue
+
+            # Physique
             await self.update_positions(state)
             await self.check_collisions_and_score(state)
             await self.broadcast_game_state(state)
-
-            await asyncio.sleep(1 / 60)
+            await asyncio.sleep(1/60)
 
     async def update_positions(self, state):
-        """Déplace les raquettes et la balle."""
-        # Raquettes
         state["paddle_left_y"] += state["paddle_speed_left"]
         state["paddle_right_y"] += state["paddle_speed_right"]
-
-        # Limites verticales
+        # Limites
         if state["paddle_left_y"] < 0:
             state["paddle_left_y"] = 0
         if state["paddle_left_y"] > state["height"] - state["paddle_height"]:
             state["paddle_left_y"] = state["height"] - state["paddle_height"]
-
         if state["paddle_right_y"] < 0:
             state["paddle_right_y"] = 0
         if state["paddle_right_y"] > state["height"] - state["paddle_height"]:
@@ -189,7 +186,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         state["ball_y"] += state["ball_vy"]
 
     async def check_collisions_and_score(self, state):
-        """Gère les collisions murs/raquettes et incrémente le score en cas de but."""
         bx = state["ball_x"]
         by = state["ball_y"]
         vx = state["ball_vx"]
@@ -201,11 +197,11 @@ class PongConsumer(AsyncWebsocketConsumer):
         paddle_left_x = 50
         paddle_right_x = w - 50 - state["paddle_width"]
 
-        # Haut / Bas
+        # Haut / bas
         if by <= 0 or by >= h - ball_size:
             state["ball_vy"] = -vy
 
-        # Raquette gauche ?
+        # Raquette gauche
         if bx <= paddle_left_x + state["paddle_width"]:
             if (by >= state["paddle_left_y"] and
                 by <= state["paddle_left_y"] + state["paddle_height"]):
@@ -215,7 +211,7 @@ class PongConsumer(AsyncWebsocketConsumer):
                 state["score_right"] += 1
                 await self.reset_ball(state)
 
-        # Raquette droite ?
+        # Raquette droite
         elif bx + ball_size >= paddle_right_x:
             if (by >= state["paddle_right_y"] and
                 by <= state["paddle_right_y"] + state["paddle_height"]):
@@ -226,7 +222,6 @@ class PongConsumer(AsyncWebsocketConsumer):
                 await self.reset_ball(state)
 
     async def reset_ball(self, state):
-        """Remet la balle au centre après un but, direction aléatoire."""
         import random
         state["ball_x"] = state["width"] // 2
         state["ball_y"] = state["height"] // 2
@@ -236,7 +231,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         state["ball_vy"] = 5 * dir_y
 
     async def broadcast_game_state(self, state):
-        """Envoie l'état du jeu à tous les joueurs de ce match."""
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -253,7 +247,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         )
 
     async def update_game_state(self, event):
-        """Reçoit le message group_send et l'envoie aux clients en JSON."""
         await self.send(text_data=json.dumps({
             "type": "game_state",
             "ball_x": event["state"]["ball_x"],
@@ -265,17 +258,18 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     #
-    # ----- Messages reçus du client -----
+    # --- Réception client ---
     #
     async def receive(self, text_data):
         data = json.loads(text_data)
         action_type = data.get("type")
 
         if action_type == "move":
-            direction = data.get("direction")  # "up", "down" ou "stop"
+            direction = data.get("direction")
             state = game_states.get(self.match_id)
             if not state:
                 return
+
             if self.paddle == "left":
                 if direction == "up":
                     state["paddle_speed_left"] = -5
@@ -290,6 +284,8 @@ class PongConsumer(AsyncWebsocketConsumer):
                     state["paddle_speed_right"] = 5
                 else:
                     state["paddle_speed_right"] = 0
+
+
 
 
 
