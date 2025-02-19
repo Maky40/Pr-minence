@@ -24,14 +24,24 @@
                 <!-- Zone de chat sur la droite -->
                 <div class="col-md-9">
                     <div class="chat-container p-3 border rounded">
-                        <div id="chat-header" class="d-flex justify-content-between align-items-center mb-3">
-                            <h4 id="chat-friend-name" class="m-0"></h4>
-                            <button id="block-friend" class="btn btn-danger btn-sm">Bloquer</button>
+                        <div id="chat-header" class="d-flex w-100 justify-content-between align-items-center mb-3">
+                            <h4 id="message-select" class="name-chat m-0">Selectionnez un ami pour demarrer une discussion</h4>
+							<div id="user-informations" class="d-none d-flex w-100 align-items-center">
+								<div class="d-flex align-items-center">
+									<img id="chat-friend-avatar" src="" alt="Avatar" class="rounded-circle me-4" width="40" height="40">
+									<h4 id="chat-friend-name" class="name-chat m-0"></h4>
+								</div>
+								<!-- Ajout de `ms-auto` pour forcer l'alignement à droite et un `ml-0` pour supprimer tout margin à gauche -->
+								<div class="ms-auto d-flex align-items-center ml-0">
+									<button id="invite-friend" class="btn btn-outline-warning me-3">JOUER</button>
+									<button id="block-friend" class="btn btn-danger btn-sm">Bloquer</button>
+								</div>
+							</div>
                         </div>
                         <div class="chat-box" id="chat-box">
                             <!-- Historique des messages -->
                         </div>
-                        <div class="chat-input-container">
+                        <div id = "input-send-mess" class="chat-input-container" style = "display: none;">
 							<input type="text" class="message-input form-control flex-grow-1" id="message-input" placeholder="Envoyer un message...">
 							<button id="send-message" class="btn btn-primary">Envoyer</button>
 						</div>

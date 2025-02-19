@@ -101,7 +101,7 @@ function renderFriendList(friendsList, data, api) {
 		// Créer l'élément HTML sous forme de chaîne
 		const friendItem = `
 			<li class="list-group-item d-flex justify-content-between align-items-center">
-				<span class="friend-name" data-friend-id="${friend.id}">${friend.username}</span>
+				<span class="friend-name" data-friend-id="${friend.id}" data-friend-name="${friend.username}">${friend.username}</span>
 				<span class="badge ${api === "requests" ? "bg-secondary" : (isOnline ? "bg-success" : "bg-danger")}">
 					${api === "requests" ? "Pending" : (isOnline ? "En ligne" : "Hors ligne")}
 				</span>
@@ -168,4 +168,52 @@ export function displayMessage(senderName, senderId, message, otherUserId) {
     }
 
     messageContainer.appendChild(newMessage);
+}
+
+export async function displayFriendChat(friendName) {
+	const messToHide = document.getElementById("message-select");
+	const userInfos = document.getElementById("user-informations");
+	const friendAvatar = document.getElementById("chat-friend-avatar");
+	const friendFrontName = document.getElementById("chat-friend-name");
+	const inputSendMess = document.getElementById("input-send-mess");
+
+	messToHide.classList.add("d-none");
+
+	const response = await api.apiFetch("/player/?username=" + friendName, true, "GET")
+	friendFrontName.textContent = friendName;
+	friendAvatar.src = response.players[0].avatar;
+	userInfos.classList.remove("d-none");
+	inputSendMess.style.display = "flex";
+
+}
+
+function displayChatHistory(friend) {
+  const chatBox = document.getElementById("chat-box");
+
+
+
+  chatBox.innerHTML = "";
+
+//   if (friend.blocked) {
+//     const blockedMessage = document.createElement("div");
+//     blockedMessage.classList.add("text-center", "text-muted", "mt-3");
+//     blockedMessage.textContent = "Conversation bloquée";
+//     chatBox.appendChild(blockedMessage);
+//     return;
+//   }
+
+  const chatHistory = document.createElement("div");
+  chatHistory.classList.add("chat-history");
+
+  friend.messages.forEach((msg) => {
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add(
+      "message",
+      msg.sender === "me" ? "sent" : "received"
+    );
+    messageDiv.textContent = msg.text;
+    chatHistory.appendChild(messageDiv);
+  });
+
+  chatBox.appendChild(chatHistory);
 }

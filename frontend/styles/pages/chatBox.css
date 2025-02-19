@@ -85,8 +85,8 @@
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-#chat-friend-name {
-	color : black;
+.name-chat {
+	color : var(--neon-purple);
 	overflow: hidden;
 	text-overflow: ellipsis;
 }

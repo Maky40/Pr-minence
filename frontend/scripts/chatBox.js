@@ -1,7 +1,7 @@
 // main.js
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage } from './chatServices/liveChatService.js';
-import { showChat, showSuggestions, renderFriendRequests } from './chatServices/uiService.js';
+import { showChat, showSuggestions, renderFriendRequests, displayFriendChat } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 
@@ -65,8 +65,9 @@ function addEventListeners(elements, socketActivate, currentUser) {
     elements["search-friend"].addEventListener("input", (event) => handleSearchInput(event.target.value, elements));
 	document.addEventListener("click", (event) => hideDropDownList(event, elements));
 
-    // // Add friend functionality
-    elements["add-friend"].addEventListener("click", () => addFriend(elements["search-friend"].value, elements["friends-list"]));
+    // Add friend functionality
+    elements["add-friend"].addEventListener("click", () => addFriend(elements["search-friend"].value.trim(), elements["friends-list"]));
+	elements["search-friend"].addEventListener("keydown", (event) => handlePushEnterFriend(event, elements["search-friend"].value.trim(), elements["friends-list"]))
 
     // Handle friend requests
     elements["requests-list"].addEventListener("click", (event) => handleRequestsClick(event, elements));
@@ -74,10 +75,27 @@ function addEventListeners(elements, socketActivate, currentUser) {
     // Handle friends list clicks
     elements["friends-list"].addEventListener("click", (event) => handleFriendsListClick(event, socketActivate, currentUser));
 
-	// Handle send message button
+	// Handle send message
 	elements["send-message"].addEventListener("click", () => handleSendMessage(socketActivate, currentUser, elements["message-input"]))
+	elements["message-input"].addEventListener("keydown", (event) => handlePushEnterMessage(event, socketActivate, currentUser, elements["message-input"]))
 
 }
+
+
+
+
+
+
+//╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+//║                                                                      EVENT FUNCTIONS                                                                       ║
+//╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                     SEARCH FUNCTIONALITY                   ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
 
 function handleSearchFocus(elements){
 	const currentValue = elements["search-friend"].value;
@@ -102,6 +120,24 @@ function hideDropDownList(event, elements) {
 			elements["suggestions-container"].style.display = "none";
 }
 
+
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                  ADD FRIEND FUNCTIONALITY                  ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+
+function handlePushEnterFriend(event, friendToAdd, friendsList) {
+	if (event.key === "Enter" && friendToAdd)
+		addFriend(friendToAdd, friendsList);
+}
+
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                       FRIENDS REQUESTS                     ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+
 function handleRequestsClick(event, elements) {
     // Vérifie si le clic était sur un bouton accept ou reject
     const acceptButton = event.target.closest('.accept-request');
@@ -118,19 +154,35 @@ function handleRequestsClick(event, elements) {
 		card.remove();}
 }
 
-function handleFriendsListClick(event, socketActivate, currentUser) {
-    try {
-        const friendName = event.target.closest('.friend-name');
-        const otherUserId = friendName.dataset.friendId;
 
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                      FRIEND LIST CLICK                     ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+
+async function handleFriendsListClick(event, socketActivate, currentUser) {
+    try {
+        const friend = event.target.closest('.friend-name');
+        const otherUserId = friend.dataset.friendId;
+		const friendName = friend.dataset.friendName;
+
+		await displayFriendChat(friendName);
         if (Object.keys(socketActivate).length === 0)
             initWebSocket(otherUserId, socketActivate, currentUser);
         else if (socketActivate.otherUserId !== otherUserId)
             closeAndOpenNew(otherUserId, socketActivate, currentUser)
     } catch (error) {
         console.error("Erreur API :", error);
+		console.error(error.stack);
     }
 }
+
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                        SEND MESSAGE                        ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
 
 function handleSendMessage(socketActivate, currentUser, messageInput) {
 	if (Object.keys(socketActivate). length === 0) {
@@ -140,4 +192,10 @@ function handleSendMessage(socketActivate, currentUser, messageInput) {
 	}
 	const message = messageInput.value.trim();
 	sendMessage(socketActivate, currentUser, message);
+	messageInput.value = "";
+}
+
+function handlePushEnterMessage(event, socketActivate, currentUser, messageInput) {
+	if (event.key === "Enter" && messageInput.value.trim())
+		handleSendMessage(socketActivate, currentUser, messageInput)
 }
