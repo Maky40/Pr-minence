@@ -37,7 +37,7 @@ class DuelModeHost extends Component {
   }
 
   afterRender() {
-    this.getMatchId();
+    if (!this.state.matchId) this.getMatchId();
   }
 
   template() {

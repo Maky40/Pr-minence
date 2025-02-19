@@ -22,41 +22,34 @@ class GameComponent extends Component {
       player2: "Player 2",
     };
 
-    // Gère le compte à rebours et l'état "la partie a commencé"
     this.state = {
       countdown: 5,
       isGameStarted: false,
       isGameOver: false,
       winner: null,
+      muted: false,
     };
 
-    // On définit "gameObjects" juste pour dessiner (paddle1, paddle2, ball...)
-    // On n'y stocke plus la logique de vitesse, collisions, etc.
     this.gameObjects = this.initializeGameObjects();
-
-    // WebSocket qui est déjà créé ailleurs
     this.webSocket = pong42.player.socketMatch;
-
-    // Movement = module pour envoyer "move up/down/stop"
     this.movement = new GameMovement(
       this.gameObjects,
       this.gameConfig,
       this.gameState
     );
-
     this.renderer = null;
     this.animationFrameId = null;
 
-    // Audio
     this.countdownAudio = new Audio("/assets/start.mp3");
     this.themeAudio = new Audio("/assets/theme.mp3");
-    this.isMuted = false;
+    this.finalAudio = new Audio("/assets/final.mp3");
     this.isCountdownStarted = false;
+
+    // Bind the handleSilence method to ensure the correct context
+    this.handleSilence = this.handleSilence.bind(this);
   }
 
   initializeGameObjects() {
-    // Positions initiales (arbitraires, purement visuelles ;
-    // le serveur nous enverra vite la position "réelle")
     const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
       this.gameConfig;
 
@@ -78,7 +71,6 @@ class GameComponent extends Component {
         y: HEIGHT / 2,
         size: BALL_SIZE,
       },
-      // On garde score1, score2 pour affichage
       score1: 0,
       score2: 0,
     };
@@ -90,26 +82,18 @@ class GameComponent extends Component {
       return;
     }
 
-    // Écoute des messages du serveur
     this.webSocket.addMessageListener("message", (data) => {
       try {
         const message = JSON.parse(data);
-        console.log("Received message:", message);
         switch (message.type) {
           case "game_start":
-            // Optionnel : on peut lancer/forcer le compte à rebours,
-            // ou afficher un message "La partie va commencer".
             console.log("Game start message received");
             break;
           case "players_info":
-            // Le serveur nous envoie les infos des joueurs
-            // On peut les stocker pour afficher les noms, scores, etc.
             this.gameState.player1 = message.left_username;
             this.gameState.player2 = message.right_username;
             break;
           case "game_state":
-            // Le serveur nous envoie l'état complet
-            // On met à jour nos objets pour dessiner
             this.gameObjects.paddle1.y = message.paddle_left_y;
             this.gameObjects.paddle2.y = message.paddle_right_y;
             this.gameObjects.ball.x = message.ball_x;
@@ -138,7 +122,12 @@ class GameComponent extends Component {
               this.state.winner = "You lose!";
             }
             this.state.isGameOver = true;
-
+            this.state.muted = true;
+            this.destroy();
+            if (this.themeAudio) {
+              this.themeAudio.muted = this.state.muted;
+            }
+            this.finalAudio.play();
             this.update();
             break;
         }
@@ -149,7 +138,6 @@ class GameComponent extends Component {
   }
 
   getControlsToDisplay() {
-    // Si le joueur utilise les flèches (vérifie les dernières touches utilisées)
     const usesArrows = pong42.player.paddle === "right";
     return {
       up: usesArrows ? "↑" : "W",
@@ -178,6 +166,14 @@ class GameComponent extends Component {
     if (btnLeaveGame) {
       btnLeaveGame.addEventListener("click", () => {
         console.log("Leaving game...");
+
+        if (this.themeAudio) {
+          this.themeAudio.muted = true;
+        }
+        if (this.finalAudio) {
+          this.finalAudio.muted = true;
+        }
+        this.destroy();
         this.webSocket.removeAllListeners();
         this.webSocket.close();
         pong42.player.socketMatch = null;
@@ -185,37 +181,30 @@ class GameComponent extends Component {
       });
     }
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key in this.gameState.keys) {
-        event.preventDefault();
-        this.gameState.keys[event.key] = true;
-        this.updateKeyDisplay(event.key, true);
-      }
-    });
+    const btnSilence = document.getElementById("btnSilence");
+    if (btnSilence) {
+      btnSilence.removeEventListener("click", this.handleSilence); // Remove any existing listener
+      btnSilence.addEventListener("click", this.handleSilence); // Add the new listener
+    }
+  }
 
-    document.addEventListener("keyup", (event) => {
-      if (event.key in this.gameState.keys) {
-        event.preventDefault();
-        this.gameState.keys[event.key] = false;
-        this.updateKeyDisplay(event.key, false);
-      }
-    });
+  handleSilence() {
+    this.state.muted = !this.state.muted;
+
+    if (this.themeAudio) {
+      this.themeAudio.muted = this.state.muted;
+    }
+    if (this.countdownAudio) {
+      this.countdownAudio.muted = this.state.muted;
+    }
 
     const btnSilence = document.getElementById("btnSilence");
     if (btnSilence) {
-      btnSilence.addEventListener("click", () => {
-        this.isMuted = !this.isMuted;
-        this.themeAudio.muted = this.isMuted;
-        this.countdownAudio.muted = this.isMuted;
-
-        // Mettre à jour l'icône
-        btnSilence.innerHTML = this.isMuted
-          ? '<i class="fas fa-volume-mute"></i>'
-          : '<i class="fas fa-volume-up"></i>';
-
-        console.log("Sound is now", this.isMuted ? "muted" : "unmuted");
-      });
+      btnSilence.innerHTML = this.state.muted
+        ? '<i class="fas fa-volume-mute"></i>'
+        : '<i class="fas fa-volume-up"></i>';
     }
+    this.update();
   }
 
   startCountdown() {
@@ -229,11 +218,10 @@ class GameComponent extends Component {
         );
         if (timeLeft !== this.state.countdown) {
           this.state.countdown = timeLeft;
-          this.update(); // Met à jour le DOM (affiche le nouveau countdown)
+          this.update();
         }
 
         if (timeLeft <= 0) {
-          // Le décompte est fini, on lance la partie
           this.state.isGameStarted = true;
           this.update();
           this.gameLoop();
@@ -250,18 +238,11 @@ class GameComponent extends Component {
     }
   }
 
-  /**
-   * Boucle d'animation :
-   *  - Envoie la direction du paddle (up/down/stop) au serveur
-   *  - Dessine l'état actuel (ce que le serveur nous a envoyé)
-   *  - Reboucle avec requestAnimationFrame
-   */
   gameLoop = () => {
     if (this.themeAudio) {
-      this.themeAudio.muted = this.isMuted;
+      this.themeAudio.muted = this.state.muted;
     }
 
-    // Envoyer l'input (paddle up/down/stop) au serveur
     this.movement.updatePaddlePosition(
       this.gameState.keys,
       pong42.player.paddle,
@@ -270,9 +251,7 @@ class GameComponent extends Component {
       }
     );
 
-    // Dessiner l'état (positions ball, paddles, scores)
     this.renderer.draw(this.gameObjects, this.gameState);
-    // On continue la boucle
     this.animationFrameId = requestAnimationFrame(this.gameLoop);
   };
 
@@ -282,16 +261,14 @@ class GameComponent extends Component {
       console.error("Canvas element not found");
       return;
     }
-    //on stocke les keydown et keyup dans le gameState
     this.renderer = new GameRenderer(canvas, this.gameConfig);
 
-    // WebSocket + events
     this.setupWebSocket();
     this.setupEventListeners();
 
-    // Lancement compte à rebours
     this.startCountdown();
   }
+
   updateKeyDisplay(key, isPressed) {
     const upKeyElement = document.getElementById("upKey");
     const downKeyElement = document.getElementById("downKey");
@@ -338,21 +315,15 @@ class GameComponent extends Component {
   }
 
   destroy() {
-    // Annule la boucle d'animation
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
 
-    // Stop audios
-    if (this.themeAudio) {
-      this.themeAudio.pause();
-      this.themeAudio.currentTime = 0;
-    }
-    if (this.countdownAudio) {
-      this.countdownAudio.pause();
-      this.countdownAudio.currentTime = 0;
+    const btnSilence = document.getElementById("btnSilence");
+    if (btnSilence) {
+      btnSilence.removeEventListener("click", this.handleSilence);
     }
   }
 
