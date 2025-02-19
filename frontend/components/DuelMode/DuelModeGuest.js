@@ -62,7 +62,6 @@ class DuelModeGuest extends Component {
             isConnected: true,
             waitingGuest: false,
           });
-          console.log("Match prêt ! Début du jeu.");
           //on remove tout les listeners
           this.webSocketMatch.removeAllListeners();
           const game = new GameComponent();

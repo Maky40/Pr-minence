@@ -18,12 +18,16 @@ class GameComponent extends Component {
       },
       score1: 0,
       score2: 0,
+      player1: "Player 1",
+      player2: "Player 2",
     };
 
     // Gère le compte à rebours et l'état "la partie a commencé"
     this.state = {
       countdown: 5,
       isGameStarted: false,
+      isGameOver: false,
+      winner: null,
     };
 
     // On définit "gameObjects" juste pour dessiner (paddle1, paddle2, ball...)
@@ -90,14 +94,19 @@ class GameComponent extends Component {
     this.webSocket.addMessageListener("message", (data) => {
       try {
         const message = JSON.parse(data);
-
+        console.log("Received message:", message);
         switch (message.type) {
           case "game_start":
             // Optionnel : on peut lancer/forcer le compte à rebours,
             // ou afficher un message "La partie va commencer".
             console.log("Game start message received");
             break;
-
+          case "players_info":
+            // Le serveur nous envoie les infos des joueurs
+            // On peut les stocker pour afficher les noms, scores, etc.
+            this.gameState.player1 = message.left_username;
+            this.gameState.player2 = message.right_username;
+            break;
           case "game_state":
             // Le serveur nous envoie l'état complet
             // On met à jour nos objets pour dessiner
@@ -114,7 +123,23 @@ class GameComponent extends Component {
               this.gameState.score2 = message.score_right;
               this.handleScore();
             }
+            break;
+          case "game_over":
+            this.webSocket.removeAllListeners();
+            this.webSocket.close();
+            pong42.player.socketMatch = null;
+            this.gameState.score1 = message.score_left;
+            this.gameState.score2 = message.score_right;
+            let winner = "right";
+            if (message.score_left > message.score_right) winner = "left";
+            if (pong42.player.paddle === winner) {
+              this.state.winner = "You win!";
+            } else {
+              this.state.winner = "You lose!";
+            }
+            this.state.isGameOver = true;
 
+            this.update();
             break;
         }
       } catch (error) {
@@ -131,8 +156,6 @@ class GameComponent extends Component {
       down: usesArrows ? "↓" : "S",
       upKey: usesArrows ? "ArrowUp" : "w",
       downKey: usesArrows ? "ArrowDown" : "s",
-      player1: usesArrows ? "Player 1" : pong42.player.username,
-      player2: usesArrows ? pong42.player.username : "Player 2",
     };
   }
 
@@ -155,7 +178,6 @@ class GameComponent extends Component {
     if (btnLeaveGame) {
       btnLeaveGame.addEventListener("click", () => {
         console.log("Leaving game...");
-        this.webSocket.send({ type: "leave" });
         this.webSocket.removeAllListeners();
         this.webSocket.close();
         pong42.player.socketMatch = null;
@@ -373,7 +395,61 @@ class GameComponent extends Component {
         </div>
       `;
     }
-    // Partie en cours
+    if (this.state.isGameOver) {
+      return `
+        <div class="game-container position-relative vh-100 bg-dark">
+          <canvas id="gameCanvas" 
+                  width="${this.gameConfig.WIDTH}" 
+                  height="${this.gameConfig.HEIGHT}"
+                  class="position-absolute top-50 start-50 translate-middle shadow-lg opacity-50">
+          </canvas>
+  
+          <!-- Game Over Overlay -->
+          <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" 
+               style="background: rgba(0, 0, 0, 0.8); z-index: 1000;">
+            <div class="text-center">
+              <h1 class="display-1 text-danger mb-4" 
+                  style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);">
+                GAME OVER
+              </h1>
+              
+              <!-- Final Score -->
+              <div class="bg-black bg-opacity-75 p-4 rounded-pill border border-3 border-info mb-4">
+                <div class="d-flex justify-content-center align-items-center gap-5">
+                  <div class="text-center">
+                    <div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
+                      ${this.gameState.score1}
+                    </div>
+                    <small class="text-white-50">${this.gameState.player1}</small>
+                  </div>
+                  <div class="text-danger display-6">VS</div>
+                  <div class="text-center">
+                    <div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
+                      ${this.gameState.score2}
+                    </div>
+                    <small class="text-white-50">${this.gameState.player2}</small>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Winner Display -->
+              <div class="mb-5">
+                <h2 class="text-warning" style="font-family: 'Orbitron', sans-serif;">
+                  
+                  <span class="text-info">${this.state.winner} </span>
+                </h2>
+              </div>
+  
+              <!-- Return Button -->
+              <button class="btn btn-outline-info btn-lg px-5" id="btnLeaveGame">
+                <i class="fas fa-home me-2"></i>
+                Return to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
     return `
     <div class="game-container position-relative vh-100 bg-dark">
       <!-- Canvas Background -->
@@ -406,7 +482,7 @@ class GameComponent extends Component {
                       </div>
                       <div class="score-label">
                         <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
-                          controls.player1
+                          this.gameState.player1
                         }</small>
                       </div>
                       <div class="score-glow"></div>
@@ -422,7 +498,7 @@ class GameComponent extends Component {
                       </div>
                       <div class="score-label">
                         <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
-                          controls.player2
+                          this.gameState.player2
                         }</small>
                       </div>
                       <div class="score-glow"></div>
