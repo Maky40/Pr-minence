@@ -1,6 +1,7 @@
 from django.db import models
-from django.db.models import Q
 from django.contrib.auth.models import AbstractBaseUser
+
+
 
 class Player(AbstractBaseUser):
     STATUS_CHOICES = [
@@ -43,6 +44,8 @@ class Player(AbstractBaseUser):
 
     def __str__(self):
         return f'Player: [ email: {self.email}, username: {self.username} ]'
+
+
 
 class Friendship(models.Model):
     player_sender = models.ForeignKey(Player, related_name='friend_requests_sent', on_delete=models.CASCADE)
@@ -112,6 +115,11 @@ class PlayerMatch(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     score = models.IntegerField(default=0)  # Score du joueur dans le match (facultatif)
     is_winner = models.BooleanField(default=False)  # Indique si le joueur a gagné ce match
+    SIDE_CHOICES = [
+        ('L', 'Left'),
+        ('R', 'Right'),
+    ]
+    player_side = models.CharField(max_length=1, choices=SIDE_CHOICES, null=True, blank=True)
 
     class Meta:
         unique_together = ('player', 'match')
