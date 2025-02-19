@@ -31,9 +31,7 @@ load_dotenv(DOTENV_PATH)
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")  # Clé par défaut si non définie
 DEBUG = True  # Toujours en mode debug pour le développement local
 ALLOWED_HOSTS = [
-    'localhost',  # Pour les tests locaux
-    '127.0.0.1',  # Adresse IP locale
-    'player',     # Hôte utilisé dans votre conteneur Docker
+    '*'     # Hôte utilisé dans votre conteneur Docker
 ]
 
 # === 3. Applications Django ===

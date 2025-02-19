@@ -81,7 +81,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         """Si c'est le 1er, side='L'. Si c'est le 2ᵉ, side='R'."""
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
         if existing_pm.count() == 0:
-            # Premier joueur => 'L'
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -91,7 +90,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
             return "left"
         elif existing_pm.count() == 1:
-            # Deuxième joueur => 'R'
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -166,7 +164,10 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def init_game_state(self):
-        """running=False => la physique attend la fin du countdown."""
+        """
+        running=False => la physique attend la fin du countdown
+        next_engagement_left=True => la balle partira côté droit au 1er engagement
+        """
         game_states[self.match_id] = {
             "width": 800,
             "height": 600,
@@ -182,7 +183,10 @@ class PongConsumer(AsyncWebsocketConsumer):
             "paddle_height": 100,
             "score_left": 0,
             "score_right": 0,
-            "running": False
+            "running": False,
+
+            # Pour alterner l'engagement
+            "next_engagement_left": True
         }
 
     async def start_game_loop(self):
@@ -215,6 +219,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(1/60)
 
     async def update_positions(self, state):
+        # On utilise ±10 pour des raquettes "beaucoup plus vites"
         state["paddle_left_y"] += state["paddle_speed_left"]
         state["paddle_right_y"] += state["paddle_speed_right"]
 
@@ -246,23 +251,36 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         # Haut/bas
         if by <= 0 or by >= h - ball_size:
+            # Inverse Y
             state["ball_vy"] = -vy
 
-        # Gauche
+        # Collision avec raquette gauche ?
         if bx <= paddle_left_x + state["paddle_width"]:
             if (by >= state["paddle_left_y"] and
                 by <= state["paddle_left_y"] + state["paddle_height"]):
-                state["ball_vx"] = -vx
+                # On inverse vx
+                new_vx = -vx
+                # On augmente un peu la vitesse (par ex. *1.1)
+                new_vx *= 1.1
+                # On fait pareil pour vy pour plus de fun (optionnel)
+                new_vy = vy * 1.1
+                state["ball_vx"] = new_vx
+                state["ball_vy"] = new_vy
             else:
+                # But pour la droite
                 state["score_right"] += 1
                 await self.reset_ball(state)
 
-        # Droite
+        # Collision raquette droite ?
         elif bx + ball_size >= paddle_right_x:
             if (by >= state["paddle_right_y"] and
                 by <= state["paddle_right_y"] + state["paddle_height"]):
-                state["ball_vx"] = -vx
+                new_vx = -vx * 1.1
+                new_vy = vy * 1.1
+                state["ball_vx"] = new_vx
+                state["ball_vy"] = new_vy
             else:
+                # But pour la gauche
                 state["score_left"] += 1
                 await self.reset_ball(state)
 
@@ -272,13 +290,27 @@ class PongConsumer(AsyncWebsocketConsumer):
             await self.end_game(self.match_id, state)
 
     async def reset_ball(self, state):
+        """Replace la balle au centre et alterne l'engagement."""
         import random
+
+        # Centre
         state["ball_x"] = state["width"] // 2
         state["ball_y"] = state["height"] // 2
-        dir_x = 1 if random.random() > 0.5 else -1
+
+        # On choisit un angle vertical +/- 1
         dir_y = 1 if random.random() > 0.5 else -1
-        state["ball_vx"] = 5 * dir_x
         state["ball_vy"] = 5 * dir_y
+
+        # Engagement alterné :
+        if state["next_engagement_left"]:
+            # Balle part vers la droite
+            state["ball_vx"] = 5
+        else:
+            # Balle part vers la gauche
+            state["ball_vx"] = -5
+
+        # On inverse pour la prochaine fois
+        state["next_engagement_left"] = not state["next_engagement_left"]
 
     async def broadcast_game_state(self, state):
         await self.channel_layer.group_send(
@@ -325,6 +357,8 @@ class PongConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def update_database_winner(self, match_id, state):
         """Match PLY, side 'L' et 'R' => set is_winner, + wins/losses."""
+        from .models import Match, PlayerMatch
+
         match = Match.objects.get(id=match_id)
         match.state = 'PLY'
         match.save()
@@ -347,7 +381,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             pm_left.player.losses += 1
             pm_right.player.save()
             pm_left.player.save()
-        # else => égalité possible ?
 
         pm_left.save()
         pm_right.save()
@@ -373,19 +406,19 @@ class PongConsumer(AsyncWebsocketConsumer):
             if not state:
                 return
 
-            # Ajuster la vitesse selon la raquette
+            # Raquettes "beaucoup plus vite" => ±10
             if self.paddle == "left":
                 if direction == "up":
-                    state["paddle_speed_left"] = -5
+                    state["paddle_speed_left"] = -10
                 elif direction == "down":
-                    state["paddle_speed_left"] = 5
+                    state["paddle_speed_left"] = 10
                 else:
                     state["paddle_speed_left"] = 0
             else:
                 if direction == "up":
-                    state["paddle_speed_right"] = -5
+                    state["paddle_speed_right"] = -10
                 elif direction == "down":
-                    state["paddle_speed_right"] = 5
+                    state["paddle_speed_right"] = 10
                 else:
                     state["paddle_speed_right"] = 0
 
