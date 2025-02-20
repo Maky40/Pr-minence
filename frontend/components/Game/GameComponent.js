@@ -4,6 +4,7 @@ import { GAME_CONFIG } from "./gameConfig.js";
 import pong42 from "../../services/pong42.js";
 import { changePage } from "../../utils/Page.js";
 import GameRenderer from "./GameRenderer.js";
+import Music from "../../utils/Music.js";
 
 class GameComponent extends Component {
   constructor() {
@@ -40,9 +41,7 @@ class GameComponent extends Component {
     this.renderer = null;
     this.animationFrameId = null;
 
-    this.countdownAudio = new Audio("/assets/start.mp3");
-    this.themeAudio = new Audio("/assets/theme.mp3");
-    this.finalAudio = new Audio("/assets/final.mp3");
+    this.music = new Music();
     this.isCountdownStarted = false;
 
     // Bind the handleSilence method to ensure the correct context
@@ -82,7 +81,7 @@ class GameComponent extends Component {
       return;
     }
 
-    this.webSocket.addMessageListener("message", (data) => {
+    this.webSocket.addMessageListener("message", async (data) => {
       try {
         const message = JSON.parse(data);
         switch (message.type) {
@@ -109,6 +108,7 @@ class GameComponent extends Component {
             }
             break;
           case "game_over":
+            console.log("Game over message received");
             this.webSocket.removeAllListeners();
             this.webSocket.close();
             pong42.player.socketMatch = null;
@@ -122,12 +122,9 @@ class GameComponent extends Component {
               this.state.winner = "You lose!";
             }
             this.state.isGameOver = true;
-            this.state.muted = true;
-            this.destroy();
-            if (this.themeAudio) {
-              this.themeAudio.muted = this.state.muted;
-            }
-            this.finalAudio.play();
+            await this.music.stop();
+            await this.music.play("final");
+            await this.destroy();
             this.update();
             break;
         }
@@ -166,17 +163,11 @@ class GameComponent extends Component {
     if (btnLeaveGame) {
       btnLeaveGame.addEventListener("click", () => {
         console.log("Leaving game...");
-
-        if (this.themeAudio) {
-          this.themeAudio.muted = true;
-        }
-        if (this.finalAudio) {
-          this.finalAudio.muted = true;
-        }
         this.destroy();
         this.webSocket.removeAllListeners();
         this.webSocket.close();
         pong42.player.socketMatch = null;
+        this.music.stop();
         changePage("home");
       });
     }
@@ -188,21 +179,17 @@ class GameComponent extends Component {
     }
   }
 
-  handleSilence() {
+  async handleSilence() {
     this.state.muted = !this.state.muted;
-
-    if (this.themeAudio) {
-      this.themeAudio.muted = this.state.muted;
+    if (this.state.muted) {
+      await this.music.mute();
+    } else {
+      await this.music.unmute();
     }
-    if (this.countdownAudio) {
-      this.countdownAudio.muted = this.state.muted;
-    }
-
     const btnSilence = document.getElementById("btnSilence");
     if (btnSilence) {
-      btnSilence.innerHTML = this.state.muted
-        ? '<i class="fas fa-volume-mute"></i>'
-        : '<i class="fas fa-volume-up"></i>';
+      const iconClass = this.state.muted ? "fa-volume-mute" : "fa-volume-up";
+      btnSilence.innerHTML = `<i class="fas ${iconClass}"></i>`;
     }
     this.update();
   }
@@ -210,31 +197,21 @@ class GameComponent extends Component {
   startCountdown() {
     if (!this.state.isGameStarted && !this.isCountdownStarted) {
       this.isCountdownStarted = true;
-      this.countdownAudio.play();
-
-      const updateCountdown = () => {
-        const timeLeft = Math.ceil(
-          this.countdownAudio.duration - this.countdownAudio.currentTime
-        );
-        if (timeLeft !== this.state.countdown) {
-          this.state.countdown = timeLeft;
-          this.update();
-        }
-
-        if (timeLeft <= 0) {
+      this.music.startCountdown(
+        // Callback quand le compte à rebours est terminé
+        () => {
           this.state.isGameStarted = true;
           this.update();
           this.gameLoop();
-
-          this.themeAudio.play();
-          this.countdownAudio.removeEventListener(
-            "timeupdate",
-            updateCountdown
-          );
+        },
+        // Callback pour mettre à jour le compte à rebours
+        (timeLeft) => {
+          if (this.state.countdown !== timeLeft) {
+            this.state.countdown = timeLeft;
+            this.update();
+          }
         }
-      };
-
-      this.countdownAudio.addEventListener("timeupdate", updateCountdown);
+      );
     }
   }
 
@@ -314,7 +291,7 @@ class GameComponent extends Component {
     this.update();
   }
 
-  destroy() {
+  async destroy() {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }

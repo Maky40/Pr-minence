@@ -7,6 +7,7 @@ class WebSocketAPI {
     this.listeners = new Map();
     this.retryCount = 0; // Ajouter un compteur de tentatives
     this.maxRetries = 3; // Limiter à 3 tentatives
+    this.forceClose = false;
     this.init();
   }
 
@@ -30,6 +31,7 @@ class WebSocketAPI {
 
   close() {
     if (this.socket) {
+      this.forceClose = true;
       this.removeAllListeners();
       this.socket.close();
       this.socket = null;
@@ -96,9 +98,11 @@ class WebSocketAPI {
       const closeMessage = "La connexion a été perdue";
       this.status = "DISCONNECTED";
       this.notifyListeners("close", closeMessage);
-      this.close();
-      this.retryCount++;
-      setTimeout(() => this.init(), 2000); // Réessayer après 2 secondes
+      if (!this.forceClose) {
+        this.close();
+        this.retryCount++;
+        setTimeout(() => this.init(), 2000);
+      } // Réessayer après 2 secondes
     });
 
     this.socket.addEventListener("error", (event) => {
