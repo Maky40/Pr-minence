@@ -110,9 +110,10 @@ class WebSocketAPI {
       console.error("WebSocket error:", event);
       this.status = "ERROR";
       this.notifyListeners("error", errorMessage);
-      this.close();
-      this.retryCount++;
-      setTimeout(() => this.init(), 2000); // Réessayer après 2 secondes
+      // Ne pas tenter de reconnecter si forceClose est true
+      if (!this.forceClose) {
+        this.handleConnectionFailure();
+      }
     });
   }
 }

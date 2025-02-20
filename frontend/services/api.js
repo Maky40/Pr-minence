@@ -1,8 +1,10 @@
 import Toast from "../components/toast.js";
+import { ENV } from "../env.js";
 
 class Api {
   constructor() {
-    this.baseUrl = "https://localhost";
+    this.baseUrl = `${ENV.API_URL}`;
+    this.urlAuthDjangoLogout = `${ENV.API_URL}${ENV.URL_AUTH_DJANGO_LOGOUT}`;
     this.authentificatHeader = {
       credentials: "include",
     };
@@ -42,7 +44,7 @@ class Api {
       const response = await fetch(fetchUrl, headers);
 
       // For logout, accept any successful response
-      if (url === "/authentication/logout/") {
+      if (url === this.urlAuthDjangoLogout) {
         return response.ok;
       }
       if (response.status === 401) {

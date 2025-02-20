@@ -2,6 +2,7 @@ import Component from "../../utils/Component.js";
 import pong42 from "../../services/pong42.js";
 import WebSocketAPI from "../../services/websocket.js";
 import GameComponent from "../Game/GameComponent.js";
+import { ENV } from "../../env.js";
 
 class DuelModeHost extends Component {
   constructor() {
@@ -13,9 +14,10 @@ class DuelModeHost extends Component {
       error: null,
       waitingGuest: false,
     };
+    this.wsurlgame = `${ENV.WS_URL_GAME}`;
   }
   async getMatchId() {
-    const webSocketMatch = new WebSocketAPI("wss://localhost/pong/ws/pong/");
+    const webSocketMatch = new WebSocketAPI(this.wsurlgame);
     webSocketMatch.addMessageListener("message", (data) => {
       const message = JSON.parse(data);
       if (message.type === "game_start") {

@@ -30,7 +30,6 @@ class ProfileManager extends Component {
     });
 
     pong42.player.addListener("updateStatus", () => {
-      console.log("Player updated");
       this.setState({ profile: pong42.player });
 
       this.render(this.container);

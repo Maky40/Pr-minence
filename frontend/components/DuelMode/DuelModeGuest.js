@@ -2,6 +2,8 @@ import Component from "../../utils/Component.js";
 import WebSocketAPI from "../../services/websocket.js";
 import pong42 from "../../services/pong42.js";
 import GameComponent from "../Game/GameComponent.js";
+import { changePage } from "../../utils/Page.js";
+import { ENV } from "../../env.js";
 
 class DuelModeGuest extends Component {
   constructor(matchId) {
@@ -15,13 +17,14 @@ class DuelModeGuest extends Component {
       startingGame: false,
     };
     this.webSocketMatch = null;
+    this.wsurlgame = `${ENV.WS}`;
   }
 
   async joinMatch() {
     if (this.state.isConnected) return;
     this.setState({ loading: true, isConnected: true });
     this.webSocketMatch = new WebSocketAPI(
-      "wss://localhost/pong/ws/pong/" + this.state.matchId + "/"
+      this.wsurlgame + this.state.matchId + "/"
     );
 
     // Gestion des erreurs de connexion
@@ -32,15 +35,18 @@ class DuelModeGuest extends Component {
       this.setState({ loading: true, isConnected: true });
     });
 
-    this.webSocketMatch.addMessageListener("error", () => {
+    this.webSocketMatch.addMessageListener("error", (error) => {
+      this.webSocketMatch.forceClose = true;
+      this.webSocketMatch.close();
       this.setState({
-        error: "Une erreur de connexion est survenue",
+        error: "Une erreur de connexion est survenue : " + error,
         loading: false,
         isConnected: false,
       });
+      this.update();
       setTimeout(() => {
-        window.location.href = "#game";
-      }, 2000); // Rediriger après 2 secondes
+        changePage("#home");
+      }, 2500); // Rediriger après 2 secondes
     });
 
     this.webSocketMatch.addMessageListener("close", () => {
@@ -95,10 +101,11 @@ class DuelModeGuest extends Component {
   }
 
   template() {
-    if (this.state.error && !this.state.waitingGuest) {
+    if (this.state.error) {
       return `
             <div class="container mt-5">
                 <div class="d-flex flex-column align-items-center justify-content-center">
+                    <div id="alert-container" /div>
                     <h3 class="text-danger mb-4">Erreur</h3>
                     <p class="text-danger">${this.state.error}</p>
                     <button class="btn btn-primary mt-3" onclick="changePage('#home')">Retour à l'accueil</button>

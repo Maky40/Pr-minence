@@ -2,6 +2,7 @@ import pong42 from "./pong42.js";
 import api from "./api.js";
 import Toast from "../components/toast.js";
 import WebSocketAPI from "./websocket.js";
+
 class Auth {
   constructor() {
     this.authenticated = false;
@@ -10,6 +11,10 @@ class Auth {
     this.refreshToken = null;
     this.listeners = new Set();
     this.initFromAPI();
+    this.urlwsauth = `${ENV.WS_URL_AUTH}`;
+    this.urlauthdjango = `${ENV.WS_URL_AUTH}`;
+    this.urlauthdjangosignup = `${ENV.URL_AUTH_DJANGO_SIGNUP}`;
+    this.urlauthdjangologout = `${ENV.URL_AUTH_DJANGO_LOGOUT}`;
   }
 
   async initFromAPI() {
@@ -43,11 +48,10 @@ class Auth {
 
   async login(email, password) {
     try {
-      const data = await api.apiFetch("/authentication/login/", false, "POST", {
+      const data = await api.apiFetch(this.urlauthdjango, false, "POST", {
         email,
         password,
       });
-      console.log("======Login successful:", data);
       if (data.status !== 200) {
         const toast = new Toast("error", "Erreur de connexion", "error");
         toast.show();
@@ -88,7 +92,7 @@ class Auth {
   }
 
   async registerUser(userData) {
-    const data = await api.apiFetch("/authentication/signup/", false, "POST", {
+    const data = await api.apiFetch(this.urlauthdjangosignup, false, "POST", {
       email: userData.email,
       username: userData.username,
       first_name: userData.first_name,
@@ -120,9 +124,7 @@ class Auth {
     this.user = player;
     pong42.player.setPlayerInformations(player);
     this.notifyListeners("login");
-    const webSocketStatus = new WebSocketAPI(
-      "wss://localhost/authentication/ws/online/"
-    );
+    const webSocketStatus = new WebSocketAPI(this.urlwsauth);
     webSocketStatus.addMessageListener("message", (data) => {
       pong42.player.updateStatus("ON");
     });
@@ -130,7 +132,7 @@ class Auth {
 
   async logout() {
     try {
-      const response = await api.apiFetch("/authentication/logout/", true);
+      const response = await api.apiFetch(this.urlauthdjangologout, true);
       this.authenticated = false;
       this.user = null;
       const toast = new Toast("Success", "Déconnexion réussie", "success");
