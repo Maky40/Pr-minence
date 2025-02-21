@@ -17,7 +17,7 @@ class DuelModeGuest extends Component {
       startingGame: false,
     };
     this.webSocketMatch = null;
-    this.wsurlgame = `${ENV.WS}`;
+    this.wsurlgame = `${ENV.WS_URL_GAME}`;
   }
 
   async joinMatch() {

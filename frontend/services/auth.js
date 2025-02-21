@@ -12,7 +12,7 @@ class Auth {
     this.listeners = new Set();
     this.initFromAPI();
     this.urlwsauth = `${ENV.WS_URL_AUTH}`;
-    this.urlauthdjango = `${ENV.WS_URL_AUTH}`;
+    this.urlauthdjango = `${ENV.URL_AUTH_DJANGO}`;
     this.urlauthdjangosignup = `${ENV.URL_AUTH_DJANGO_SIGNUP}`;
     this.urlauthdjangologout = `${ENV.URL_AUTH_DJANGO_LOGOUT}`;
   }
