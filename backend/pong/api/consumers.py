@@ -4,9 +4,11 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Match, PlayerMatch
 
-# States en mémoire
+# States en mémoire (pour la logique en temps réel)
 game_states = {}
+# Tâches asynchrones de partie
 game_tasks = {}
+# Tâches de décompte
 countdown_tasks = {}
 
 class PongConsumer(AsyncWebsocketConsumer):
@@ -20,40 +22,58 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
         self.room_group_name = None
 
-        # Check match_id
+        # --- NOUVEAU : Vérification du match (s'il y a un match_id) ---
         if self.match_id:
-            # On rejoint un match existant
-            if await self.is_match_ready(self.match_id):
+            # Vérifie en base si ce match existe réellement
+            match_exists = await self.match_exists_in_db(self.match_id)
+            if not match_exists:
+                # Si le match n'existe pas => on ferme immédiatement
                 await self.close()
                 return
+            
+            # On rejoint un match existant
+            # Vérifie si le match est déjà complet (2 joueurs)
+            if await self.is_match_ready(self.match_id):
+                # Si le match a déjà 2 joueurs, on empêche un 3ᵉ joueur d'entrer
+                await self.close()
+                return
+
+            # Assigne la raquette au second joueur
             self.paddle = await self.assign_player_side(self.match_id, self.player)
             if not self.paddle:
+                # Problème lors de l'assignation (match complet ?)
                 await self.close()
                 return
+
         else:
-            # On crée un match
+            # Aucune match_id => on crée un nouveau match
             self.match_id = await self.create_match(self.player)
             self.paddle = "left"
 
+        # Nom du "groupe" Channels (salle) basé sur match_id
         self.room_group_name = f"pong_{self.match_id}"
 
+        # Rejoint le groupe
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
+        # Accepte la connexion WebSocket
         await self.accept()
 
+        # Message de confirmation au client
         await self.send(text_data=json.dumps({
             "message": "Connexion WebSocket établie",
             "match_id": self.match_id,
             "paddle": self.paddle
         }))
 
-        # Si on a 2 joueurs => start
+        # Si on a 2 joueurs => on démarre la partie
         if await self.is_match_ready(self.match_id):
             await self.start_game()
 
     async def disconnect(self, close_code):
+        """Déconnexion d'un joueur"""
         if self.room_group_name:
             await self.channel_layer.group_discard(
                 self.room_group_name,
@@ -61,11 +81,16 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
 
     #
-    # --- Méthodes DB ---
+    # --- Méthodes DB utilitaires ---
     #
     @database_sync_to_async
+    def match_exists_in_db(self, match_id):
+        """Retourne True si le match existe en base, False sinon."""
+        return Match.objects.filter(id=match_id).exists()
+
+    @database_sync_to_async
     def create_match(self, player):
-        """Crée un match + un PlayerMatch (side = 'L') pour le premier joueur."""
+        """Crée un match + un PlayerMatch (side='L') pour le premier joueur."""
         match = Match.objects.create()
         PlayerMatch.objects.create(
             player=player,
@@ -78,9 +103,10 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
-        """Si c'est le 1er, side='L'. Si c'est le 2ᵉ, side='R'."""
+        """Assigne la raquette 'L' ou 'R' selon le nombre de joueurs déjà présents."""
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
         if existing_pm.count() == 0:
+            # Premier joueur => side 'L'
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -90,6 +116,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
             return "left"
         elif existing_pm.count() == 1:
+            # Deuxième joueur => side 'R'
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -98,11 +125,12 @@ class PongConsumer(AsyncWebsocketConsumer):
                 player_side='R'
             )
             return "right"
+        # Sinon, c'est qu'il y a déjà 2 joueurs => pas de 3ᵉ
         return None
 
     @database_sync_to_async
     def is_match_ready(self, match_id):
-        """2 joueurs connectés ?"""
+        """Retourne True si 2 joueurs sont dans le match."""
         return PlayerMatch.objects.filter(match_id=match_id).count() == 2
 
     #
@@ -118,14 +146,14 @@ class PongConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        # Réinitialise
+        # Réinitialise l'état de jeu pour ce match (s'il existait déjà)
         if self.match_id in game_states:
             del game_states[self.match_id]
 
         await self.init_game_state()
         await self.start_game_loop()
 
-        # On récupère les pseudos left/right
+        # On récupère les pseudos (left/right)
         left_username, right_username = await self.get_left_right_usernames(self.match_id)
         # On diffuse ces infos à tout le monde
         await self.channel_layer.group_send(
@@ -137,7 +165,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        # Décompte asynchrone 5s
+        # Décompte asynchrone de 5s
         countdown_task = asyncio.create_task(self.do_countdown(self.match_id))
         countdown_tasks[self.match_id] = countdown_task
 
@@ -150,7 +178,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_left_right_usernames(self, match_id):
-        """Retourne (left_username, right_username) en se basant sur player_side."""
+        """Retourne (left_username, right_username) via PlayerMatch."""
         pm_left = PlayerMatch.objects.get(match_id=match_id, player_side='L')
         pm_right = PlayerMatch.objects.get(match_id=match_id, player_side='R')
         return pm_left.player.username, pm_right.player.username
@@ -164,10 +192,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def init_game_state(self):
-        """
-        running=False => la physique attend la fin du countdown
-        next_engagement_left=True => la balle partira côté droit au 1er engagement
-        """
+        """Initialise l'état de la partie (position balle, raquettes, etc.)."""
         game_states[self.match_id] = {
             "width": 800,
             "height": 600,
@@ -185,16 +210,17 @@ class PongConsumer(AsyncWebsocketConsumer):
             "score_right": 0,
             "running": False,
 
-            # Pour alterner l'engagement
+            # Pour alterner l'engagement de la balle après chaque but
             "next_engagement_left": True
         }
 
     async def start_game_loop(self):
+        """Crée la tâche asynchrone qui gère la boucle de jeu."""
         task = asyncio.create_task(self.game_loop(self.match_id))
         game_tasks[self.match_id] = task
 
     async def do_countdown(self, match_id):
-        """Compte à rebours 5s -> running=True."""
+        """Compte à rebours 5s avant de passer running=True."""
         await asyncio.sleep(5)
         state = game_states.get(match_id)
         if state:
@@ -204,26 +230,33 @@ class PongConsumer(AsyncWebsocketConsumer):
     # --- Boucle de jeu ---
     #
     async def game_loop(self, match_id):
+        """Boucle principale qui met à jour la position de la balle et des raquettes."""
         while True:
             state = game_states.get(match_id)
             if not state:
+                # Si pour une raison X l'état n'existe plus, on arrête
                 break
 
             if not state["running"]:
+                # En attente de la fin du compte à rebours
                 await asyncio.sleep(0.1)
                 continue
 
+            # Met à jour positions
             await self.update_positions(state)
             await self.check_collisions_and_score(state)
+            # Broadcast aux joueurs
             await self.broadcast_game_state(state)
+
+            # 60 FPS => 1/60 s
             await asyncio.sleep(1/60)
 
     async def update_positions(self, state):
-        # On utilise ±10 pour des raquettes "beaucoup plus vites"
+        """Met à jour la position des raquettes et de la balle."""
         state["paddle_left_y"] += state["paddle_speed_left"]
         state["paddle_right_y"] += state["paddle_speed_right"]
 
-        # Limites
+        # Limites raquettes
         if state["paddle_left_y"] < 0:
             state["paddle_left_y"] = 0
         if state["paddle_left_y"] > state["height"] - state["paddle_height"]:
@@ -238,6 +271,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         state["ball_y"] += state["ball_vy"]
 
     async def check_collisions_and_score(self, state):
+        """Gère les collisions de balle avec les bords/raquettes et incrémente le score."""
         bx = state["ball_x"]
         by = state["ball_y"]
         vx = state["ball_vx"]
@@ -249,20 +283,16 @@ class PongConsumer(AsyncWebsocketConsumer):
         paddle_left_x = 50
         paddle_right_x = w - 50 - state["paddle_width"]
 
-        # Haut/bas
+        # Collision haut/bas
         if by <= 0 or by >= h - ball_size:
-            # Inverse Y
             state["ball_vy"] = -vy
 
-        # Collision avec raquette gauche ?
+        # Collision raquette gauche ?
         if bx <= paddle_left_x + state["paddle_width"]:
             if (by >= state["paddle_left_y"] and
                 by <= state["paddle_left_y"] + state["paddle_height"]):
-                # On inverse vx
-                new_vx = -vx
-                # On augmente un peu la vitesse (par ex. *1.1)
-                new_vx *= 1.1
-                # On fait pareil pour vy pour plus de fun (optionnel)
+                # Inverse vx (rebond)
+                new_vx = -vx * 1.1
                 new_vy = vy * 1.1
                 state["ball_vx"] = new_vx
                 state["ball_vy"] = new_vy
@@ -290,18 +320,18 @@ class PongConsumer(AsyncWebsocketConsumer):
             await self.end_game(self.match_id, state)
 
     async def reset_ball(self, state):
-        """Replace la balle au centre et alterne l'engagement."""
+        """Replace la balle au centre, altère la direction selon next_engagement_left."""
         import random
 
         # Centre
         state["ball_x"] = state["width"] // 2
         state["ball_y"] = state["height"] // 2
 
-        # On choisit un angle vertical +/- 1
+        # Direction Y aléatoire
         dir_y = 1 if random.random() > 0.5 else -1
         state["ball_vy"] = 5 * dir_y
 
-        # Engagement alterné :
+        # Engagement alterné
         if state["next_engagement_left"]:
             # Balle part vers la droite
             state["ball_vx"] = 5
@@ -309,10 +339,11 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Balle part vers la gauche
             state["ball_vx"] = -5
 
-        # On inverse pour la prochaine fois
+        # Inverse le prochain engagement
         state["next_engagement_left"] = not state["next_engagement_left"]
 
     async def broadcast_game_state(self, state):
+        """Envoie l'état de la partie (balle, raquettes, scores) à tous les clients."""
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -329,6 +360,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         )
 
     async def update_game_state(self, event):
+        """Reçoit les messages 'update_game_state' et les envoie au client WebSocket."""
         await self.send(text_data=json.dumps({
             "type": "game_state",
             "ball_x": event["state"]["ball_x"],
@@ -343,7 +375,7 @@ class PongConsumer(AsyncWebsocketConsumer):
     # --- Fin de partie ---
     #
     async def end_game(self, match_id, state):
-        """Marque la partie terminée + update BDD + envoie 'game_over'."""
+        """Marque la partie terminée + met à jour la base (vainqueur, etc.)."""
         await self.update_database_winner(match_id, state)
         await self.channel_layer.group_send(
             f"pong_{match_id}",
@@ -356,9 +388,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def update_database_winner(self, match_id, state):
-        """Match PLY, side 'L' et 'R' => set is_winner, + wins/losses."""
-        from .models import Match, PlayerMatch
-
+        """Match -> 'PLY'. Met à jour score + is_winner. Incrémente wins/losses."""
         match = Match.objects.get(id=match_id)
         match.state = 'PLY'
         match.save()
@@ -386,7 +416,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         pm_right.save()
 
     async def game_over(self, event):
-        """Envoi du score final."""
+        """Envoie le message 'game_over' avec score final."""
         await self.send(text_data=json.dumps({
             "type": "game_over",
             "score_left": event["score_left"],
@@ -394,7 +424,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     #
-    # --- Réception client (WS) ---
+    # --- Réception des messages côté client (WS) ---
     #
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -406,7 +436,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             if not state:
                 return
 
-            # Raquettes "beaucoup plus vite" => ±10
+            # Pour se déplacer rapidement
             if self.paddle == "left":
                 if direction == "up":
                     state["paddle_speed_left"] = -10

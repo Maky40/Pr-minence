@@ -16,7 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-
+from .views import match_exists_view
 urlpatterns = [
     path('admin/', admin.site.urls),
+	path('match-exists/<int:match_id>/', match_exists_view, name='match-exists'),
 ]
