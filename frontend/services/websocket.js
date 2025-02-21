@@ -8,6 +8,7 @@ class WebSocketAPI {
     this.retryCount = 0; // Ajouter un compteur de tentatives
     this.maxRetries = 3; // Limiter à 3 tentatives
     this.forceClose = false;
+    this.messageListeners = new Map();
     this.init();
   }
 
@@ -66,6 +67,26 @@ class WebSocketAPI {
     if (callback) {
       callback(data);
     }
+  }
+  addMessageListener(type, callback) {
+    console.log(`[WebSocket] Adding listener for type: ${type}`);
+    if (typeof callback !== "function") {
+      console.error("[WebSocket] Callback must be a function");
+      return;
+    }
+    this.messageListeners.set(type, callback);
+  }
+
+  // Ajouter cette méthode
+  removeMessageListener(type) {
+    console.log(`[WebSocket] Removing listener for type: ${type}`);
+    this.messageListeners.delete(type);
+  }
+
+  // Ajouter cette méthode
+  removeAllListeners() {
+    console.log("[WebSocket] Removing all listeners");
+    this.messageListeners.clear();
   }
 
   send(data) {

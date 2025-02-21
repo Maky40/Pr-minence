@@ -77,13 +77,23 @@ class GameComponent extends Component {
 
   setupWebSocket() {
     if (!this.webSocket) {
-      console.error("WebSocket not initialized");
+      console.error("[DEBUG] WebSocket not initialized");
+      changePage("home"); // Redirection si pas de WebSocket
       return;
     }
 
     this.webSocket.addMessageListener("message", async (data) => {
       try {
+        console.log("[DEBUG] Message reçu:", data);
         const message = JSON.parse(data);
+        if (message.error) {
+          console.error("[DEBUG] Erreur WebSocket:", message.error);
+          this.destroy();
+          this.webSocket.close();
+          pong42.player.socketMatch = null;
+          changePage("home");
+          return;
+        }
         switch (message.type) {
           case "game_start":
             console.log("Game start message received");

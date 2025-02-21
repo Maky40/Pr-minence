@@ -104,9 +104,18 @@ class PongConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
         """Assigne la raquette 'L' ou 'R' selon le nombre de joueurs déjà présents."""
+        print(f"[DEBUG] Tentative d'assignation pour player={player.username} dans match_id={match_id}")
+        
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
+        print(f"[DEBUG] Joueurs existants dans le match: {existing_pm.count()}")
+        
+        # Vérifier si le joueur est déjà dans le match
+        if existing_pm.filter(player=player).exists():
+            print(f"[DEBUG] ⚠️ {player.username} est déjà dans le match!")
+            return None
+        
         if existing_pm.count() == 0:
-            # Premier joueur => side 'L'
+            print(f"[DEBUG] Premier joueur: {player.username} -> LEFT")
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -116,7 +125,8 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
             return "left"
         elif existing_pm.count() == 1:
-            # Deuxième joueur => side 'R'
+            existing_player = existing_pm.first().player
+            print(f"[DEBUG] Deuxième joueur: {player.username} -> RIGHT (vs {existing_player.username})")
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -125,7 +135,8 @@ class PongConsumer(AsyncWebsocketConsumer):
                 player_side='R'
             )
             return "right"
-        # Sinon, c'est qu'il y a déjà 2 joueurs => pas de 3ᵉ
+        
+        print(f"[DEBUG] ❌ Match complet, impossible d'ajouter {player.username}")
         return None
 
     @database_sync_to_async
