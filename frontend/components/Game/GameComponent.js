@@ -84,10 +84,8 @@ class GameComponent extends Component {
 
     this.webSocket.addMessageListener("message", async (data) => {
       try {
-        console.log("[DEBUG] Message reçu:", data);
         const message = JSON.parse(data);
         if (message.error) {
-          console.error("[DEBUG] Erreur WebSocket:", message.error);
           this.destroy();
           this.webSocket.close();
           pong42.player.socketMatch = null;
@@ -95,9 +93,6 @@ class GameComponent extends Component {
           return;
         }
         switch (message.type) {
-          case "game_start":
-            console.log("Game start message received");
-            break;
           case "players_info":
             this.gameState.player1 = message.left_username;
             this.gameState.player2 = message.right_username;
@@ -118,7 +113,6 @@ class GameComponent extends Component {
             }
             break;
           case "game_over":
-            console.log("Game over message received");
             this.webSocket.removeAllListeners();
             this.webSocket.close();
             pong42.player.socketMatch = null;
