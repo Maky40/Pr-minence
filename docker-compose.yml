@@ -27,7 +27,7 @@ services:
       - app_network
     restart: always
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "$POSTGRES_USER"]
+      test: ["CMD", "pg_isready", "-U", "$POSTGRES_USER", "-d", "$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -110,6 +110,27 @@ services:
       - DJANGO_SETTINGS_MODULE=api.settings
     ports:
       - "8003:8003"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app_network
+    restart: always
+
+  tournament:
+    build:
+      context: ./backend/tournament
+    container_name: tournament
+    volumes:
+      - ./backend/tournament:/usr/src/app # Volume pour synchronisation des fichiers
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=api.settings
+    ports:
+      - "8004:8004"
     depends_on:
       db:
         condition: service_healthy
