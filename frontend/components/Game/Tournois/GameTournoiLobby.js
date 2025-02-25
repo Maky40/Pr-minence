@@ -1,10 +1,9 @@
 import Component from "../../../utils/Component.js";
-import tournamentService from "../../../services/tournament.js";
+import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
-    console.log(tournamentId);
     super();
     this.tournamentId = tournamentId;
     this.container = null;
@@ -14,6 +13,11 @@ class GameTournoiLobby extends Component {
       loading: false,
       initialized: false,
     };
+
+    pong42.player.tournament.on("tournamentLeft", () => {
+      changePage("game");
+    });
+    //initialization des emmit
   }
 
   async afterRender() {
@@ -29,7 +33,7 @@ class GameTournoiLobby extends Component {
   async fetchTournamentDetails() {
     try {
       this.setState({ loading: true });
-      const data = await tournamentService.getTournaments();
+      const data = await pong42.player.tournament.getTournaments();
       this.setState({
         tournament: data,
         loading: false,
@@ -49,7 +53,7 @@ class GameTournoiLobby extends Component {
   async leaveTournament() {
     try {
       this.setState({ loading: true });
-      await tournamentService.leaveTournament(this.tournamentId);
+      await pong42.player.tournament.leaveTournament(this.tournamentId);
       // Rediriger vers la page des tournois
       changePage("game");
     } catch (error) {
@@ -106,8 +110,10 @@ class GameTournoiLobby extends Component {
         <div class="card shadow">
           <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h3 class="mb-0">${tournament.name}</h3>
-            <button class="btn btn-outline-light" id="leaveTournamentButton">
-              Quitter le tournoi
+            <button class="btn btn-outline-danger" id="leaveTournamentButton">
+              ${
+                tournament.creator ? "Annuler le tournoi" : "Quitter le tournoi"
+              }
             </button>
           </div>
           

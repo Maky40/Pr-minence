@@ -2,6 +2,7 @@ import Navbar from "../components/navbar.js";
 import { changePage } from "../utils/Page.js";
 import { Router } from "./router.js";
 import TemplateManager from "./templateManager.js";
+import pong42 from "../services/pong42.js";
 
 const navbar = new Navbar();
 const content = document.getElementById("content");
@@ -37,5 +38,7 @@ document.addEventListener("click", (e) => {
     changePage(hash);
   }
 });
-
+console.log("App initialized");
+console.log("Pong42 player:", pong42.player);
+pong42.player.init();
 router.init();

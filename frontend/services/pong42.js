@@ -2,6 +2,7 @@ import Player from "./player.js";
 
 class Pong42 {
   constructor() {
+    console.log("Pong42 initialized");
     this.currentPage = "";
     this.beforePage = "";
     this.timeout = 30000;

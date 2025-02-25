@@ -1,10 +1,12 @@
 import api from "./api.js";
 import Toast from "../components/toast.js";
 import EventEmitter from "../utils/EventEmitter.js";
+import TournamentService from "./tournament.js";
 import { ENV } from "../env.js";
 
 class Player extends EventEmitter {
   constructor() {
+    console.log("Player initialized:");
     super();
     this.id = null;
     this.email = null;
@@ -23,6 +25,7 @@ class Player extends EventEmitter {
     this.from_42 = false;
     this.friends = [];
     this.defaultAvatar = `${ENV.API_URL}${ENV.DEFAULT_AVATAR}`;
+    this.tournament = new TournamentService();
   }
 
   async init() {

@@ -1,7 +1,6 @@
 import Component from "../../../utils/Component.js";
-import tournamentService from "../../../services/tournament.js";
 import GameTournoiLobby from "./GameTournoiLobby.js";
-import { changePage } from "../../../utils/Page.js";
+import pong42 from "../../../services/pong42.js";
 
 class GameTournoisMode extends Component {
   constructor() {
@@ -24,22 +23,26 @@ class GameTournoisMode extends Component {
     };
 
     this.playerInTournamentListener = (tournament) => {
+      console.log("Player in tournament:", tournament);
       if (this.container) {
         const lobby = new GameTournoiLobby(tournament.id);
         lobby.render(this.container);
         this.destroy();
       }
     };
-
-    // Add listeners
-    tournamentService.on("tournamentsLoaded", this.tournamentLoadedListener);
-    tournamentService.on("playerInTournament", this.playerInTournamentListener);
+    pong42.player.tournament.on(
+      "tournamentsLoaded",
+      this.tournamentLoadedListener
+    );
+    pong42.player.tournament.on("tournamentCreatedOrJoinOrIn", (tournament) => {
+      this.playerInTournamentListener(tournament);
+    });
   }
 
   async createTournament(name) {
     try {
       this.setState({ loading: true, error: null });
-      await tournamentService.createTournament(name);
+      await pong42.player.tournament.createTournament(name);
     } catch (error) {
       this.setState({
         error: error.message,
@@ -80,7 +83,9 @@ class GameTournoisMode extends Component {
   async joinTournament(tournamentId) {
     try {
       this.setState({ loading: true, error: null });
-      const response = await tournamentService.joinTournament(tournamentId);
+      const response = await pong42.player.tournament.joinTournament(
+        tournamentId
+      );
       if (response.statusCode === 200 && this.container) {
         const lobby = new GameTournoiLobby(this.container);
         lobby.render(this.container);
@@ -121,7 +126,7 @@ class GameTournoisMode extends Component {
     if (!this.state.initialized && !this.state.loading) {
       try {
         this.setState({ loading: true });
-        await tournamentService.getTournaments();
+        await pong42.player.tournament.getTournaments();
       } catch (error) {
         console.error("Failed to load tournaments:", error);
         this.setState({
@@ -139,6 +144,7 @@ class GameTournoisMode extends Component {
   setupFormHandlers() {
     const input = document.getElementById("tournamentName");
     const createButton = document.getElementById("createTournamentBtn");
+    const actualiserButton = document.getElementById("actualiserBtn");
 
     if (!input || !createButton) return;
 
@@ -177,6 +183,21 @@ class GameTournoisMode extends Component {
         });
       }
     });
+    actualiserButton.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        this.setState({ loading: true, error: null });
+        await pong42.player.tournament.getTournaments();
+      } catch (error) {
+        console.error("Failed to load tournaments:", error);
+        this.setState({
+          error: error.message,
+          loading: false,
+          initialized: true,
+        });
+      }
+    });
+
     const buttons = document.querySelectorAll("[data-tournament-id]");
     buttons.forEach((button) => {
       button.addEventListener("click", (e) => {
@@ -191,9 +212,12 @@ class GameTournoisMode extends Component {
     if (this.interval) {
       clearInterval(this.interval);
     }
-    tournamentService.off("tournamentsLoaded", this.tournamentLoadedListener);
-    tournamentService.off(
-      "playerInTournament",
+    pong42.player.tournament.off(
+      "tournamentsLoaded",
+      this.tournamentLoadedListener
+    );
+    pong42.player.tournament.off(
+      "tournamentCreatedOrJoinOrIn",
       this.playerInTournamentListener
     );
     super.destroy();
@@ -206,7 +230,7 @@ class GameTournoisMode extends Component {
         <section id="game-selection" class="container mt-5">
             <div class="row justify-content-center">
                 <div class="col-12 text-center mb-5">
-                    <h2 class="text-info display-4">Mode Duel</h2>
+                    <h2 class="text-info display-4">Mode Tournoi</h2>
                 </div>
             </div>
             <div class="row justify-content-center align-items-stretch g-4">
@@ -291,6 +315,10 @@ class GameTournoisMode extends Component {
                                           : ""
                                       }
                                   </div>
+                                  <div class="text-center mt-3">
+                                  <button class="btn btn-primary btn-lg px-5 py-3" id="actualiserBtn">
+                                      Actualiser
+                                  </button>
                         </div>
                     </div>
                 </div>
