@@ -170,7 +170,7 @@ export function displayMessage(senderName, senderId, message, otherUserId) {
     messageContainer.appendChild(newMessage);
 }
 
-export async function displayFriendChat(friendName) {
+export async function displayFriendChat(friendName, blocked) {
 	const messToHide = document.getElementById("message-select");
 	const userInfos = document.getElementById("user-informations");
 	const friendAvatar = document.getElementById("chat-friend-avatar");
@@ -184,36 +184,36 @@ export async function displayFriendChat(friendName) {
 	friendAvatar.src = response.players[0].avatar;
 	userInfos.classList.remove("d-none");
 	inputSendMess.style.display = "flex";
-
+	if (blocked)
+		blockedElements();
 }
 
-function displayChatHistory(friend) {
-  const chatBox = document.getElementById("chat-box");
+export function blockedElements() {
+	const blockFriendButton = document.getElementById("block-friend");
+	const inviteFriend = document.getElementById("invite-friend")
+	const inputSendMess = document.getElementById("input-send-mess");
+	const chatBox = document.getElementById("chat-box");
 
+	inviteFriend.classList.add("d-none");
+	inputSendMess.classList.add("d-none");
+	blockFriendButton.textContent = "Débloquer";
+	blockFriendButton.classList.replace("btn-danger", "btn-secondary");
+	chatBox.innerHTML = "";
+	const blockedMessage = document.createElement("div");
+    blockedMessage.classList.add("text-center", "text-muted", "mt-3");
+    blockedMessage.textContent = "Conversation bloquée";
+    chatBox.appendChild(blockedMessage);
+}
 
+export function unblockedElements() {
+	const blockFriendButton = document.getElementById("block-friend");
+	const chatBox = document.getElementById("chat-box");
+	const inviteFriend = document.getElementById("invite-friend")
+	const inputSendMess = document.getElementById("input-send-mess");
 
-  chatBox.innerHTML = "";
-
-//   if (friend.blocked) {
-//     const blockedMessage = document.createElement("div");
-//     blockedMessage.classList.add("text-center", "text-muted", "mt-3");
-//     blockedMessage.textContent = "Conversation bloquée";
-//     chatBox.appendChild(blockedMessage);
-//     return;
-//   }
-
-  const chatHistory = document.createElement("div");
-  chatHistory.classList.add("chat-history");
-
-  friend.messages.forEach((msg) => {
-    const messageDiv = document.createElement("div");
-    messageDiv.classList.add(
-      "message",
-      msg.sender === "me" ? "sent" : "received"
-    );
-    messageDiv.textContent = msg.text;
-    chatHistory.appendChild(messageDiv);
-  });
-
-  chatBox.appendChild(chatHistory);
+	inviteFriend.classList.remove("d-none");
+	inputSendMess.classList.remove("d-none");
+	blockFriendButton.textContent = "Bloquer";
+	blockFriendButton.classList.replace("btn-secondary", "btn-danger");
+	chatBox.innerHTML = "";
 }

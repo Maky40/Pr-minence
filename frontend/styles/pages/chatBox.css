@@ -17,6 +17,14 @@
     flex-direction: column;
 }
 
+#blocked-message {
+    display: block; /* S'assurer que l'élément est bien visible */
+    color: #6c757d;
+    font-size: 1.2rem;
+    margin-top: 20px;
+}
+
+
 /* Style pour un message */
 .message {
     padding: 8px 12px;

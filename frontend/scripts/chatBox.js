@@ -1,7 +1,7 @@
 // main.js
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage } from './chatServices/liveChatService.js';
-import { showChat, showSuggestions, renderFriendRequests, displayFriendChat } from './chatServices/uiService.js';
+import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 
@@ -9,6 +9,7 @@ export async function init() {
     console.log("init() called");
 	let socketActivate = {};
 	let currentUser = {};
+	let otherUser = {};
 
 	// Initialize currentUser
 	await initializeCurrentUser(currentUser);
@@ -17,7 +18,7 @@ export async function init() {
     const elements = initializeUIElements();
 
     // Add event listeners
-    addEventListeners(elements, socketActivate, currentUser);
+    addEventListeners(elements, socketActivate, currentUser, otherUser);
 
     // Initial render
     renderFriendRequests(elements["requests-list"]);
@@ -51,7 +52,7 @@ function initializeUIElements() {
     return elements;
 }
 
-function addEventListeners(elements, socketActivate, currentUser) {
+function addEventListeners(elements, socketActivate, currentUser, otherUser) {
 
     // Chat type buttons
     if (elements["tournament-room"] && elements["private-chat"]) {
@@ -73,12 +74,14 @@ function addEventListeners(elements, socketActivate, currentUser) {
     elements["requests-list"].addEventListener("click", (event) => handleRequestsClick(event, elements));
 
     // Handle friends list clicks
-    elements["friends-list"].addEventListener("click", (event) => handleFriendsListClick(event, socketActivate, currentUser));
+    elements["friends-list"].addEventListener("click", (event) => handleFriendsListClick(event, socketActivate, currentUser, otherUser));
 
 	// Handle send message
 	elements["send-message"].addEventListener("click", () => handleSendMessage(socketActivate, currentUser, elements["message-input"]))
 	elements["message-input"].addEventListener("keydown", (event) => handlePushEnterMessage(event, socketActivate, currentUser, elements["message-input"]))
 
+	// Handle block/unblock click
+	elements["block-friend"].addEventListener("click", () => handleBlockFriend(socketActivate, currentUser, otherUser))
 }
 
 
@@ -161,17 +164,19 @@ function handleRequestsClick(event, elements) {
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 
-async function handleFriendsListClick(event, socketActivate, currentUser) {
+async function handleFriendsListClick(event, socketActivate, currentUser, otherUser) {
     try {
         const friend = event.target.closest('.friend-name');
-        const otherUserId = friend.dataset.friendId;
-		const friendName = friend.dataset.friendName;
-
-		await displayFriendChat(friendName);
+        otherUser.id = friend.dataset.friendId;
+		otherUser.username = friend.dataset.friendName;
+		const response = await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "GET");
+		await displayFriendChat(otherUser.username, response.is_blocked_by_me);
+		if (response.is_blocked_by_me)
+			return ;
         if (Object.keys(socketActivate).length === 0)
-            initWebSocket(otherUserId, socketActivate, currentUser);
-        else if (socketActivate.otherUserId !== otherUserId)
-            closeAndOpenNew(otherUserId, socketActivate, currentUser)
+            initWebSocket(otherUser.id, socketActivate, currentUser);
+        else if (socketActivate.otherUserId !== otherUser.id)
+            closeAndOpenNew(otherUser.id, socketActivate, currentUser)
     } catch (error) {
         console.error("Erreur API :", error);
 		console.error(error.stack);
@@ -198,4 +203,24 @@ function handleSendMessage(socketActivate, currentUser, messageInput) {
 function handlePushEnterMessage(event, socketActivate, currentUser, messageInput) {
 	if (event.key === "Enter" && messageInput.value.trim())
 		handleSendMessage(socketActivate, currentUser, messageInput)
+}
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                    BLOCK/UNBLOCK CLICK                     ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+async function handleBlockFriend(socketActivate, currentUser, otherUser) {
+
+	await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "POST")
+	const response = await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "GET");
+	if (response.is_blocked_by_me){
+		blockedElements();
+		socketActivate.socket.close();
+		delete socketActivate.socket;
+		delete socketActivate.otherUserId;
+	}
+	else {
+		unblockedElements();
+		initWebSocket(otherUser.id, socketActivate, currentUser);
+	}
 }

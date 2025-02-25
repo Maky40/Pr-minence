@@ -16,7 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from api import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+	path('is_blocked/', views.is_blocked.as_view(), name='is_blocked'),
 ]
