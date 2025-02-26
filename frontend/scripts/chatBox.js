@@ -166,13 +166,22 @@ function handleRequestsClick(event, elements) {
 
 async function handleFriendsListClick(event, socketActivate, currentUser, otherUser) {
     try {
-        const friend = event.target.closest('.friend-name');
+        const friend = event.target.closest('.list-group-item').querySelector('.friend-name');
+		if (otherUser.id === friend.dataset.friendId)
+			return;
         otherUser.id = friend.dataset.friendId;
 		otherUser.username = friend.dataset.friendName;
+		console.log("data : " + otherUser.id + "     " + otherUser.username);
 		const response = await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "GET");
+		console.log("API RESPONSE = ", response);
 		await displayFriendChat(otherUser.username, response.is_blocked_by_me);
-		if (response.is_blocked_by_me)
+		if (response.is_blocked_by_me){
+			if (socketActivate.socket){
+				socketActivate.socket.close();
+				delete socketActivate.otherUserId;
+				delete socketActivate.socket;}
 			return ;
+		}
         if (Object.keys(socketActivate).length === 0)
             initWebSocket(otherUser.id, socketActivate, currentUser);
         else if (socketActivate.otherUserId !== otherUser.id)
@@ -211,6 +220,8 @@ function handlePushEnterMessage(event, socketActivate, currentUser, messageInput
 
 async function handleBlockFriend(socketActivate, currentUser, otherUser) {
 
+	const chatBox = document.getElementById("chat-box");
+
 	await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "POST")
 	const response = await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "GET");
 	if (response.is_blocked_by_me){
@@ -221,6 +232,7 @@ async function handleBlockFriend(socketActivate, currentUser, otherUser) {
 	}
 	else {
 		unblockedElements();
+		chatBox.innerHTML ='';
 		initWebSocket(otherUser.id, socketActivate, currentUser);
 	}
 }

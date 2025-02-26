@@ -176,9 +176,10 @@ export async function displayFriendChat(friendName, blocked) {
 	const friendAvatar = document.getElementById("chat-friend-avatar");
 	const friendFrontName = document.getElementById("chat-friend-name");
 	const inputSendMess = document.getElementById("input-send-mess");
+	const chatBox = document.getElementById("chat-box");
 
 	messToHide.classList.add("d-none");
-
+	chatBox.innerHTML = "";
 	const response = await api.apiFetch("/player/?username=" + friendName, true, "GET")
 	friendFrontName.textContent = friendName;
 	friendAvatar.src = response.players[0].avatar;
@@ -186,6 +187,9 @@ export async function displayFriendChat(friendName, blocked) {
 	inputSendMess.style.display = "flex";
 	if (blocked)
 		blockedElements();
+	else {
+		unblockedElements();
+	}
 }
 
 export function blockedElements() {
@@ -215,5 +219,4 @@ export function unblockedElements() {
 	inputSendMess.classList.remove("d-none");
 	blockFriendButton.textContent = "Bloquer";
 	blockFriendButton.classList.replace("btn-secondary", "btn-danger");
-	chatBox.innerHTML = "";
 }
