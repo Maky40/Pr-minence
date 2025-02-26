@@ -1,6 +1,7 @@
 from django.urls import path
-from .consumers import TestConsumer
+from .consumers import PongConsumer
 
 websocket_urlpatterns = [
-    path('ws/pong/', TestConsumer.as_asgi()),  # Ensure this matches the Nginx path
+    path('ws/pong/', PongConsumer.as_asgi()),
+    path('ws/pong/<int:match_id>/', PongConsumer.as_asgi()),
 ]

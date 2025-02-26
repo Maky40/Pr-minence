@@ -115,6 +115,11 @@ class PlayerMatch(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
     score = models.IntegerField(default=0)  # Score du joueur dans le match (facultatif)
     is_winner = models.BooleanField(default=False)  # Indique si le joueur a gagné ce match
+    SIDE_CHOICES = [
+        ('L', 'Left'),
+        ('R', 'Right'),
+    ]
+    player_side = models.CharField(max_length=1, choices=SIDE_CHOICES, null=True, blank=True)
 
     class Meta:
         unique_together = ('player', 'match')

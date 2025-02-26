@@ -17,8 +17,8 @@ from dotenv import load_dotenv
 # === 1. Chemins dynamiques ===
 # Base directory for the Django project.
 BASE_DIR = Path(__file__).resolve().parent  # backend/authentication/api/
-AUTH_DIR = BASE_DIR.parent  # backend/authentication/
-SERVICES_DIR = AUTH_DIR.parent  # backend/
+PONG_DIR = BASE_DIR.parent  # backend/authentication/
+SERVICES_DIR = PONG_DIR.parent  # backend/
 
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
@@ -130,7 +130,7 @@ USE_TZ = True  # Enable timezone support
 # === 9. Fichiers statiques ===
 # Configuration for static files (CSS, JavaScript, images).
 STATIC_URL = '/static/'  # Public URL for static files
-STATIC_ROOT = AUTH_DIR / 'static/'  # Directory where static files are collected
+STATIC_ROOT = PONG_DIR / 'static/'  # Directory where static files are collected
 
 # === 10. Authentification ===
 # Use a custom user model (Player).
@@ -138,3 +138,13 @@ AUTH_USER_MODEL = "api.Player"
 
 USE_X_FORWARDED_HOST = True
 PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # Assure-toi que Redis tourne bien
+        },
+    },
+}

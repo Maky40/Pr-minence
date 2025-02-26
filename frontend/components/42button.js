@@ -1,9 +1,11 @@
 import Component from "../utils/Component.js";
-import pong42 from "../services/pong42.js";
+import { ENV } from "../env.js";
+
 class Button42 extends Component {
   constructor(text = "S'inscrire avec 42") {
     super();
     this.text = text;
+    this.authUrl = `${ENV.API_URL}${ENV.URL_AUTH_INTRA}`;
   }
 
   template() {
@@ -13,7 +15,7 @@ class Button42 extends Component {
                     <div class="col-12">
                         <div class="d-grid gap-2">
                             <button class="btn btn-success px-5 py-3 rounded-pill shadow-sm align-items-center w-100"
-                                onclick="window.location.href='https://localhost/authentication/intra/'">
+                                onclick="window.location.href='${this.authUrl}'">
                                 <img src="/assets/42_Logo.svg" 
                                     alt="42 Logo" 
                                     height="30"
@@ -32,7 +34,7 @@ class Button42 extends Component {
     const button = this.container.querySelector("button");
     button?.addEventListener("click", (e) => {
       e.preventDefault();
-      window.location.href = "https://localhost/authentication/intra/";
+      window.location.href = this.authUrl;
     });
   }
 }

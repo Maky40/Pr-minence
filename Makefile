@@ -2,7 +2,7 @@
 PROJECT_NAME = transcendance
 
 # Services Docker (à ajuster selon tes services)
-DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE = docker compose
 DOCKER_COMPOSE_FILE = docker-compose.yml
 
 # Commandes

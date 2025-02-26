@@ -1,9 +1,12 @@
 import api from "./api.js";
 import Toast from "../components/toast.js";
 import EventEmitter from "../utils/EventEmitter.js";
+import TournamentService from "./tournament.js";
+import { ENV } from "../env.js";
 
 class Player extends EventEmitter {
   constructor() {
+    console.log("Player initialized:");
     super();
     this.id = null;
     this.email = null;
@@ -16,8 +19,13 @@ class Player extends EventEmitter {
     this.losses = 0;
     this.two_factor = false;
     this.status = "OF";
+    this.match_id = null;
+    this.paddle = null;
+    this.socketMatch = null;
     this.from_42 = false;
     this.friends = [];
+    this.defaultAvatar = `${ENV.API_URL}${ENV.DEFAULT_AVATAR}`;
+    this.tournament = new TournamentService();
   }
 
   async init() {
@@ -51,11 +59,7 @@ class Player extends EventEmitter {
   }
 
   loadPlayerAvatar() {
-    if (
-      this.avatar ==
-      "https://localhost/player/static/api/images/default_avatar.png"
-    )
-      return "assets/images/default_avatar.png";
+    if (this.avatar == this.defaultAvatar) return "assets/avatars/default.png";
     else {
       return this.avatar;
     }
@@ -100,7 +104,7 @@ class Player extends EventEmitter {
       const formData = new FormData();
       formData.append("avatar", avatarFile);
       const result = await api.apiFetch(
-        "/player/avatar/",
+        "player/avatar/",
         true,
         "POST",
         formData,
