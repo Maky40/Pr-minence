@@ -2,7 +2,7 @@ import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import Match, PlayerMatch
+from .models import Match, PlayerMatch, Player
 
 # States en mémoire (pour la logique en temps réel)
 game_states = {}
@@ -13,7 +13,7 @@ countdown_tasks = {}
 
 class PongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        """Connexion d'un joueur"""
+        """Connexion d'un joueur."""
         if "player" not in self.scope:
             await self.close()
             return
@@ -21,6 +21,12 @@ class PongConsumer(AsyncWebsocketConsumer):
         self.player = self.scope["player"]
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
         self.room_group_name = None
+
+        # Vérifier si le joueur est déjà "INGAME" ou a un match 'UPL'
+        if await self.is_player_in_game_or_has_active_match(self.player):
+            # Si c'est le cas, on refuse la connexion
+            await self.close()
+            return
 
         # --- NOUVEAU : Vérification du match (s'il y a un match_id) ---
         if self.match_id:
@@ -73,7 +79,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             await self.start_game()
 
     async def disconnect(self, close_code):
-        """Déconnexion d'un joueur"""
+        """Déconnexion d'un joueur."""
         if self.room_group_name:
             await self.channel_layer.group_discard(
                 self.room_group_name,
@@ -104,18 +110,13 @@ class PongConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
         """Assigne la raquette 'L' ou 'R' selon le nombre de joueurs déjà présents."""
-        print(f"[DEBUG] Tentative d'assignation pour player={player.username} dans match_id={match_id}")
-        
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
-        print(f"[DEBUG] Joueurs existants dans le match: {existing_pm.count()}")
         
         # Vérifier si le joueur est déjà dans le match
         if existing_pm.filter(player=player).exists():
-            print(f"[DEBUG] ⚠️ {player.username} est déjà dans le match!")
             return None
         
         if existing_pm.count() == 0:
-            print(f"[DEBUG] Premier joueur: {player.username} -> LEFT")
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -125,8 +126,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             )
             return "left"
         elif existing_pm.count() == 1:
-            existing_player = existing_pm.first().player
-            print(f"[DEBUG] Deuxième joueur: {player.username} -> RIGHT (vs {existing_player.username})")
             PlayerMatch.objects.create(
                 player=player,
                 match_id=match_id,
@@ -135,8 +134,6 @@ class PongConsumer(AsyncWebsocketConsumer):
                 player_side='R'
             )
             return "right"
-        
-        print(f"[DEBUG] ❌ Match complet, impossible d'ajouter {player.username}")
         return None
 
     @database_sync_to_async
@@ -144,10 +141,43 @@ class PongConsumer(AsyncWebsocketConsumer):
         """Retourne True si 2 joueurs sont dans le match."""
         return PlayerMatch.objects.filter(match_id=match_id).count() == 2
 
+    @database_sync_to_async
+    def is_player_in_game_or_has_active_match(self, player):
+        """
+        Vérifie si le joueur a déjà un match 'UPL' (non terminé)
+        OU s'il est en 'IG' (INGAME).
+        """
+        if player.status == 'IG':
+            return True
+        # Vérifie s'il a un match non terminé
+        active_match_exists = PlayerMatch.objects.filter(
+            player=player,
+            match__state='UPL'
+        ).exists()
+        return active_match_exists
+
+    @database_sync_to_async
+    def set_player_in_game(self, player):
+        """Passe le statut du joueur en IG (INGAME)."""
+        player.status = 'IG'
+        player.save()
+
+    @database_sync_to_async
+    def set_player_online(self, player):
+        """Remet le statut du joueur en ON (ONLINE) ou OF."""
+        player.status = 'ON'
+        player.save()
+
     #
     # --- start_game ---
     #
     async def start_game(self):
+        # Mettre les deux joueurs en 'IG' seulement quand la partie va démarrer
+        pm_left = await self.get_player_match(self.match_id, 'L')
+        pm_right = await self.get_player_match(self.match_id, 'R')
+        await self.set_player_in_game(pm_left.player)
+        await self.set_player_in_game(pm_right.player)
+
         # Notifie le front
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -179,6 +209,10 @@ class PongConsumer(AsyncWebsocketConsumer):
         # Décompte asynchrone de 5s
         countdown_task = asyncio.create_task(self.do_countdown(self.match_id))
         countdown_tasks[self.match_id] = countdown_task
+
+    @database_sync_to_async
+    def get_player_match(self, match_id, side):
+        return PlayerMatch.objects.get(match_id=match_id, player_side=side)
 
     async def game_start(self, event):
         """Reçu par le front => message 'La partie va commencer'."""
@@ -220,8 +254,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             "score_left": 0,
             "score_right": 0,
             "running": False,
-
-            # Pour alterner l'engagement de la balle après chaque but
             "next_engagement_left": True
         }
 
@@ -245,18 +277,14 @@ class PongConsumer(AsyncWebsocketConsumer):
         while True:
             state = game_states.get(match_id)
             if not state:
-                # Si pour une raison X l'état n'existe plus, on arrête
                 break
 
             if not state["running"]:
-                # En attente de la fin du compte à rebours
                 await asyncio.sleep(0.1)
                 continue
 
-            # Met à jour positions
             await self.update_positions(state)
             await self.check_collisions_and_score(state)
-            # Broadcast aux joueurs
             await self.broadcast_game_state(state)
 
             # 60 FPS => 1/60 s
@@ -300,9 +328,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         # Collision raquette gauche ?
         if bx <= paddle_left_x + state["paddle_width"]:
-            if (by >= state["paddle_left_y"] and
-                by <= state["paddle_left_y"] + state["paddle_height"]):
-                # Inverse vx (rebond)
+            if state["paddle_left_y"] <= by <= state["paddle_left_y"] + state["paddle_height"]:
                 new_vx = -vx * 1.1
                 new_vy = vy * 1.1
                 state["ball_vx"] = new_vx
@@ -314,8 +340,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         # Collision raquette droite ?
         elif bx + ball_size >= paddle_right_x:
-            if (by >= state["paddle_right_y"] and
-                by <= state["paddle_right_y"] + state["paddle_height"]):
+            if state["paddle_right_y"] <= by <= state["paddle_right_y"] + state["paddle_height"]:
                 new_vx = -vx * 1.1
                 new_vy = vy * 1.1
                 state["ball_vx"] = new_vx
@@ -334,23 +359,17 @@ class PongConsumer(AsyncWebsocketConsumer):
         """Replace la balle au centre, altère la direction selon next_engagement_left."""
         import random
 
-        # Centre
         state["ball_x"] = state["width"] // 2
         state["ball_y"] = state["height"] // 2
 
-        # Direction Y aléatoire
         dir_y = 1 if random.random() > 0.5 else -1
         state["ball_vy"] = 5 * dir_y
 
-        # Engagement alterné
         if state["next_engagement_left"]:
-            # Balle part vers la droite
             state["ball_vx"] = 5
         else:
-            # Balle part vers la gauche
             state["ball_vx"] = -5
 
-        # Inverse le prochain engagement
         state["next_engagement_left"] = not state["next_engagement_left"]
 
     async def broadcast_game_state(self, state):
@@ -388,6 +407,13 @@ class PongConsumer(AsyncWebsocketConsumer):
     async def end_game(self, match_id, state):
         """Marque la partie terminée + met à jour la base (vainqueur, etc.)."""
         await self.update_database_winner(match_id, state)
+
+        # Remettre les joueurs en 'ONLINE'
+        pm_left = await self.get_player_match(match_id, 'L')
+        pm_right = await self.get_player_match(match_id, 'R')
+        await self.set_player_online(pm_left.player)
+        await self.set_player_online(pm_right.player)
+
         await self.channel_layer.group_send(
             f"pong_{match_id}",
             {
