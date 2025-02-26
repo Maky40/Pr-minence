@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 # Base directory for the Django project.
 BASE_DIR = Path(__file__).resolve().parent  # backend/authentication/api/
 AUTH_DIR = BASE_DIR.parent  # backend/authentication/
-SERVICES_DIR = AUTH_DIR.parent  # backend/
+SERVICES_DIR = AUTH_DIR.parent  # backend/k
 
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
@@ -34,6 +34,15 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "*",  # Allows all hosts (useful in development or testing).
 ]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('redis', 6379)],
+        },
+    },
+}
 
 # === 3. Applications Django ===
 # Installed apps required for the microservice.

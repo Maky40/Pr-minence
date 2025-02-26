@@ -6,7 +6,7 @@ import pong42 from "../services/pong42.js";
 
 const navbar = new Navbar();
 const content = document.getElementById("content");
-const templateManager = new TemplateManager(content);
+export const templateManager = new TemplateManager(content);
 const router = new Router(templateManager);
 
 const loadComponent = async (componentName) =>

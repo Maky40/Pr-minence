@@ -1,6 +1,6 @@
-from django.urls import path
-from .consumers import TestConsumer
+from django.urls import re_path
+from . import consumers
 
 websocket_urlpatterns = [
-    path('ws/chat/', TestConsumer.as_asgi()),  # Ensure this matches the Nginx path
+    re_path(r'ws/chat/(?P<other_player_id>\d+)/$', consumers.ChatConsumer.as_asgi()),
 ]

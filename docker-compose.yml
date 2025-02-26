@@ -94,6 +94,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+
     networks:
       - app_network
     restart: always

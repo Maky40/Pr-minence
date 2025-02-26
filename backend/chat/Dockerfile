@@ -16,7 +16,7 @@ COPY . .
 # Définir les variables d'environnement pour Django
 ENV PYTHONUNBUFFERED=1
 
-# Exposer le port 8000 pour le serveur Django
+# Exposer le port 8002 pour le serveur Django
 EXPOSE 8002
 
 # Commande par défaut pour démarrer Django après les migrations
