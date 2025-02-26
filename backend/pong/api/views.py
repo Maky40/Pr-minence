@@ -86,7 +86,7 @@ def accept_individual_match(request):
     )
 
     # Construire l'URL du WebSocket Pong (exemple)
-    pong_url = f"ws://pong-service/ws/pong/{match.id}/"
+    pong_url = f"wss://pong/ws/pong/{match.id}/"
 
     return Response({
         "message": "Match accepted successfully",
