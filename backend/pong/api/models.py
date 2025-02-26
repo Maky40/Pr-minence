@@ -127,12 +127,17 @@ class PlayerMatch(models.Model):
     def __str__(self):
         return f"{self.player.username} in Match {self.match.id}"
 
-class ChatMessage(models.Model):
-    sender = models.ForeignKey(Player, related_name='sent_messages', on_delete=models.CASCADE)
-    receiver = models.ForeignKey(Player, related_name='received_messages', on_delete=models.CASCADE)
-    content = models.TextField()
+class Room(models.Model):
+    name = models.CharField(max_length=255)
+    participants = models.ManyToManyField("Player")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    sender = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="sent_messages")
+    message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
+
 
 class BlockedUser(models.Model):
     blocker = models.ForeignKey(Player, related_name='blocked_by', on_delete=models.CASCADE)

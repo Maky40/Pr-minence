@@ -79,13 +79,6 @@ services:
       - app_network
     restart: always
 
-  redis:
-    image: redis:7
-    networks:
-      - app_network
-    ports:
-      - "6379:6379"
-
   chat:
     build:
       context: ./backend/chat
@@ -99,8 +92,11 @@ services:
     ports:
       - "8002:8002"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
     networks:
       - app_network
     restart: always

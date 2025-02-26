@@ -127,7 +127,6 @@ class PlayerMatch(models.Model):
     def __str__(self):
         return f"{self.player.username} in Match {self.match.id}"
 
-
 class Room(models.Model):
     name = models.CharField(max_length=255)
     participants = models.ManyToManyField("Player")
