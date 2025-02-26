@@ -27,7 +27,6 @@ class GameTournoiLobby extends Component {
     if (leaveButton) {
       leaveButton.addEventListener("click", () => this.leaveTournament());
     }
-    //this.interval = setInterval(() => this.fetchTournamentDetails(), 5000);
   }
 
   async fetchTournamentDetails() {

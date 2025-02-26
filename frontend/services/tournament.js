@@ -8,13 +8,9 @@ class TournamentService extends EventEmitter {
     super();
     console.log("TournamentService initialized");
     this.baseUrl = `${ENV.API_URL}tournament/tournament/`;
-    this.tournamentId = 0;
-    //this.checkTournamentStatus = this.checkTournamentStatus.bind(this);
-    //this.updateTournamentStatus = this.updateTournamentStatus.bind(this);
-    //this.startStatusCheckInterval = this.startStatusCheckInterval.bind(this);
+    this.initData();
     this.init();
   }
-
   init = async () => {
     try {
       await this.getTournaments();
@@ -24,9 +20,71 @@ class TournamentService extends EventEmitter {
     }
   };
 
+  returnTournamentInfo() {
+    return {
+      tournamentId: this.tournamentId,
+      tournamentStatus: this.tournamentStatus,
+      tournamentStatusDisplayName: this.tournamentStatusDisplayName,
+      tournamentStatusDisplayClass: this.tournamentStatusDisplayClass,
+      tournamentCurren_round: this.tournamentCurren_round,
+      tournamentMatches: this.tournamentMatches,
+      tournamentCreator: this.tournamentCreator,
+      tournamentPlayers_count: this.tournamentPlayers_count,
+    };
+  }
+
+  apiToData(tournament) {
+    this.tournamentId = tournament.id;
+    this.tournamentCurren_round = tournament.current_round;
+    this.tournamentMatches = tournament.matches;
+    this.tournamentCreator = tournament.creator;
+    this.tournamentPlayers_count = tournament.players_count;
+    this.tournamentOldStatus = this.tournamentStatus;
+    this.tournamentStatus = tournament.status;
+    this.tournamentStatusDisplayName = this.get_status_display(
+      tournament.status
+    );
+    this.tournamentStatusDisplayClass = this.get_btn_display(tournament.status);
+  }
+  initData() {
+    this.tournamentId = 0;
+    this.tournamentStatus = null;
+    this.tournamentOldStatus = null;
+    this.tournamentStatusDisplayName = "";
+    this.tournamentStatusDisplayClass = "";
+    this.tournamentCurren_round = null;
+    this.tournamentMatches = [];
+    this.tournamentCreator = false;
+    this.tournamentPlayers_count = 0;
+    if (this.interval) clearInterval(this.interval);
+  }
+  get_status_display(status) {
+    const statusMap = {
+      PN: "En attente",
+      BG: "Commencé",
+      FN: "Fini",
+      CA: "Annulé",
+    };
+    return statusMap[status] || "Unknown";
+  }
+  get_btn_display(status) {
+    return "btn-outline-" + this.get_status_display_class(status);
+  }
+  get_status_display_class(status) {
+    const statusMap = {
+      PN: "warning",
+      BG: "info",
+      FN: "success",
+      CA: "danger",
+    };
+    return statusMap[status] || "text-secondary";
+  }
+
   checkTournamentStatus(status) {
-    if (status !== "PN" && status !== this.tournamentStatus) {
-      // Afficher le toast si le statut a changé et n'est pas "PN"
+    if (status !== this.tournamentStatus) {
+      this.tournamentStatus = status;
+      this.tournamentStatusDisplayName = this.get_status_display(status);
+      this.tournamentStatusDisplayClass = this.get_status_display_class(status);
       const updateToast = new Toast(
         "Success",
         "Le statut du tournoi a changé !",
@@ -36,17 +94,19 @@ class TournamentService extends EventEmitter {
       this.tournamentStatus = status; // Mettre à jour le statut
     }
   }
+
   updateTournamentStatus = async () => {
     console.log("Updating tournament status");
-    //if (!this.tournamentId) return; // Ne rien faire si l'ID du tournoi est inconnu
     console.log("Tournament ID:", this.tournamentId);
+    if (!this.tournamentId) return; // Ne rien faire si l'ID du tournoi est inconnu
     try {
       const tournament = await this.getTournaments();
       if (tournament.id === this.tournamentId) {
-        this.tournamentId = tournament.id;
+        this.apiToData(tournament);
         const newStatus = tournament.status;
         this.checkTournamentStatus(newStatus);
-        this.startStatusCheckInterval(); // Vérifier le nouveau statut
+        this.startStatusCheckInterval();
+        this.emit("update", this.returnTournamentInfo()); // Vérifier le nouveau statut
       } else {
         this.tournamentId = 0;
         this.emit("tournamentLeft", {});
@@ -79,6 +139,7 @@ class TournamentService extends EventEmitter {
       });
 
       const data = await response.json();
+      this.apiToData(data);
       if (!response.ok)
         throw new Error(data.message || "Failed to create tournament");
       this.emit("tournamentCreatedOrJoinOrIn", data);
@@ -117,8 +178,6 @@ class TournamentService extends EventEmitter {
 
   async leaveTournament(tournamentId) {
     try {
-      console.log("Leaving tournament", tournamentId);
-      console.log("Player ID", this.baseUrl);
       const response = await fetch(this.baseUrl, {
         method: "POST",
         credentials: "include",
@@ -136,8 +195,7 @@ class TournamentService extends EventEmitter {
         throw new Error(data.message || "Failed to leave tournament");
 
       this.emit("tournamentLeft", data);
-      this.tournamentId = 0;
-      clearInterval(this.interval);
+      this.initData();
       return data;
     } catch (error) {
       console.error("Error leaving tournament:", error);
@@ -153,15 +211,11 @@ class TournamentService extends EventEmitter {
           Accept: "application/json",
         },
       });
-
-      console.log("[Tournament] Response status:", response.status);
       const data = await response.json();
-      console.log("[Tournament] Response data:", data);
-
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch tournaments");
       }
-      this.tournamentId = 0;
+      this.initData();
       // Check if player is in tournament
       if (data.current_tournament) {
         this.tournamentId = data.current_tournament.id;
