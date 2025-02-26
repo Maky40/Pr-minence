@@ -1,7 +1,7 @@
 // main.js
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage } from './chatServices/liveChatService.js';
-import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements } from './chatServices/uiService.js';
+import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements, inviteForPlay } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 
@@ -38,7 +38,8 @@ function initializeUIElements() {
     const elements = {};
 
     ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message",
-     "search-friend", "suggestions-container", "requests-list", "friends-list", "message-input"
+     "search-friend", "suggestions-container", "requests-list", "friends-list",
+	 "message-input", "invite-friend"
     ].forEach(id => {
         const oldElement = document.getElementById(id);
         if (oldElement) {
@@ -82,6 +83,9 @@ function addEventListeners(elements, socketActivate, currentUser, otherUser) {
 
 	// Handle block/unblock click
 	elements["block-friend"].addEventListener("click", () => handleBlockFriend(socketActivate, currentUser, otherUser))
+
+	// Handle play click
+	elements["invite-friend"].addEventListener("click", () => handleInvitePlay(socketActivate, currentUser))
 }
 
 
@@ -234,5 +238,31 @@ async function handleBlockFriend(socketActivate, currentUser, otherUser) {
 		unblockedElements();
 		chatBox.innerHTML ='';
 		initWebSocket(otherUser.id, socketActivate, currentUser);
+	}
+}
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                  INVITE FRIEND FOR PLAY                    ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+
+async function handleInvitePlay(socketActivate, currentUser) {
+	try {
+		await friendshipVerifications(socketActivate);
+		await inviteForPlay(socketActivate, currentUser);
+
+	}
+	catch (error){
+		const toast = new Toast("Error", error, "error");
+		toast.show();
+	}
+}
+
+async function friendshipVerifications(socketActivate) {
+	if (Object.keys(socketActivate).length !== 2)
+		throw new Error ("Veuillez reessayer");
+	const response =  await api.apiFetch("/player/friendship/?target=friends", true, "GET");
+	if (response.friendships.length===0) {
+		throw new Error("Vous n'etes pas encore pote");
 	}
 }

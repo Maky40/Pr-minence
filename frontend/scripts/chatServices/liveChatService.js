@@ -64,3 +64,20 @@ export function sendMessage(socketActivate, currentUser, message) {
 
     socketActivate.socket.send(JSON.stringify(payload));
 }
+
+/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+/////////////////////////////////////////////║                      INVITE FOR PLAY                       ║/////////////////////////////////////////////
+/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+export async function inviteForPlay(socketActivate, currentUser) {
+	// const response = await api.apiFetch("/match/individual/create/", true, "POST");
+	id_match = 123;
+	const payload = {
+		type: 'invitation_play',
+		senderId : currentUser.id,
+		senderName: currentUser.username,
+		matchId: id_match,
+	};
+
+	socketActivate.socket.send(JSON.stringify(payload));
+}

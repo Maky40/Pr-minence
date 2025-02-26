@@ -23,12 +23,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Recuperer et envoyer l'historique des messages
         await self.send_chat_history()
 
-    async def disconnect(self, close_code):
-        """Gestion de la déconnexion WebSocket"""
-        await self.channel_layer.group_discard(
-            self.room.name,  # Nom de la salle partagée
-            self.channel_name
-        )
+
+# /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+# /////////////////////////////////////////////║                     MESSAGES HANDLING                      ║/////////////////////////////////////////////
+# /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
 
     async def receive(self, text_data):
         """Réception et envoi des messages"""
@@ -60,6 +59,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "senderId": sender_id,
         }))
 
+	# async def invitation_play(self, event):
+    #     """Recevoir les messages dans la salle partagée"""
+    #     sender_name = event["senderName"]
+    #     sender_id = event["senderId"]
+
+    #     # Envoyer le message aux utilisateurs connectés via WebSocket
+    #     await self.send(text_data=json.dumps({
+    #         "message": message,
+    #         "senderName": sender_name,
+    #         "senderId": sender_id,
+    #     }))
+
+
+# /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+# /////////////////////////////////////////////║                       FOR CHAT HISTORY                     ║/////////////////////////////////////////////
+# /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
     @database_sync_to_async
     def get_or_create_room(self):
         room_name = f"chat_{min(self.player.id, self.other_player_id)}_{max(self.player.id, self.other_player_id)}"
@@ -89,7 +105,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Get message history as a list instead of a QuerySet
         messages = await self.get_message_history()
 
-        # Now we can safely iterate over the list in async context
         for message in messages:
             sender_id = message.sender_id  # Utilise l'ID directement sans accéder à l'objet relation
             sender_name = await self.get_sender_username(sender_id)
@@ -98,3 +113,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "senderName": sender_name,
                 "senderId": sender_id,
             }))
+
+# /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
+# /////////////////////////////////////////////║                         DISCONNECT                         ║/////////////////////////////////////////////
+# /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
+
+    async def disconnect(self, close_code):
+        """Gestion de la déconnexion WebSocket"""
+        await self.channel_layer.group_discard(
+            self.room.name,  # Nom de la salle partagée
+            self.channel_name
+        )
