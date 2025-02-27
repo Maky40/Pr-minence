@@ -492,3 +492,45 @@ def get_player_matches(request):
 
     return Response(response_data, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+@jwt_cookie_required
+def get_player_tournaments(request):
+    """
+    Récupère la liste des tournois auxquels le joueur participe (via PlayerTournament).
+    Retourne aussi un booléen 'has_active_tournament' qui indique si le joueur
+    a au moins un tournoi dont le statut n'est pas 'FN' (Finish).
+    """
+    try:
+        player_id = request.decoded_token['id']
+        player = Player.objects.get(id=player_id)
+    except Player.DoesNotExist:
+        return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    from .models import PlayerTournament
+    pt_qs = PlayerTournament.objects.filter(player=player).select_related('tournament')
+    
+    tournaments_info = []
+    has_active_tournament = False
+
+    for pt in pt_qs:
+        t = pt.tournament
+        # Vérifie si le tournoi n'est pas 'FN' (Finish)
+        if t.status != 'FN':
+            has_active_tournament = True
+
+        tournaments_info.append({
+            "tournament_id": t.id,
+            "name": t.name,
+            "status": t.status,          # 'PN', 'BG', ou 'FN'
+            "current_round": t.current_round,
+            "created": t.created.isoformat(),
+            "is_creator": pt.creator
+        })
+
+    return Response({
+        "has_active_tournament": has_active_tournament,
+        "tournaments": tournaments_info
+    }, status=status.HTTP_200_OK)
+
+
