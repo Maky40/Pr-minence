@@ -19,6 +19,10 @@ import qrcode
 import base64
 from django.db.models import Q
 from PIL import Image
+from rest_framework.decorators import api_view
+from rest_framework import status
+from .decorators import jwt_cookie_required
+from .models import Player, PlayerMatch
 
 
 class PlayerSearch(APIView):
@@ -440,3 +444,93 @@ class ChangePasswordView(APIView):
 
         except Exception as e:
             return Response({"status": 500, "message": str(e)}, status=500)
+        
+
+
+
+@api_view(['GET'])
+@jwt_cookie_required
+def get_player_matches(request):
+    """
+    Récupère la liste des matchs d'un joueur (via PlayerMatch).
+    Retourne également un booléen "has_unplayed" indiquant
+    si le joueur possède au moins un match unplayed (state='UPL').
+    """
+    try:
+        player_id = request.decoded_token['id']
+        player = Player.objects.get(id=player_id)
+    except Player.DoesNotExist:
+        return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Récupérer tous les PlayerMatch pour ce joueur, en préchargeant le match
+    player_matches = PlayerMatch.objects.filter(player=player).select_related('match')
+
+    # Construire la liste des matchs
+    matches_info = []
+    has_unplayed = False
+
+    for pm in player_matches:
+        match_obj = pm.match
+        # Vérifie si ce match est unplayed
+        if match_obj.state == 'UPL':
+            has_unplayed = True
+
+        matches_info.append({
+            "match_id": match_obj.id,
+            "state": match_obj.state,
+            "created": match_obj.created.isoformat(),  # format de date en ISO8601
+            "tournament_id": match_obj.tournament.id if match_obj.tournament else None,
+            "score": pm.score,
+            "is_winner": pm.is_winner,
+            "player_side": pm.player_side,
+        })
+
+    response_data = {
+        "has_unplayed": has_unplayed,
+        "matches": matches_info
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@jwt_cookie_required
+def get_player_tournaments(request):
+    """
+    Récupère la liste des tournois auxquels le joueur participe (via PlayerTournament).
+    Retourne aussi un booléen 'has_active_tournament' qui indique si le joueur
+    a au moins un tournoi dont le statut n'est pas 'FN' (Finish).
+    """
+    try:
+        player_id = request.decoded_token['id']
+        player = Player.objects.get(id=player_id)
+    except Player.DoesNotExist:
+        return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    from .models import PlayerTournament
+    pt_qs = PlayerTournament.objects.filter(player=player).select_related('tournament')
+    
+    tournaments_info = []
+    has_active_tournament = False
+
+    for pt in pt_qs:
+        t = pt.tournament
+        # Vérifie si le tournoi n'est pas 'FN' (Finish)
+        if t.status != 'FN':
+            has_active_tournament = True
+
+        tournaments_info.append({
+            "tournament_id": t.id,
+            "name": t.name,
+            "status": t.status,          # 'PN', 'BG', ou 'FN'
+            "current_round": t.current_round,
+            "created": t.created.isoformat(),
+            "is_creator": pt.creator
+        })
+
+    return Response({
+        "has_active_tournament": has_active_tournament,
+        "tournaments": tournaments_info
+    }, status=status.HTTP_200_OK)
+
+

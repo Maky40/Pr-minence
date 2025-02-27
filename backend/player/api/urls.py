@@ -20,7 +20,6 @@ from django.urls import path
 from api import views
 from django.conf import settings
 from django.conf.urls.static import static
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.PlayerInfo.as_view(), name='playerInfoView'),
@@ -29,8 +28,9 @@ urlpatterns = [
     path('2FAChange/', views.TwoFactorActivation.as_view(), name='TwoFactorChangeView'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
     path('search-players/', views.PlayerSearch.as_view(), name='playerSearchView'),
+    path('matches/', views.get_player_matches, name='get-player-matches'),
+    path('tournaments/', views.get_player_tournaments, name='get-player-tournaments'),
 ]
-
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
