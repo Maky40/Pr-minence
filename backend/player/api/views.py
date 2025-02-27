@@ -19,6 +19,10 @@ import qrcode
 import base64
 from django.db.models import Q
 from PIL import Image
+from rest_framework.decorators import api_view
+from rest_framework import status
+from .decorators import jwt_cookie_required
+from .models import Player, PlayerMatch
 
 
 class PlayerSearch(APIView):
@@ -440,3 +444,51 @@ class ChangePasswordView(APIView):
 
         except Exception as e:
             return Response({"status": 500, "message": str(e)}, status=500)
+        
+
+
+
+@api_view(['GET'])
+@jwt_cookie_required
+def get_player_matches(request):
+    """
+    Récupère la liste des matchs d'un joueur (via PlayerMatch).
+    Retourne également un booléen "has_unplayed" indiquant
+    si le joueur possède au moins un match unplayed (state='UPL').
+    """
+    try:
+        player_id = request.decoded_token['id']
+        player = Player.objects.get(id=player_id)
+    except Player.DoesNotExist:
+        return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Récupérer tous les PlayerMatch pour ce joueur, en préchargeant le match
+    player_matches = PlayerMatch.objects.filter(player=player).select_related('match')
+
+    # Construire la liste des matchs
+    matches_info = []
+    has_unplayed = False
+
+    for pm in player_matches:
+        match_obj = pm.match
+        # Vérifie si ce match est unplayed
+        if match_obj.state == 'UPL':
+            has_unplayed = True
+
+        matches_info.append({
+            "match_id": match_obj.id,
+            "state": match_obj.state,
+            "created": match_obj.created.isoformat(),  # format de date en ISO8601
+            "tournament_id": match_obj.tournament.id if match_obj.tournament else None,
+            "score": pm.score,
+            "is_winner": pm.is_winner,
+            "player_side": pm.player_side,
+        })
+
+    response_data = {
+        "has_unplayed": has_unplayed,
+        "matches": matches_info
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)
+
