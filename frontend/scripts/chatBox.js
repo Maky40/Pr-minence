@@ -1,7 +1,7 @@
 // main.js
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
-import { initWebSocket, closeAndOpenNew, sendMessage } from './chatServices/liveChatService.js';
-import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements, inviteForPlay } from './chatServices/uiService.js';
+import { initWebSocket, closeAndOpenNew, sendMessage, inviteForPlay } from './chatServices/liveChatService.js';
+import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 
@@ -39,7 +39,7 @@ function initializeUIElements() {
 
     ["tournament-room", "private-chat", "add-friend", "block-friend", "send-message",
      "search-friend", "suggestions-container", "requests-list", "friends-list",
-	 "message-input", "invite-friend"
+	 "message-input", "invite-friend", "chat-box"
     ].forEach(id => {
         const oldElement = document.getElementById(id);
         if (oldElement) {
@@ -78,14 +78,20 @@ function addEventListeners(elements, socketActivate, currentUser, otherUser) {
     elements["friends-list"].addEventListener("click", (event) => handleFriendsListClick(event, socketActivate, currentUser, otherUser));
 
 	// Handle send message
-	elements["send-message"].addEventListener("click", () => handleSendMessage(socketActivate, currentUser, elements["message-input"]))
-	elements["message-input"].addEventListener("keydown", (event) => handlePushEnterMessage(event, socketActivate, currentUser, elements["message-input"]))
+	elements["send-message"].addEventListener("click", () => handleSendMessage(socketActivate, currentUser, elements["message-input"]));
+	elements["message-input"].addEventListener("keydown", (event) => handlePushEnterMessage(event, socketActivate, currentUser, elements["message-input"]));
 
 	// Handle block/unblock click
-	elements["block-friend"].addEventListener("click", () => handleBlockFriend(socketActivate, currentUser, otherUser))
+	elements["block-friend"].addEventListener("click", () => handleBlockFriend(socketActivate, currentUser, otherUser));
 
 	// Handle play click
-	elements["invite-friend"].addEventListener("click", () => handleInvitePlay(socketActivate, currentUser))
+	elements["invite-friend"].addEventListener("click", () => handleInvitePlay(socketActivate, currentUser));
+	elements["chat-box"].addEventListener("click", (event) => {
+		if (event.target.classList.contains("accept-play"))
+			handleAcceptPlay(event, currentUser, socketActivate);
+		else if (event.target.classList.contains("refuse-play"))
+			handleRefusePlay(event, currentUser, socketActivate)
+	})
 }
 
 
@@ -242,7 +248,7 @@ async function handleBlockFriend(socketActivate, currentUser, otherUser) {
 }
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
-/////////////////////////////////////////////║                  INVITE FRIEND FOR PLAY                    ║/////////////////////////////////////////////
+/////////////////////////////////////////////║                  HANDLE PLAY WITH FRIEND                   ║/////////////////////////////////////////////
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 
@@ -264,5 +270,51 @@ async function friendshipVerifications(socketActivate) {
 	const response =  await api.apiFetch("/player/friendship/?target=friends", true, "GET");
 	if (response.friendships.length===0) {
 		throw new Error("Vous n'etes pas encore pote");
+	}
+}
+
+function handleAcceptPlay(event, currentUser, socketActivate) {
+	try {
+		const buttonAccept = event.target;
+		const matchId = buttonAccept.getAttribute("data-id");
+		api.apiFetch("pong/match/individual/accept/", true, "POST", { match_id: matchId })
+			.then(response => console.log("Réponse API :", response))
+			.catch(error => console.error("Erreur API :", error.message));
+		const payload = {
+				type: 'invitation_play',
+				senderId : currentUser.id,
+				senderName: currentUser.username,
+				message: "accept",
+				matchId: matchId,
+			};
+
+		socketActivate.socket.send(JSON.stringify(payload));
+	}
+	catch (error) {
+		const toast = new Toast("Error", error, "error");
+		toast.show();
+	}
+}
+
+function handleRefusePlay(event, currentUser, socketActivate) {
+	try {
+		const buttonRefuse = event.target;
+		const matchId = buttonRefuse.getAttribute("data-id");
+		api.apiFetch("pong/match/individual/refuse/", true, "POST", { match_id: matchId })
+			.then(response => console.log("Réponse API :", response))
+			.catch(error => console.error("Erreur API :", error.message));
+		const payload = {
+				type: 'invitation_play',
+				senderId : currentUser.id,
+				senderName: currentUser.username,
+				message: "refuse",
+				matchId: matchId,
+			};
+
+		socketActivate.socket.send(JSON.stringify(payload));
+	}
+	catch (error) {
+		const toast = new Toast("Error", error, "error");
+		toast.show();
 	}
 }

@@ -168,6 +168,53 @@ export function displayMessage(senderName, senderId, message, otherUserId) {
     }
 
     messageContainer.appendChild(newMessage);
+	messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+export function displayInvitation(senderName, senderId, matchId, otherUserId) {
+	const messageContainer = document.getElementById("chat-box");
+	const newInvitation = document.createElement("div");
+	newInvitation.id = `invitation-${matchId}`;
+
+	if (senderId != otherUserId) {
+		newInvitation.textContent = "Invitation envoyée ...";
+		newInvitation.style.color = "grey";
+	} else {
+		newInvitation.innerHTML = `
+		<p style="color: grey;">Invitation reçue, souhaitez-vous jouer ?</p>
+		<div style="display: flex; flex-direction: row; gap: 8px;">
+			<button class="btn btn-success btn-sm accept-play" data-id="${matchId}" style="flex: 1;">Accepter</button>
+			<button class="btn btn-danger btn-sm refuse-play" data-id="${matchId}" style="flex: 1;">Refuser</button>
+		</div>`;
+	}
+	messageContainer.appendChild(newInvitation);
+	messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+export function displayInvitationRefuse(senderName, senderId, matchId, otherUserId){
+	const messageContainer = document.getElementById("chat-box");
+	const newInvitation = document.getElementById(`invitation-${matchId}`);
+	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
+	// if (senderId == otherUserId){
+		newInvitation.textContent = "Invitation refusee";
+		newInvitation.style.color = "red";
+	// }
+	// else {
+
+	// }
+}
+
+export function displayInvitationAccept(senderName, senderId, matchId, otherUserId) {
+	const messageContainer = document.getElementById("chat-box");
+	const newInvitation = document.getElementById(`invitation-${matchId}`);
+	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
+	// if (senderId == otherUserId){
+		newInvitation.innerHTML = "Invitation acceptee";
+		newInvitation.style.color = "green";
+	// }
+	// else {
+		// newInvitation.innerHTML = "Invitation acceptee";
+	// }
 }
 
 export async function displayFriendChat(friendName, blocked) {
