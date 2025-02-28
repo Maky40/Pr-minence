@@ -21,7 +21,8 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         self.player = self.scope["player"]
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
-        self.room_group_name = None
+        self.room_group_name = f"pong_{self.match_id}" if self.match_id else None
+
 
         # --- NOUVEAU : Vérification du match (s'il y a un match_id) ---
         if self.match_id:
@@ -50,9 +51,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Aucune match_id => on crée un nouveau match
             self.match_id = await self.create_match(self.player)
             self.paddle = "left"
-
-        # Nom du "groupe" Channels (salle) basé sur match_id
-        self.room_group_name = f"pong_{self.match_id}"
+            self.room_group_name = f"pong_{self.match_id}"
 
         # Rejoint le groupe
         await self.channel_layer.group_add(
