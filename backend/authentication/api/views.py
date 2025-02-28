@@ -20,7 +20,6 @@ import re
 def intra_auth(request):
     # URL de redirection configurée dans l'API 42
     redirect_uri = getenv("INTRA_REDIRECT_URI")
-    
     # Paramètres OAuth2 pour l'API 42
     params = {
         "client_id": getenv("INTRA_CLIENT_ID"),  # Récupère le client_id depuis les variables d'environnement
