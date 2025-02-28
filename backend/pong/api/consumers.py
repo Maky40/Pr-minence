@@ -21,7 +21,8 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         self.player = self.scope["player"]
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
-        self.room_group_name = None
+        self.room_group_name = f"pong_{self.match_id}" if self.match_id else None
+
 
         # --- NOUVEAU : Vérification du match (s'il y a un match_id) ---
         if self.match_id:
@@ -50,9 +51,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Aucune match_id => on crée un nouveau match
             self.match_id = await self.create_match(self.player)
             self.paddle = "left"
-
-        # Nom du "groupe" Channels (salle) basé sur match_id
-        self.room_group_name = f"pong_{self.match_id}"
+            self.room_group_name = f"pong_{self.match_id}"
 
         # Rejoint le groupe
         await self.channel_layer.group_add(
@@ -111,9 +110,10 @@ class PongConsumer(AsyncWebsocketConsumer):
         print(f"[DEBUG] Joueurs existants dans le match: {existing_pm.count()}")
         
         # Vérifier si le joueur est déjà dans le match
-        if existing_pm.filter(player=player).exists():
-            print(f"[DEBUG] ⚠️ {player.username} est déjà dans le match!")
-            return None
+        player_match = existing_pm.filter(player=player).first()
+        if player_match:
+            return "left" if player_match.player_side == 'L' else "right"
+
         
         if existing_pm.count() == 0:
             print(f"[DEBUG] Premier joueur: {player.username} -> LEFT")
