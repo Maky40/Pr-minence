@@ -3,6 +3,7 @@ import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Match, PlayerMatch, Player
+from asgiref.sync import sync_to_async
 
 # States en mémoire (pour la logique en temps réel)
 game_states = {}

@@ -18,7 +18,6 @@ export default class Navbar extends Component {
       this.render(this.container);
     });
     pong42.player.tournament.on("update", (tournament) => {
-      console.log("Tournament updated:", tournament);
       this.setState({ tournament: tournament });
       this.render(this.container);
     });

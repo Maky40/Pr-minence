@@ -83,14 +83,14 @@ def intra_callback_auth(request):
     player = create_player(player_data)
     if player is None:
         # Rediriger vers la page de connexion en cas d'échec
-        return redirect(f"https://localhost/#connexion/", permanent=True)
+        return redirect(f"https://{settings.IP_ADDRESS}/#connexion/", permanent=True)
     player.from_42 = True
     player.save()
     # Générer un token JWT pour le joueur
     jwt_token = generate_jwt(player.id, player.two_factor)
 
     # Rediriger vers le frontend avec un cookie JWT
-    frontend_url = 'https://localhost/#home'
+    frontend_url = 'https://{settings.IP_ADDRESS}/#home'
     response = redirect(frontend_url)
 
     # Ajouter le token JWT et le pseudo dans les cookies
@@ -103,7 +103,7 @@ def intra_callback_auth(request):
 def logout_user(request):
     if request.token is not None:
         cache.set(request.token, True, timeout=None)
-        response = redirect(f"https://localhost/#connexion/", permanent=True)
+        response = redirect(f"https://{settings.IP_ADDRESS}/#connexion/", permanent=True)
         response.delete_cookie("jwt_token")
         return response
     else:

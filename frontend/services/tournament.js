@@ -6,7 +6,6 @@ import Toast from "../components/toast.js";
 class TournamentService extends EventEmitter {
   constructor() {
     super();
-    console.log("TournamentService initialized");
     this.baseUrl = `${ENV.API_URL}tournament/tournament/`;
     this.initData();
     this.init();
@@ -96,9 +95,6 @@ class TournamentService extends EventEmitter {
   }
 
   updateTournamentStatus = async () => {
-    console.log("Updating tournament status");
-    console.log("Tournament ID:", this.tournamentId);
-    if (!this.tournamentId) return; // Ne rien faire si l'ID du tournoi est inconnu
     try {
       const tournament = await this.getTournaments();
       if (tournament.id === this.tournamentId) {
@@ -106,7 +102,7 @@ class TournamentService extends EventEmitter {
         const newStatus = tournament.status;
         this.checkTournamentStatus(newStatus);
         this.startStatusCheckInterval();
-        this.emit("update", this.returnTournamentInfo()); // Vérifier le nouveau statut
+        this.emit("update", this.returnTournamentInfo());
       } else {
         this.tournamentId = 0;
         this.emit("tournamentLeft", {});
@@ -143,6 +139,7 @@ class TournamentService extends EventEmitter {
       if (!response.ok)
         throw new Error(data.message || "Failed to create tournament");
       this.emit("tournamentCreatedOrJoinOrIn", data);
+      this.updateTournamentStatus();
       return data;
     } catch (error) {
       console.error("Error creating tournament:", error);
@@ -165,7 +162,7 @@ class TournamentService extends EventEmitter {
       });
       this.emit("tournamentCreatedOrJoinOrIn", { tournamentId });
       this.tournamentId = tournamentId;
-      this.startStatusCheckInterval();
+      this.updateTournamentStatus();
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.message || "Failed to join tournament");

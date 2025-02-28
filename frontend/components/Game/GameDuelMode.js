@@ -1,6 +1,8 @@
 import Component from "../../utils/Component.js";
 import DuelModeHost from "../DuelMode/DuelModeHost.js";
 import DuelModeGuest from "../DuelMode/DuelModeGuest.js";
+import pong42 from "/services/pong42.js";
+import { changePage } from "../../utils/Page.js";
 
 class GameDuelMode extends Component {
   constructor(container) {
@@ -30,6 +32,11 @@ class GameDuelMode extends Component {
   }
 
   afterRender() {
+    pong42.player.checkUnplayedAndActiveTournament();
+    if (pong42.player.has_unplayed || pong42.player.has_active_tournament) {
+      changePage("game");
+      this.destroy();
+    }
     document.querySelectorAll(".game-mode-card button").forEach((button) => {
       button.addEventListener("click", (e) => {
         e.preventDefault();

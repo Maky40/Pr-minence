@@ -23,7 +23,6 @@ class GameTournoisMode extends Component {
     };
 
     this.playerInTournamentListener = (tournament) => {
-      console.log("Player in tournament:", tournament);
       if (this.container) {
         const lobby = new GameTournoiLobby(tournament.id);
         lobby.render(this.container);

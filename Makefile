@@ -43,9 +43,8 @@ logs:
 
 # Nettoie les conteneurs, réseaux, volumes et images inutilisés
 fclean:
-	@echo "Cleaning up Docker environment and removing nginx.conf..."
+	@echo "Cleaning up Docker environment ..."
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down --volumes --rmi all --remove-orphans
-	@rm -f ./nginx/nginx.conf
 	@echo "Cleanup complete!"
 
 # Crée le fichier nginx.conf

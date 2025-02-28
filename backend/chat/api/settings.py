@@ -23,6 +23,11 @@ SERVICES_DIR = AUTH_DIR.parent  # backend/k
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+IP_ADDRESS = getenv("IP_ADDRESS")
+
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")
