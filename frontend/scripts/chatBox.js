@@ -289,6 +289,7 @@ function handleAcceptPlay(event, currentUser, socketActivate) {
 			};
 
 		socketActivate.socket.send(JSON.stringify(payload));
+		// const ws = new WebSocket(`wss://localhost/pong/ws/pong/${matchId}/`);
 	}
 	catch (error) {
 		const toast = new Toast("Error", error, "error");

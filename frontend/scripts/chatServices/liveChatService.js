@@ -96,7 +96,8 @@ export async function inviteForPlay(socketActivate, currentUser) {
 		matchId: id_match,
 	};
 	console.log("PAYLOAD :", payload);
-	const ws = new WebSocket(`wss://localhost/pong/ws/pong/${id_match}/`);
+	// const ws = new WebSocket(`wss://localhost/pong/ws/pong/${id_match}/`);
+	const ws = new WebSocket(`wss://localhost/pong/ws/pong/`);
 
 	ws.onerror = function(event) {
 		console.error("WebSocket Error:", event);
