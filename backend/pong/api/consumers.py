@@ -110,9 +110,10 @@ class PongConsumer(AsyncWebsocketConsumer):
         print(f"[DEBUG] Joueurs existants dans le match: {existing_pm.count()}")
         
         # Vérifier si le joueur est déjà dans le match
-        if existing_pm.filter(player=player).exists():
-            print(f"[DEBUG] ⚠️ {player.username} est déjà dans le match!")
-            return None
+        player_match = existing_pm.filter(player=player).first()
+        if player_match:
+            return "left" if player_match.player_side == 'L' else "right"
+
         
         if existing_pm.count() == 0:
             print(f"[DEBUG] Premier joueur: {player.username} -> LEFT")
