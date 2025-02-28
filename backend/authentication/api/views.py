@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from .serializers import SignupSerializer, LoginSerializer
 import pyotp
 import re
+from django.conf import settings
 
 
 @api_view(['GET'])
@@ -89,7 +90,7 @@ def intra_callback_auth(request):
     jwt_token = generate_jwt(player.id, player.two_factor)
 
     # Rediriger vers le frontend avec un cookie JWT
-    frontend_url = 'https://{settings.IP_ADDRESS}/#home'
+    frontend_url = f'https://{settings.IP_ADDRESS}/#home'
     response = redirect(frontend_url)
 
     # Ajouter le token JWT et le pseudo dans les cookies

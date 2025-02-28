@@ -8,9 +8,6 @@ class GameSelectionComponent extends Component {
     super();
     this.selectedMode = null;
     this.handleModeSelection = this.handleModeSelection.bind(this);
-    console.log("GameSelectionComponent initialized");
-    pong42.player.checkUnplayedAndActiveTournament();
-    console.log(pong42);
   }
 
   handleModeSelection(mode) {
@@ -28,7 +25,13 @@ class GameSelectionComponent extends Component {
     // Ici vous pouvez ajouter la logique pour gérer la sélection du mode
   }
 
-  afterRender() {
+  async afterRender() {
+    await pong42.player.checkUnplayedAndActiveTournament();
+    console.log("GameSelectionComponent", pong42.player);
+    if (pong42.player.has_active_tournament) {
+      this.handleModeSelection("TournoiMode");
+    }
+
     document.getElementById("start-match")?.addEventListener("click", (e) => {
       e.preventDefault();
       this.handleModeSelection("duelMode");
