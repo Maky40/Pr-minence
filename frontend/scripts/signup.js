@@ -5,6 +5,7 @@ import pong42 from "../services/pong42.js";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const showErrorMessage = (message) => {
+  console.log("Error message ---:", message);
   const errorDiv = document.getElementById("error-msg");
   errorDiv.innerHTML = message;
   errorDiv.classList.remove("d-none");
@@ -31,25 +32,31 @@ const returnResult = (state, message) => {
 //fonction qui check les données du formulaire
 const checkDataFromForm = (data) => {
   if (data.password !== data.passwordConfirm) {
-    console.log("Passwords don't match");
-    return returnResult(false, "Passwords don't match");
+    console.log("Les mots de passe ne correspondent pas");
+    return returnResult(false, "Les mots de passe ne correspondent pas");
   }
 
   if (data.password.length < 8) {
-    console.log("Password too short");
-    return returnResult(false, "Password too short");
+    console.log("Mot de passe trop court");
+    return returnResult(
+      false,
+      "Le mot de passe doit contenir au moins 8 caractères"
+    );
   }
 
   if (emailPattern.test(data.email) === false) {
-    console.log("Invalid email");
-    return returnResult(false, "Invalid email");
+    console.log("Email invalide");
+    return returnResult(false, "Adresse email invalide");
   }
 
   if (data.username.length < 3) {
-    console.log("Username too short");
-    return returnResult(false, "Username too short");
+    console.log("Nom d'utilisateur trop court");
+    return returnResult(
+      false,
+      "Le nom d'utilisateur doit contenir au moins 3 caractères"
+    );
   }
-  return returnResult(true, "Data is valid");
+  return returnResult(true, "Les données sont valides");
 };
 
 const singupHandler = async (event) => {
@@ -66,6 +73,7 @@ const singupHandler = async (event) => {
     }
   } else {
     console.log("Error :" + result.message);
+    showErrorMessage(result.message);
   }
 };
 
