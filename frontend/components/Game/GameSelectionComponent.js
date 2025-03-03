@@ -42,6 +42,14 @@ class GameSelectionComponent extends Component {
       .getElementById("start-tournament")
       ?.addEventListener("click", (e) => {
         e.preventDefault();
+
+        // Désactiver le bouton immédiatement pour éviter les doubles clics
+        const button = e.target;
+        button.disabled = true;
+        button.textContent = "Chargement...";
+        button.classList.add("disabled");
+
+        // Appeler la fonction de sélection de mode
         this.handleModeSelection("TournoiMode");
       });
   }

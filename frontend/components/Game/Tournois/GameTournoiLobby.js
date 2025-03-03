@@ -1,12 +1,14 @@
 import Component from "../../../utils/Component.js";
 import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
+import Toast from "../../toast.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
     super();
     this.tournamentId = tournamentId;
     this.container = null;
+    this.playerLeave = false;
     this.state = {
       tournament: null,
       error: null,
@@ -17,7 +19,13 @@ class GameTournoiLobby extends Component {
     pong42.player.tournament.on("tournamentLeft", () => {
       this.state.loading = true;
       console.log(pong42.player.tournament);
-
+      if (!this.playerLeave) {
+        new Toast(
+          "Tournoi annulé",
+          "Le tournoi a été annulé par le créateur",
+          "info"
+        ).show();
+      }
       setTimeout(() => {
         pong42.player.checkUnplayedAndActiveTournament();
         this.state.loading = false;
@@ -65,6 +73,7 @@ class GameTournoiLobby extends Component {
     try {
       pong42.player.tournament.off("update");
       this.setState({ loading: true });
+      this.playerLeave = true;
       await pong42.player.tournament.leaveTournament(this.state.tournament.id);
       // Pas besoin de naviguer ici car l'événement tournamentLeft le fera
     } catch (error) {
