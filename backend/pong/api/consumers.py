@@ -31,6 +31,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Vérifie en base si ce match existe
             match_exists = await self.match_exists_in_db(self.match_id)
             if not match_exists:
+                await self.send(text_data=json.dumps({"error": f"Match {self.match_id} inexistant"}))
                 # Si le match n'existe pas => on ferme immédiatement
                 await self.close()
                 return
@@ -48,6 +49,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Assigne la raquette (L/R)
             self.paddle = await self.assign_player_side(self.match_id, self.player)
             if not self.paddle:
+                await self.send(text_data=json.dumps({"error": "Impossible d'assigner un côté (match plein ?)"}))
                 # Problème lors de l'assignation (match complet ?)
                 await self.close()
                 return
@@ -478,12 +480,3 @@ class PongConsumer(AsyncWebsocketConsumer):
                     state["paddle_speed_right"] = 10
                 else:
                     state["paddle_speed_right"] = 0
-
-
-
-
-
-
-
-
-
