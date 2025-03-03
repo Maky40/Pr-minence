@@ -8,6 +8,7 @@ import { changePage } from "../../utils/Page.js";
 class DuelModeHost extends Component {
   constructor() {
     super();
+    this.canceledMatch = false;
     this.state = {
       matchId: null,
       paddle: null,
@@ -18,6 +19,7 @@ class DuelModeHost extends Component {
     this.wsurlgame = `${ENV.WS_URL_GAME}`;
   }
   async getMatchId() {
+    if (this.canceledMatch) return;
     const webSocketMatch = new WebSocketAPI(this.wsurlgame);
     webSocketMatch.addMessageListener("message", (data) => {
       const message = JSON.parse(data);
@@ -30,19 +32,21 @@ class DuelModeHost extends Component {
         pong42.player.match_id = match_id;
         pong42.player.paddle = paddle;
         pong42.player.socketMatch = webSocketMatch;
+        this.canceledMatch = false;
         this.setState({
           matchId: match_id,
           paddle: paddle,
           waitingGuest: true,
+          loading: false,
         });
       }
     });
   }
 
   async cancelMatch() {
+    this.canceledMatch = true;
+
     const response = await pong42.player.cancelMatch();
-    console.log("Match cancelled");
-    console.log(response);
     if (response) {
       this.setState({
         matchId: null,
@@ -51,8 +55,6 @@ class DuelModeHost extends Component {
         error: null,
         waitingGuest: false,
       });
-      console.log("Match cancelled");
-      console.log(response);
       this.destroy();
       changePage("game");
     } else {
@@ -64,9 +66,9 @@ class DuelModeHost extends Component {
     if (!this.state.matchId) this.getMatchId();
     document
       .getElementById("cancel-match-hoster")
-      ?.addEventListener("click", (e) => {
+      ?.addEventListener("click", async (e) => {
         e.preventDefault();
-        this.cancelMatch();
+        await this.cancelMatch();
       });
   }
 

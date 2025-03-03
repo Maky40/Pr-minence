@@ -28,7 +28,7 @@ class Player extends EventEmitter {
     this.has_active_tournament = false;
     this.defaultAvatar = `${ENV.API_URL}${ENV.DEFAULT_AVATAR}`;
     this.tournament = new TournamentService();
-	this.game = false;
+    this.game = false;
   }
 
   async init() {
@@ -78,7 +78,7 @@ class Player extends EventEmitter {
       return true;
     } catch (error) {
       console.error("Failed to cancel match:", error);
-      const toast = new Toast("Error", "Failed to cancel match", "error");
+      const toast = new Toast("Error", error, "error");
       toast.show();
       return false;
     }

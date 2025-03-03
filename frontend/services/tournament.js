@@ -12,9 +12,6 @@ class TournamentService extends EventEmitter {
   }
   init = async () => {
     try {
-      console.log(
-        "Initializing tournament service ================================"
-      );
       await this.getTournaments();
       this.startStatusCheckInterval();
     } catch (error) {
@@ -213,7 +210,6 @@ class TournamentService extends EventEmitter {
         creatorChanged ||
         playersCountChanged
       ) {
-        console.log("Tournament changed:", tournament);
         this.apiToData(tournament);
         if (statusChanged) {
           this.checkTournamentStatus(tournament.status);
@@ -281,6 +277,29 @@ class TournamentService extends EventEmitter {
       return data;
     } catch (error) {
       console.error("Error joining tournament:", error);
+      throw error;
+    }
+  }
+  async startTournament(tournamentId) {
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "start",
+          tournament_id: tournamentId,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.message || "Failed to start tournament");
+      this.updateTournamentStatus();
+      return data;
+    } catch (error) {
+      console.error("Error starting tournament:", error);
       throw error;
     }
   }

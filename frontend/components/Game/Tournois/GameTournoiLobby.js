@@ -39,14 +39,69 @@ class GameTournoiLobby extends Component {
     });
   }
 
+  roundAffichage(round) {
+    //convertissage des rounds en francais
+    //    ('QU', 'Quart de finale'),
+    //    ('HF', 'Demi-finale'),
+    //    ('FN', 'Finale'),
+    switch (round) {
+      case "QU":
+        return "Quart de finale";
+      case "HF":
+        return "Demi-finale";
+      case "FN":
+        return "Finale";
+      default:
+        return "Erreur";
+    }
+  }
+  statusAffichage(status) {
+    //convertissage des status en francais
+    //    ('UPL', 'En attente des joueurs'),
+    //    ('PLY', 'Terminé'),
+    switch (status) {
+      case "UPL":
+        return "En attente des joueurs";
+      case "PLY":
+        return "Terminé";
+      default:
+        return "Erreur";
+    }
+  }
   async afterRender() {
-    console.log("GameTournoiLobby constructor");
     if (!this.state.initialized && !this.state.loading)
       await this.fetchTournamentDetails();
+    const startTournamentButton = this.container.querySelector(
+      "#startTournamentButton"
+    );
+    if (startTournamentButton) {
+      startTournamentButton.addEventListener("click", async () => {
+        try {
+          this.setState({ loading: true });
+          await pong42.player.tournament.startTournament(
+            this.state.tournament.id
+          );
+        } catch (error) {
+          this.setState({
+            error: error.message,
+            loading: false,
+          });
+        }
+      });
+    }
     const leaveButton = this.container.querySelector("#leaveTournamentButton");
     if (leaveButton) {
       leaveButton.addEventListener("click", () => this.leaveTournament());
     }
+  }
+
+  isPlayerIdPresent(playerId, playersList) {
+    if (
+      parseInt(playersList[0].player.id) === parseInt(playerId) ||
+      parseInt(playersList[1].player.id) === parseInt(playerId)
+    )
+      return true;
+    return false;
   }
 
   async fetchTournamentDetails() {
@@ -127,7 +182,6 @@ class GameTournoiLobby extends Component {
         </div>
       `;
     }
-
     return `
       <div class="container mt-5">
         <div class="card shadow">
@@ -138,70 +192,25 @@ class GameTournoiLobby extends Component {
                 tournament.creator ? "Annuler le tournoi" : "Quitter le tournoi"
               }
             </button>
+            ${
+              tournament.creator &&
+              tournament.status === "PN" &&
+              tournament.players_count >= 8
+                ? `
+              <button class="btn btn-outline-success" id="startTournamentButton">
+                Démarrer le tournoi
+              </button>
+            `
+                : ""
+            }
           </div>
           <div class="card-body">
             <div class="row">
               <!-- Liste des joueurs -->
-              <div class="col-md-6">
-                <div class="card mb-4">
                   <div class="card-header">
-                    <h4 class="mb-0">Joueurs (${
+                    <h4 class="mb-0">Nombre de joueurs inscrit :${
                       tournament.players_count || 0
-                    })</h4>
-                  </div>
-                  <div class="card-body">
-                    <ul class="list-group">
-                      ${
-                        tournament.players
-                          ?.map(
-                            (player) => `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                          ${player.username}
-                          ${
-                            player.isReady
-                              ? '<span class="badge bg-success">Prêt</span>'
-                              : '<span class="badge bg-warning">En attente</span>'
-                          }
-                        </li>
-                      `
-                          )
-                          .join("") || "Aucun joueur"
-                      }
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Matchs en cours -->
-              <div class="col-md-6">
-                <div class="card">
-                  <div class="card-header">
-                    <h4 class="mb-0">Matchs en cours</h4>
-                  </div>
-                  <div class="card-body">
-                    ${
-                      tournament.matches?.length
-                        ? `
-                      <ul class="list-group">
-                        ${tournament.matches
-                          .map(
-                            (match) => `
-                          <li class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                              <span>${match.player1}</span>
-                              <span class="badge bg-primary">VS</span>
-                              <span>${match.player2}</span>
-                            </div>
-                          </li>
-                        `
-                          )
-                          .join("")}
-                      </ul>
-                    `
-                        : '<p class="text-muted">Aucun match en cours</p>'
-                    }
-                  </div>
-                </div>
+                    }</h4>
               </div>
             </div>
 
@@ -221,7 +230,58 @@ class GameTournoiLobby extends Component {
                 </p>
               </div>
             `
-                : ""
+                : `<!-- Matchs en cours -->
+                  <div class="card mt-4">
+                    <div class="card-header">
+                      <h4 class="mb-0">Matchs en cours</h4>
+                    </div>
+                    <div class="card-body">
+                      ${
+                        tournament.matches?.length
+                          ? `
+                        <ul class="list-group">
+                          ${tournament.matches
+                            .map((match) => {
+                              return match.current
+                                ? `                   
+                              <li class="list-group-item">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <img src="${
+                                  match.players[0].player.avatar
+                                }" alt="Avatar" class="rounded-circle" width="50" height="50" />
+                                <span class="badge bg-primary">VS</span>
+                                <img src="${
+                                  match.players[1].player.avatar
+                                }" alt="Avatar" class="rounded-circle" width="50" height="50" />
+                              </div>
+                              <div class="d-flex justify-content-between align-items-center mt-2">
+                              round: ${this.roundAffichage(
+                                match.round
+                              )} state: ${this.statusAffichage(match.state)}
+                              </div>
+                              ${
+                                this.isPlayerIdPresent(
+                                  pong42.player.id,
+                                  match.players
+                                )
+                                  ? `
+                                  <div class="d-flex justify-content-between align-items-center mt-2">
+                                      <button class="btn btn-primary btn-join-match" data-match-id="${match.id}">Rejoindre</button>
+                                    </div>
+                                  `
+                                  : ``
+                              }
+                            </li>
+                          `
+                                : "";
+                            })
+                            .join("")}
+                        </ul>
+                      `
+                          : '<p class="text-muted">Aucun match en cours</p>'
+                      }
+                    </div>
+                  </div>`
             }
           </div>
         </div>

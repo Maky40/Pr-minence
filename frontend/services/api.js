@@ -47,6 +47,10 @@ class Api {
       if (url === this.urlAuthDjangoLogout) {
         return response.ok;
       }
+      if (response.status === 400) {
+        const awaitResponse = await response.json();
+        throw new Error(awaitResponse.error);
+      }
       if (response.status === 401) {
         const toast = new Toast(
           "Session expired",

@@ -19,7 +19,6 @@ class GameSelectionComponent extends Component {
   handleModeSelection(mode, container) {
     this.container = container || this.container;
     this.selectedMode = mode;
-    console.log("GameSelectionComponent handleModeSelection", this.container);
     if (mode === "duelMode") {
       const duelMode = new GameDuelMode();
       duelMode.render(this.container);
@@ -28,7 +27,6 @@ class GameSelectionComponent extends Component {
       const gameTournoiMode = new GameTournoiMode();
       gameTournoiMode.render(this.container);
     }
-    // Ici vous pouvez ajouter la logique pour gérer la sélection du mode
   }
   async afterRender() {
     document.getElementById("start-match")?.addEventListener("click", (e) => {
@@ -44,14 +42,10 @@ class GameSelectionComponent extends Component {
       .getElementById("start-tournament")
       ?.addEventListener("click", (e) => {
         e.preventDefault();
-
-        // Désactiver le bouton immédiatement pour éviter les doubles clics
         const button = e.target;
         button.disabled = true;
         button.textContent = "Chargement...";
         button.classList.add("disabled");
-
-        // Appeler la fonction de sélection de mode
         this.handleModeSelection("TournoiMode");
       });
   }
@@ -62,7 +56,6 @@ class GameSelectionComponent extends Component {
       this.handleModeSelection("TournoiMode", container);
       return;
     }
-    console.log("PLAYERINFO", pong42.player);
     super.render(container);
   }
 
