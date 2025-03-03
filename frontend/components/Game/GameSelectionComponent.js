@@ -8,12 +8,17 @@ class GameSelectionComponent extends Component {
     super();
     this.selectedMode = null;
     this.handleModeSelection = this.handleModeSelection.bind(this);
+    this.state = {
+      loading: true,
+      error: null,
+      initialized: false,
+    };
   }
 
-  handleModeSelection(mode) {
-    console.log("Selected mode:", mode);
+  handleModeSelection(mode, container) {
+    this.container = container || this.container;
     this.selectedMode = mode;
-
+    console.log("GameSelectionComponent handleModeSelection", this.container);
     if (mode === "duelMode") {
       const duelMode = new GameDuelMode();
       duelMode.render(this.container);
@@ -24,14 +29,7 @@ class GameSelectionComponent extends Component {
     }
     // Ici vous pouvez ajouter la logique pour gérer la sélection du mode
   }
-
   async afterRender() {
-    await pong42.player.checkUnplayedAndActiveTournament();
-    console.log("GameSelectionComponent", pong42.player);
-    if (pong42.player.has_active_tournament) {
-      this.handleModeSelection("TournoiMode");
-    }
-
     document.getElementById("start-match")?.addEventListener("click", (e) => {
       e.preventDefault();
       this.handleModeSelection("duelMode");
@@ -47,8 +45,35 @@ class GameSelectionComponent extends Component {
         this.handleModeSelection("TournoiMode");
       });
   }
+  async render(container) {
+    console.log("GameSelectionComponent render", container);
+    this.state.loading = false;
+    console.log("GameSelectionComponent afterRender1");
+    await pong42.player.checkUnplayedAndActiveTournament();
+    if (pong42.player.has_active_tournament) {
+      this.handleModeSelection("TournoiMode", container);
+      return;
+    }
+    super.render(container);
+  }
 
   template() {
+    if (this.state.loading) {
+      return `
+        <div class="container mt-5">
+          <div class="text-center">
+            <div class="card">
+              <div class="card-body">
+              <h3>Loading...</h3>
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
     return `
       <section id="game-selection" class="container mt-5">
         <div class="row justify-content-center">

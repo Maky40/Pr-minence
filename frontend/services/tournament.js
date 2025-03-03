@@ -12,6 +12,9 @@ class TournamentService extends EventEmitter {
   }
   init = async () => {
     try {
+      console.log(
+        "Initializing tournament service ================================"
+      );
       await this.getTournaments();
       this.startStatusCheckInterval();
     } catch (error) {
@@ -31,11 +34,73 @@ class TournamentService extends EventEmitter {
       tournamentPlayers_count: this.tournamentPlayers_count,
     };
   }
+  checkTournamentChange(newValues) {
+    // Vérifier d'abord si c'est le même tournoi
+    if (this.tournamentId !== newValues.id) {
+      console.log(
+        "Tournament ID changed:",
+        this.tournamentId,
+        "->",
+        newValues.id
+      );
+      return false;
+    }
+
+    // Vérifier chaque propriété individuellement pour un meilleur débogage
+    const statusChanged = this.tournamentStatus !== newValues.status;
+    const roundChanged =
+      this.tournamentCurren_round !== newValues.current_round;
+    const matchesChanged =
+      JSON.stringify(this.tournamentMatches) !==
+      JSON.stringify(newValues.matches);
+    const creatorChanged = this.tournamentCreator !== newValues.creator;
+    const playersCountChanged =
+      this.tournamentPlayers_count !== newValues.players_count;
+
+    // Log des changements
+    if (statusChanged)
+      console.log(
+        "Status changed:",
+        this.tournamentStatus,
+        "->",
+        newValues.status
+      );
+    if (roundChanged)
+      console.log(
+        "Round changed:",
+        this.tournamentCurren_round,
+        "->",
+        newValues.current_round
+      );
+    if (matchesChanged) console.log("Matches changed");
+    if (creatorChanged)
+      console.log(
+        "Creator changed:",
+        this.tournamentCreator,
+        "->",
+        newValues.creator
+      );
+    if (playersCountChanged)
+      console.log(
+        "Players count changed:",
+        this.tournamentPlayers_count,
+        "->",
+        newValues.players_count
+      );
+
+    return (
+      statusChanged ||
+      roundChanged ||
+      matchesChanged ||
+      creatorChanged ||
+      playersCountChanged
+    );
+  }
 
   apiToData(tournament) {
     this.tournamentId = tournament.id;
     this.tournamentCurren_round = tournament.current_round;
-    this.tournamentMatches = tournament.matches;
+    this.tournamentMatches = tournament.matches || [];
     this.tournamentCreator = tournament.creator;
     this.tournamentPlayers_count = tournament.players_count;
     this.tournamentOldStatus = this.tournamentStatus;
@@ -96,17 +161,64 @@ class TournamentService extends EventEmitter {
 
   updateTournamentStatus = async () => {
     try {
+      // Sauvegarder l'état actuel pour la comparaison
+      const oldStatus = this.tournamentStatus;
+      const oldRound = this.tournamentCurren_round;
+
+      const oldCreator = this.tournamentCreator;
+      const oldPlayersCount = this.tournamentPlayers_count;
+
       const tournament = await this.getTournaments();
-      if (tournament.id === this.tournamentId) {
-        this.apiToData(tournament);
-        const newStatus = tournament.status;
-        this.checkTournamentStatus(newStatus);
-        this.startStatusCheckInterval();
-        this.emit("update", this.returnTournamentInfo());
-      } else {
+
+      // Si le joueur n'est plus dans le tournoi ou le tournoi a changé
+      if (!tournament.id || tournament.id !== this.tournamentId) {
         this.tournamentId = 0;
         this.emit("tournamentLeft", {});
-        clearInterval(this.interval);
+        this.stopStatusCheckInterval();
+        return;
+      }
+      let matchesChanged = false;
+      if (this.tournamentMatches.length > 0) {
+        const oldMatches = [...this.tournamentMatches];
+        matchesChanged =
+          JSON.stringify(oldMatches) !== JSON.stringify(tournament.matches);
+      }
+      // Vérifier si quelque chose a changé en comparant avec les anciennes valeurs
+      const statusChanged = oldStatus !== tournament.status;
+      const roundChanged = oldRound !== tournament.current_round;
+      const creatorChanged = oldCreator !== tournament.creator;
+      const playersCountChanged = oldPlayersCount !== tournament.players_count;
+
+      // Log des changements
+      if (statusChanged)
+        console.log("Status changed:", oldStatus, "->", tournament.status);
+      if (roundChanged)
+        console.log("Round changed:", oldRound, "->", tournament.current_round);
+      if (matchesChanged) console.log("Matches changed");
+      if (creatorChanged)
+        console.log("Creator changed:", oldCreator, "->", tournament.creator);
+      if (playersCountChanged)
+        console.log(
+          "Players count changed:",
+          oldPlayersCount,
+          "->",
+          tournament.players_count
+        );
+
+      // Si quelque chose a changé
+      if (
+        statusChanged ||
+        roundChanged ||
+        matchesChanged ||
+        creatorChanged ||
+        playersCountChanged
+      ) {
+        console.log("Tournament changed:", tournament);
+        this.apiToData(tournament);
+        if (statusChanged) {
+          this.checkTournamentStatus(tournament.status);
+        }
+        this.emit("update", this.returnTournamentInfo());
       }
     } catch (error) {
       console.error("Failed to update tournament status:", error);
@@ -186,13 +298,12 @@ class TournamentService extends EventEmitter {
           tournament_id: tournamentId,
         }),
       });
-
       const data = await response.json();
+      console.log("Leave tournament response:", response.body);
       if (!response.ok)
         throw new Error(data.message || "Failed to leave tournament");
-
+      this.destroy();
       this.emit("tournamentLeft", data);
-      this.initData();
       return data;
     } catch (error) {
       console.error("Error leaving tournament:", error);
@@ -212,20 +323,30 @@ class TournamentService extends EventEmitter {
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch tournaments");
       }
-      this.initData();
+
       // Check if player is in tournament
       if (data.current_tournament) {
-        this.tournamentId = data.current_tournament.id;
-        this.emit("tournamentCreatedOrJoinOrIn", data.current_tournament);
+        // Si c'est la première fois qu'on récupère ce tournoi ou si l'ID a changé
+        if (this.tournamentId !== data.current_tournament.id) {
+          this.initData(); // Réinitialiser seulement si c'est un nouveau tournoi
+          this.tournamentId = data.current_tournament.id;
+          this.emit("tournamentCreatedOrJoinOrIn", data.current_tournament);
+          this.startStatusCheckInterval();
+        }
         return data.current_tournament;
-      }
+      } else {
+        // Si le joueur n'est plus dans un tournoi mais qu'on avait un tournoi avant
+        if (this.tournamentId !== 0) {
+          this.initData();
+        }
 
-      // Emit tournaments list
-      console.log("[Tournament] Emitting tournaments list");
-      this.emit("tournamentsLoaded", {
-        tournaments: data.tournaments || [],
-      });
-      return data;
+        // Emit tournaments list
+        console.log("[Tournament] Emitting tournaments list");
+        this.emit("tournamentsLoaded", {
+          tournaments: data.tournaments || [],
+        });
+        return data;
+      }
     } catch (error) {
       console.error("[Tournament] Error:", error);
       this.emit("tournamentsLoaded", { tournaments: [] });
@@ -233,17 +354,43 @@ class TournamentService extends EventEmitter {
     }
   }
   startStatusCheckInterval() {
-    if (this.interval) clearInterval(this.interval);
-    if (!this.tournamentId) return;
-    this.interval = setInterval(() => {
-      console.log("Checking tournament status");
-      this.updateTournamentStatus();
+    // Nettoyage de l'intervalle existant
+    this.stopStatusCheckInterval();
+
+    // Vérification de la présence d'un tournamentId
+    if (!this.tournamentId) {
+      console.warn("No tournament ID provided");
+      return;
+    }
+
+    // Création du nouvel intervalle
+    this.interval = setInterval(async () => {
+      try {
+        console.log("Checking tournament status");
+        await this.updateTournamentStatus();
+      } catch (error) {
+        console.error("Error updating tournament status:", error);
+        this.stopStatusCheckInterval(); // Arrêt de l'intervalle en cas d'erreur
+      }
     }, 5000);
   }
 
-  // Effacer l'intervalle lors de la destruction du service
+  // Méthode pour arrêter l'intervalle
+  stopStatusCheckInterval() {
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = null;
+    }
+  }
+
+  // À appeler lors du démontage du composant
+  cleanup() {
+    this.stopStatusCheckInterval();
+  }
+
   destroy() {
-    if (this.interval) clearInterval(this.interval);
+    this.cleanup();
+    this.initData();
   }
 }
 

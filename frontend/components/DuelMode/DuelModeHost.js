@@ -38,6 +38,13 @@ class DuelModeHost extends Component {
     });
   }
 
+  async cancelMatch() {
+    const webSocketMatch = new WebSocketAPI(this.wsurlgame);
+    webSocketMatch.sendMessage({
+      type: "cancel_match",
+    });
+  }
+
   afterRender() {
     if (!this.state.matchId) this.getMatchId();
   }
@@ -76,20 +83,12 @@ class DuelModeHost extends Component {
                         <p class="text-primary">Votre adversaire n'est pas encore là, merci de patienter</p>
                         <h3 class="text-primary">Code du match: ${this.state.matchId}</h3>
                         <small class="text-primary">Le match démarrera automatiquement dès qu'il sera connecté</small>
+                      </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-danger" onclick="this.cancelMatch()" >Annuler le match</button>
                     </div>
                 </div>
             </div>
-            `;
-    }
-    if (!this.state.waitingGuest) {
-      return `
-                <div class="container mt-5">
-                    <div class="d-flex justify-content-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Votre Adversaire n'est pas encore la, merci de patienter !</span>
-                        </div>
-                    </div>
-                </div>
             `;
     }
   }
