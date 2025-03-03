@@ -13,12 +13,15 @@ export default class Navbar extends Component {
           this.setState({ isAuthenticated: false });
         }
     });
+    pong42.player.tournament.on("tournamentLeft", (tournament) => {
+      this.setState({ tournament: null });
+      this.render(this.container);
+    });
     pong42.player.addListener("update", (player) => {
       this.setState({ player: player });
       this.render(this.container);
     });
     pong42.player.tournament.on("update", (tournament) => {
-      console.log("Tournament updated:", tournament);
       this.setState({ tournament: tournament });
       this.render(this.container);
     });

@@ -22,21 +22,16 @@ class GameTournoisMode extends Component {
       });
     };
 
-    this.playerInTournamentListener = (tournament) => {
-      console.log("Player in tournament:", tournament);
-      if (this.container) {
-        const lobby = new GameTournoiLobby(tournament.id);
-        lobby.render(this.container);
-        this.destroy();
-      }
-    };
-    pong42.player.tournament.on(
-      "tournamentsLoaded",
-      this.tournamentLoadedListener
-    );
     pong42.player.tournament.on("tournamentCreatedOrJoinOrIn", (tournament) => {
       this.playerInTournamentListener(tournament);
     });
+  }
+
+  goToLobby(tournamentId) {
+    if (!this.container) return;
+    const lobby = new GameTournoiLobby(tournamentId);
+    lobby.render(this.container);
+    this.destroy();
   }
 
   async createTournament(name) {
@@ -125,8 +120,18 @@ class GameTournoisMode extends Component {
     // Ne charger les tournois qu'une seule fois au démarrage
     if (!this.state.initialized && !this.state.loading) {
       try {
+        this.playerInTournamentListener = (tournament) => {
+          if (this.container) {
+            this.goToLobby(tournament.id);
+          }
+        };
+        pong42.player.tournament.on(
+          "tournamentsLoaded",
+          this.tournamentLoadedListener
+        );
         this.setState({ loading: true });
         await pong42.player.tournament.getTournaments();
+        if (pong42.player.tournament.tournamentId) this.goToLobby();
       } catch (error) {
         console.error("Failed to load tournaments:", error);
         this.setState({
@@ -325,17 +330,6 @@ class GameTournoisMode extends Component {
             </div>
         </section>
         `;
-      if (this.state.mode === "joinGame") {
-        return `
-          <section id="game" class="container mt-5">
-              <div class="row justify-content-center">
-                  <div class="col-md-8 text-center">
-                      <h1 class="mt-4">Le Jeu</h1>
-                  </div>
-              </div>
-        </section>
-      `;
-      }
     }
   }
 }

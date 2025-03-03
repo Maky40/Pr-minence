@@ -1,12 +1,14 @@
 import Component from "../../../utils/Component.js";
 import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
+import Toast from "../../toast.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
     super();
     this.tournamentId = tournamentId;
     this.container = null;
+    this.playerLeave = false;
     this.state = {
       tournament: null,
       error: null,
@@ -15,12 +17,30 @@ class GameTournoiLobby extends Component {
     };
 
     pong42.player.tournament.on("tournamentLeft", () => {
-      changePage("game");
+      this.state.loading = true;
+      console.log(pong42.player.tournament);
+      if (!this.playerLeave) {
+        new Toast(
+          "Tournoi annulé",
+          "Le tournoi a été annulé par le créateur",
+          "info"
+        ).show();
+      }
+      setTimeout(() => {
+        pong42.player.checkUnplayedAndActiveTournament();
+        this.state.loading = false;
+        this.destroy();
+        changePage("game");
+      }, 100);
+      //changePage("game");
     });
-    //initialization des emmit
+    pong42.player.tournament.on("update", () => {
+      this.fetchTournamentDetails();
+    });
   }
 
   async afterRender() {
+    console.log("GameTournoiLobby constructor");
     if (!this.state.initialized && !this.state.loading)
       await this.fetchTournamentDetails();
     const leaveButton = this.container.querySelector("#leaveTournamentButton");
@@ -51,10 +71,11 @@ class GameTournoiLobby extends Component {
 
   async leaveTournament() {
     try {
+      pong42.player.tournament.off("update");
       this.setState({ loading: true });
-      await pong42.player.tournament.leaveTournament(this.tournamentId);
-      // Rediriger vers la page des tournois
-      changePage("game");
+      this.playerLeave = true;
+      await pong42.player.tournament.leaveTournament(this.state.tournament.id);
+      // Pas besoin de naviguer ici car l'événement tournamentLeft le fera
     } catch (error) {
       this.setState({
         error: error.message,
@@ -63,10 +84,13 @@ class GameTournoiLobby extends Component {
     }
   }
 
-  destroy() {
+  async destroy() {
     if (this.interval) {
       clearInterval(this.interval);
     }
+    await pong42.player.checkUnplayedAndActiveTournament();
+    pong42.player.tournament.off("tournamentLeft");
+    pong42.player.tournament.off("update");
     super.destroy();
   }
 
@@ -115,7 +139,6 @@ class GameTournoiLobby extends Component {
               }
             </button>
           </div>
-          
           <div class="card-body">
             <div class="row">
               <!-- Liste des joueurs -->

@@ -1,4 +1,4 @@
-import pong42 from "../services/pong42.js";
+import pong42 from "/services/pong42.js";
 import auth from "../services/auth.js";
 import { routes } from "./router.js";
 import { changePage } from "../utils/Page.js";
@@ -10,7 +10,7 @@ export default class TemplateManager {
     else this.contentElement = contentElement;
     this.routes = routes;
     this.loadedScripts = new Set();
-	this.activeWebSockets = [];
+    this.activeWebSockets = [];
   }
 
   closeAllWebSockets() {
@@ -20,7 +20,7 @@ export default class TemplateManager {
       }
     });
     this.activeWebSockets = []; // Vide la liste après fermeture
-}
+  }
 
   cleanup() {
     // Supprimer tous les scripts existants
@@ -30,8 +30,8 @@ export default class TemplateManager {
     // Réinitialiser la liste des scripts chargés
     this.loadedScripts.clear();
 
-	// Supprimer toutes les sockets
-	this.closeAllWebSockets();
+    // Supprimer toutes les sockets
+    this.closeAllWebSockets();
   }
 
   async loadTemplate(templateFile) {
@@ -73,7 +73,7 @@ export default class TemplateManager {
         pong42.setCurrentPage(templateName);
       }
 
-      const modulePath = `../scripts/${templateName}.js`;
+      const modulePath = `/scripts/${templateName}.js`;
       try {
         const jsResponse = await fetch(modulePath);
         if (jsResponse.ok) {

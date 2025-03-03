@@ -38,7 +38,7 @@ document.addEventListener("click", (e) => {
     changePage(hash);
   }
 });
-console.log("App initialized");
-console.log("Pong42 player:", pong42.player);
+
 pong42.player.init();
+pong42.player.tournament.init();
 router.init();

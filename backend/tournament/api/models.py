@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
-
-
+from django.conf import settings
 
 class Player(AbstractBaseUser):
     STATUS_CHOICES = [
@@ -19,7 +18,7 @@ class Player(AbstractBaseUser):
     avatar = models.URLField(
         blank=False,
         null=False,
-        default='https://localhost/player/static/api/images/default_avatar.png'  # Remplacez par votre domaine réel
+        default=f'https://{settings.IP_ADDRESS}/player/static/api/images/default_avatar.png'  # Remplacez par votre domaine réel
     )
     champions = models.IntegerField(blank=False, null=False, default=0)
     wins = models.IntegerField(blank=False, null=False, default=0)

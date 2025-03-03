@@ -21,12 +21,17 @@ PLAYER_DIR = BASE_DIR.parent  # backend/player/
 BACKEND_DIR = PLAYER_DIR.parent  # backend/
 PROJECT_ROOT = BACKEND_DIR.parent  # Racine du projet
 
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
 
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
-
+IP_ADDRESS = getenv("IP_ADDRESS")
 # === 2. Sécurité ===
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")  # Clé par défaut si non définie
 DEBUG = True  # Toujours en mode debug pour le développement local
@@ -119,4 +124,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # === 10. Authentification ===
 AUTH_USER_MODEL = "api.Player"  # Modèle utilisateur personnalisé (Player)
 
-PUBLIC_PLAYER_URL = 'https://localhost'
+PUBLIC_PLAYER_URL = F'https://{IP_ADDRESS}'

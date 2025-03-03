@@ -20,8 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent  # backend/authentication/api/
 PONG_DIR = BASE_DIR.parent  # backend/authentication/
 SERVICES_DIR = PONG_DIR.parent  # backend/
 
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+
+
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
+IP_ADDRESS = getenv("IP_ADDRESS")
 
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
@@ -137,8 +144,6 @@ STATIC_ROOT = PONG_DIR / 'static/'  # Directory where static files are collected
 AUTH_USER_MODEL = "api.Player"
 
 USE_X_FORWARDED_HOST = True
-PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
-
 
 CHANNEL_LAYERS = {
     "default": {

@@ -23,9 +23,12 @@ SERVICES_DIR = AUTH_DIR.parent  # backend/
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")
+IP_ADDRESS = getenv("IP_ADDRESS")
 
 # Debug mode should only be enabled during development.
 DEBUG = True
@@ -137,9 +140,9 @@ STATIC_ROOT = AUTH_DIR / 'static/'  # Directory where static files are collected
 AUTH_USER_MODEL = "api.Player"
 
 USE_X_FORWARDED_HOST = True
-PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
+PUBLIC_AUTHENTICATION_URL = f'http://{IP_ADDRESS}:8000/'
 
-DEFAULT_AVATAR_URL = getenv("DEFAULT_AVATAR_URL", "https://localhost/player/static/api/images/default_avatar.png")
+DEFAULT_AVATAR_URL = getenv("DEFAULT_AVATAR_URL", f'https://{IP_ADDRESS}/player/static/api/images/default_avatar.png')
 
 
 AUTHENTICATION_BACKENDS = ['api.backends.EmailBackend']

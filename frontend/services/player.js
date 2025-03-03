@@ -24,6 +24,8 @@ class Player extends EventEmitter {
     this.socketMatch = null;
     this.from_42 = false;
     this.friends = [];
+    this.has_unplayed = false;
+    this.has_active_tournament = false;
     this.defaultAvatar = `${ENV.API_URL}${ENV.DEFAULT_AVATAR}`;
     this.tournament = new TournamentService();
 	this.game = false;
@@ -65,6 +67,68 @@ class Player extends EventEmitter {
       return this.avatar;
     }
   }
+  checkUnplayed = async () => {
+    try {
+      const data = await api.apiFetch("player/matches/", true);
+      this.has_unplayed = data.has_unplayed;
+      return this.has_unplayed;
+    } catch (error) {
+      console.error("Failed to check unplayed matches:", error);
+      const toast = new Toast(
+        "Error",
+        "Failed to check unplayed matches",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
+  checkTournament = async () => {
+    try {
+      const data = await api.apiFetch("player/tournaments/", true);
+      this.has_active_tournament = data.has_active_tournament;
+      return this.has_active_tournament;
+    } catch (error) {
+      console.error("Failed to check active tournament:", error);
+      const toast = new Toast(
+        "Error",
+        "Failed to check active tournament",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
+  checkUnplayedAndActiveTournament = async () => {
+    try {
+      await this.checkTournament();
+      await this.checkUnplayed();
+    } catch (error) {
+      console.error(
+        "Failed to check unplayed matches and active tournament:",
+        error
+      );
+      const toast = new Toast(
+        "Error",
+        "Failed to check unplayed matches and active tournament",
+        "error"
+      );
+      toast.show();
+      return false;
+    }
+  };
+
+  cancelMatch = async () => {
+    try {
+      const data = await api.apiFetch("player/pong/", true, "GET");
+      return data;
+    } catch (error) {
+      console.error("Failed to cancel match:", error);
+      const toast = new Toast("Error", "Failed to cancel match", "error");
+      toast.show();
+      return false;
+    }
+  };
 
   updateWins() {
     this.wins++;
@@ -90,7 +154,6 @@ class Player extends EventEmitter {
         "/player/friendship/?target=friends",
         true
       );
-      console.log(data);
       this.friends = data.friendships;
       return this.friends;
     } catch (error) {

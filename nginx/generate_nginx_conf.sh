@@ -22,6 +22,7 @@ get_local_ip() {
 }
 
 # Obtenir l'adresse IP locale
+DNS_NAME="42PONG.local"
 SERVER_IP=$(get_local_ip)
 
 # Vérifier si une adresse IP a été trouvée
@@ -31,10 +32,20 @@ if [ -z "$SERVER_IP" ]; then
 fi
 
 # Remplacer la variable ${SERVER_IP} dans le modèle et créer nginx.conf
-if [ -f ./nginx/nginx.template.conf ]; then
-    sed "s/\${SERVER_IP}/$SERVER_IP/g" ./nginx/nginx.template.conf > ./nginx/nginx.conf
-    echo "Fichier nginx.conf généré avec l'adresse IP : $SERVER_IP"
+# if [ -f ./nginx/nginx.template.conf ]; then
+#     sed "s/\${SERVER_IP}/$DNS_NAME/g" ./nginx/nginx.template.conf > ./nginx/nginx.conf
+#     echo "Fichier nginx.conf généré avec l'adresse IP : $DNS_NAME"
+# else
+#     echo "Le fichier template ./nginx/nginx.template.conf n'existe pas."
+#     exit 1
+# fi
+
+if grep -q "42PONG.local" /etc/hosts; then
+    # Mettre à jour l'entrée existante
+    sudo sed -i '' "s/.*42PONG.local/$SERVER_IP 42PONG.local/g" /etc/hosts
+    echo "Entrée existante mise à jour dans /etc/hosts: $SERVER_IP 42PONG.local"
 else
-    echo "Le fichier template ./nginx/nginx.template.conf n'existe pas."
-    exit 1
+    # Ajouter une nouvelle entrée
+    echo "$SERVER_IP 42PONG.local" | sudo tee -a /etc/hosts > /dev/null
+    echo "Nouvelle entrée ajoutée dans /etc/hosts: $SERVER_IP 42PONG.local"
 fi

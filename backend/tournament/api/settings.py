@@ -23,6 +23,8 @@ SERVICES_DIR = TOURNAMENT_DIR.parent  # backend/
 DOTENV_PATH = BASE_DIR.parent.parent.parent / '.env'
 load_dotenv(DOTENV_PATH)
 
+IP_ADDRESS = getenv("IP_ADDRESS")
+
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")
@@ -137,8 +139,6 @@ STATIC_ROOT = TOURNAMENT_DIR / 'static/'  # Directory where static files are col
 AUTH_USER_MODEL = "api.Player"
 
 USE_X_FORWARDED_HOST = True
-PUBLIC_AUTHENTICATION_URL = "http://localhost:8000/"
-
 
 CHANNEL_LAYERS = {
     "default": {

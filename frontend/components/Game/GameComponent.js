@@ -78,7 +78,7 @@ class GameComponent extends Component {
   setupWebSocket() {
     if (!this.webSocket) {
       console.error("[DEBUG] WebSocket not initialized");
-      changePage("home"); // Redirection si pas de WebSocket
+      changePage("home");
       return;
     }
 	console.log("[DEBUG] WebSocket instance:", this.webSocket);
@@ -167,7 +167,6 @@ class GameComponent extends Component {
     const btnLeaveGame = document.getElementById("btnLeaveGame");
     if (btnLeaveGame) {
       btnLeaveGame.addEventListener("click", () => {
-        console.log("Leaving game...");
         this.destroy();
         this.webSocket.removeAllListeners();
         this.webSocket.close();
