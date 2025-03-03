@@ -5,6 +5,7 @@ import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 import pong42 from "../services/pong42.js";
 import WebSocketAPI from '../services/websocket.js';
+import { ENV } from "../env.js";
 
 export async function init() {
     console.log("init() called");
@@ -290,8 +291,8 @@ function handleAcceptPlay(event, currentUser, socketActivate) {
 				message: "accept",
 				matchId: matchId,
 			};
-		const ws = new WebSocketAPI(`wss://localhost/pong/ws/pong/${matchId}/`);
-		pong42.player.match_id = id_match;
+		const ws = new WebSocketAPI(`${ENV.WS_URL_GAME}${matchId}/`);
+		pong42.player.match_id = matchId;
 		pong42.player.paddle = "right";
 		pong42.player.socketMatch = ws;
 		socketActivate.socket.send(JSON.stringify(payload));

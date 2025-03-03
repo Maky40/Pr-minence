@@ -3,16 +3,18 @@ import { templateManager } from "../app.js";
 import { displayMessage, displayInvitation, displayInvitationRefuse, displayInvitationAccept } from "./uiService.js";
 import pong42 from "../../../services/pong42.js";
 import WebSocketAPI from "../../services/websocket.js"
+import { ENV } from "../../env.js";
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
 /////////////////////////////////////////////║                    SOCKET CHAT MANAGEMENT                  ║/////////////////////////////////////////////
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 export function initWebSocket(otherUserId, socketActivate, currentUser) {
-  const ws = new WebSocket(`wss://${API_URL}/chat/ws/chat/${otherUserId}/`);
-  templateManager.addWebSocket(ws);
-  socketActivate.socket = ws;
-  socketActivate.otherUserId = otherUserId;
+
+	const ws = new WebSocket(`${ENV.WS_URL_CHAT}${otherUserId}/`);
+	templateManager.addWebSocket(ws);
+	socketActivate.socket = ws;
+	socketActivate.otherUserId = otherUserId;
 
   setupWebSocketListeners(socketActivate, otherUserId, currentUser);
 }
@@ -97,7 +99,7 @@ export function sendMessage(socketActivate, currentUser, message) {
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 export async function inviteForPlay(socketActivate, currentUser) {
-	const response = await api.apiFetch("pong//match/individual/create/", true, "POST");
+	const response = await api.apiFetch("pong/match/individual/create/", true, "POST");
 	let id_match = response.match_id;
 	const payload = {
 		type: 'invitation_play',
@@ -107,7 +109,7 @@ export async function inviteForPlay(socketActivate, currentUser) {
 		matchId: id_match,
 	};
 	console.log("PAYLOAD :", payload);
-	const ws = new WebSocketAPI(`wss://localhost/pong/ws/pong/${id_match}/`);
+	const ws = new WebSocketAPI(`${ENV.WS_URL_GAME}${id_match}/`);
 	pong42.player.match_id = id_match;
 	pong42.player.paddle = "left";
 	pong42.player.socketMatch = ws;

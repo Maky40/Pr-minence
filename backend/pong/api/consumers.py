@@ -132,10 +132,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         if player_match:
             return "left" if player_match.player_side == 'L' else "right"
 
-<<<<<<< HEAD
-
-=======
->>>>>>> main
         if existing_pm.count() == 0:
             print(f"[DEBUG] Premier joueur: {player.username} -> LEFT")
             PlayerMatch.objects.create(
@@ -484,15 +480,3 @@ class PongConsumer(AsyncWebsocketConsumer):
                     state["paddle_speed_right"] = 10
                 else:
                     state["paddle_speed_right"] = 0
-<<<<<<< HEAD
-=======
-
-
-
-
-
-
-
-
-
->>>>>>> main

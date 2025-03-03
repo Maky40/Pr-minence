@@ -5,6 +5,7 @@ const ENV = {
   URL_AUTH_INTRA: "authentication/intra/",
   WS_URL_GAME: `wss://${API_HOST}/pong/ws/pong/`,
   WS_URL_AUTH: `wss://${API_HOST}/authentication/ws/online/`,
+  WS_URL_CHAT: `wss://${API_HOST}/chat/ws/chat/`,
   URL_AUTH_DJANGO: "authentication/login/",
   URL_AUTH_DJANGO_SIGNUP: "/authentication/signup/",
   URL_AUTH_DJANGO_LOGOUT: "/authentication/logout/",
