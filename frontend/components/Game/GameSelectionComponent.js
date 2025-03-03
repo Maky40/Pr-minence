@@ -2,6 +2,7 @@ import Component from "../../utils/Component.js";
 import GameDuelMode from "./GameDuelMode.js";
 import GameTournoiMode from "./Tournois/GameTournoiMode.js";
 import pong42 from "../../services/pong42.js";
+import { changePage } from "../../utils/Page.js";
 
 class GameSelectionComponent extends Component {
   constructor() {
@@ -37,6 +38,7 @@ class GameSelectionComponent extends Component {
     document.getElementById("cancel-match")?.addEventListener("click", (e) => {
       e.preventDefault();
       pong42.player.cancelMatch();
+      changePage("game");
     });
     document
       .getElementById("start-tournament")
@@ -54,14 +56,13 @@ class GameSelectionComponent extends Component {
       });
   }
   async render(container) {
-    console.log("GameSelectionComponent render", container);
     this.state.loading = false;
-    console.log("GameSelectionComponent afterRender1");
     await pong42.player.checkUnplayedAndActiveTournament();
     if (pong42.player.has_active_tournament) {
       this.handleModeSelection("TournoiMode", container);
       return;
     }
+    console.log("PLAYERINFO", pong42.player);
     super.render(container);
   }
 

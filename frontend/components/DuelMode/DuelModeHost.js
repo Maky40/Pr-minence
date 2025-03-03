@@ -3,6 +3,7 @@ import pong42 from "../../services/pong42.js";
 import WebSocketAPI from "../../services/websocket.js";
 import GameComponent from "../Game/GameComponent.js";
 import { ENV } from "../../env.js";
+import { changePage } from "../../utils/Page.js";
 
 class DuelModeHost extends Component {
   constructor() {
@@ -39,14 +40,34 @@ class DuelModeHost extends Component {
   }
 
   async cancelMatch() {
-    const webSocketMatch = new WebSocketAPI(this.wsurlgame);
-    webSocketMatch.sendMessage({
-      type: "cancel_match",
-    });
+    const response = await pong42.player.cancelMatch();
+    console.log("Match cancelled");
+    console.log(response);
+    if (response) {
+      this.setState({
+        matchId: null,
+        paddle: null,
+        loading: false,
+        error: null,
+        waitingGuest: false,
+      });
+      console.log("Match cancelled");
+      console.log(response);
+      this.destroy();
+      changePage("game");
+    } else {
+      console.error("Failed to cancel match");
+    }
   }
 
   afterRender() {
     if (!this.state.matchId) this.getMatchId();
+    document
+      .getElementById("cancel-match-hoster")
+      ?.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.cancelMatch();
+      });
   }
 
   template() {
@@ -85,7 +106,7 @@ class DuelModeHost extends Component {
                         <small class="text-primary">Le match démarrera automatiquement dès qu'il sera connecté</small>
                       </div>
                     <div class="text-center mt-4">
-                        <button class="btn btn-outline-danger" onclick="this.cancelMatch()" >Annuler le match</button>
+                        <button class="btn btn-outline-danger" id="cancel-match-hoster">Annuler le match</button>
                     </div>
                 </div>
             </div>
