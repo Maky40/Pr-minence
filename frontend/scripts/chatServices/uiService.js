@@ -1,7 +1,8 @@
 // uiService.js
 
 import api from "../../services/api.js";
-
+import GameComponent from "../../components/Game/GameComponent.js";
+import pong42 from"../../services/pong42.js"
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
 /////////////////////////////////////////////║                    TOURNAMENT/PRIVATE CHAT                 ║/////////////////////////////////////////////
@@ -207,10 +208,15 @@ export function displayInvitationRefuse(senderName, senderId, matchId, otherUser
 export function displayInvitationAccept(senderName, senderId, matchId, otherUserId) {
 	const messageContainer = document.getElementById("chat-box");
 	const newInvitation = document.getElementById(`invitation-${matchId}`);
+	const chatContainer = document.getElementsByClassName("container")[0];
 	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
+	pong42.player.game = true;
+	const game = new GameComponent();
+	game.render(chatContainer);
+	console.log("laaaaa");
 	// if (senderId == otherUserId){
-		newInvitation.innerHTML = "Invitation acceptee";
-		newInvitation.style.color = "green";
+		// newInvitation.innerHTML = "Invitation acceptee";
+		// newInvitation.style.color = "green";
 	// }
 	// else {
 		// newInvitation.innerHTML = "Invitation acceptee";

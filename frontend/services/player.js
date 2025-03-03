@@ -26,6 +26,7 @@ class Player extends EventEmitter {
     this.friends = [];
     this.defaultAvatar = `${ENV.API_URL}${ENV.DEFAULT_AVATAR}`;
     this.tournament = new TournamentService();
+	this.game = false;
   }
 
   async init() {

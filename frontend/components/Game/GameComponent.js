@@ -81,7 +81,8 @@ class GameComponent extends Component {
       changePage("home"); // Redirection si pas de WebSocket
       return;
     }
-
+	console.log("[DEBUG] WebSocket instance:", this.webSocket);
+	console.log("this.webSocket instance:", this.webSocket);
     this.webSocket.addMessageListener("message", async (data) => {
       try {
         const message = JSON.parse(data);
@@ -318,10 +319,10 @@ class GameComponent extends Component {
                style="background: rgba(0, 0, 0, 0.85); z-index: 1000;">
             <div class="text-center">
               <h2 class="text-warning mb-4 display-4 fw-bold">GET READY!</h2>
-              <div class="countdown-box border border-4 border-warning rounded-circle bg-dark 
+              <div class="countdown-box border border-4 border-warning rounded-circle bg-dark
                           d-flex justify-content-center align-items-center mx-auto"
                    style="width: 150px; height: 150px;">
-                <span class="display-1 text-warning fw-bold" 
+                <span class="display-1 text-warning fw-bold"
                       style="animation: bounce 0.5s infinite;">
                   ${this.state.countdown}
                 </span>
@@ -339,8 +340,8 @@ class GameComponent extends Component {
               </div>
             </div>
           </div>
-          <canvas id="gameCanvas" 
-                  width="${this.gameConfig.WIDTH}" 
+          <canvas id="gameCanvas"
+                  width="${this.gameConfig.WIDTH}"
                   height="${this.gameConfig.HEIGHT}"
                   class="shadow-lg">
           </canvas>
@@ -350,21 +351,21 @@ class GameComponent extends Component {
     if (this.state.isGameOver) {
       return `
         <div class="game-container position-relative vh-100 bg-dark">
-          <canvas id="gameCanvas" 
-                  width="${this.gameConfig.WIDTH}" 
+          <canvas id="gameCanvas"
+                  width="${this.gameConfig.WIDTH}"
                   height="${this.gameConfig.HEIGHT}"
                   class="position-absolute top-50 start-50 translate-middle shadow-lg opacity-50">
           </canvas>
-  
+
           <!-- Game Over Overlay -->
-          <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" 
+          <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
                style="background: rgba(0, 0, 0, 0.8); z-index: 1000;">
             <div class="text-center">
-              <h1 class="display-1 text-danger mb-4" 
+              <h1 class="display-1 text-danger mb-4"
                   style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);">
                 GAME OVER
               </h1>
-              
+
               <!-- Final Score -->
               <div class="bg-black bg-opacity-75 p-4 rounded-pill border border-3 border-info mb-4">
                 <div class="d-flex justify-content-center align-items-center gap-5">
@@ -383,15 +384,15 @@ class GameComponent extends Component {
                   </div>
                 </div>
               </div>
-  
+
               <!-- Winner Display -->
               <div class="mb-5">
                 <h2 class="text-warning" style="font-family: 'Orbitron', sans-serif;">
-                  
+
                   <span class="text-info">${this.state.winner} </span>
                 </h2>
               </div>
-  
+
               <!-- Return Button -->
               <button class="btn btn-outline-info btn-lg px-5" id="btnLeaveGame">
                 <i class="fas fa-home me-2"></i>
@@ -405,8 +406,8 @@ class GameComponent extends Component {
     return `
     <div class="game-container position-relative vh-100 bg-dark">
       <!-- Canvas Background -->
-      <canvas id="gameCanvas" 
-              width="${this.gameConfig.WIDTH}" 
+      <canvas id="gameCanvas"
+              width="${this.gameConfig.WIDTH}"
               height="${this.gameConfig.HEIGHT}"
               class="position-absolute top-50 start-50 translate-middle shadow-lg">
       </canvas>
@@ -439,10 +440,10 @@ class GameComponent extends Component {
                       </div>
                       <div class="score-glow"></div>
                     </div>
-                    
+
                     <!-- Divider -->
                     <div class="score-divider border-end border-info opacity-75" style="height: 50px;"></div>
-                    
+
                     <!-- Player 2 Score -->
                     <div class="score-box text-center position-relative">
                       <div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">

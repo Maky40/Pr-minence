@@ -41,7 +41,7 @@ def match_exists_view(request, match_id):
         return Response({"detail": "Match exists."}, status=status.HTTP_200_OK)
     else:
         return Response({"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND)
-    
+
 
 
 @api_view(['POST'])
@@ -121,17 +121,17 @@ def accept_individual_match(request):
     # Vérifier que le match existe
     match = get_object_or_404(Match, id=match_id, state='UPL', tournament__isnull=True)
 
-    # Vérifier combien de joueurs sont déjà dans ce match
-    existing_count = PlayerMatch.objects.filter(match=match).count()
-    if existing_count >= 2:
-        return Response({"error": "Match is already full"}, status=400)
+    # # Vérifier combien de joueurs sont déjà dans ce match
+    # existing_count = PlayerMatch.objects.filter(match=match).count()
+    # if existing_count >= 2:
+    #     return Response({"error": "Match is already full"}, status=400)
 
-    # Associer le joueur (côté Right)
-    PlayerMatch.objects.create(
-        player=player,
-        match=match,
-        player_side='R'
-    )
+    # # Associer le joueur (côté Right)
+    # PlayerMatch.objects.create(
+    #     player=player,
+    #     match=match,
+    #     player_side='R'
+    # )
 
     # Construire l'URL du WebSocket Pong (exemple)
     pong_url = f"wss://pong/ws/pong/{match.id}/"
@@ -209,5 +209,3 @@ def delete_individual_match(request):
     # Si on est ici, c'est qu'il n'y a qu'un seul joueur : le créateur
     match.delete()
     return Response({"message": "Your unplayed match has been deleted successfully."}, status=200)
-
-

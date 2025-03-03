@@ -1,6 +1,8 @@
 import api from "../../services/api.js";
 import { templateManager } from "../app.js";
 import { displayMessage, displayInvitation, displayInvitationRefuse, displayInvitationAccept } from "./uiService.js";
+import pong42 from "../../../services/pong42.js";
+import WebSocketAPI from "../../services/websocket.js"
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
 /////////////////////////////////////////////║                    SOCKET CHAT MANAGEMENT                  ║/////////////////////////////////////////////
@@ -45,7 +47,8 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
 			else{
 				console.log("JE SUIS DANS ACCEPT");
 				console.log("VOICI LE BODY : ", data.message);
-				displayInvitationAccept(data.senderName, data.senderId, data.matchId, otherUserId);}
+				displayInvitationAccept(data.senderName, data.senderId, data.matchId, otherUserId);
+			}
 		} catch (error) {
 			console.error("Erreur de traitement du message reçu :", error);
 		}
@@ -96,16 +99,9 @@ export async function inviteForPlay(socketActivate, currentUser) {
 		matchId: id_match,
 	};
 	console.log("PAYLOAD :", payload);
-	// const ws = new WebSocket(`wss://localhost/pong/ws/pong/${id_match}/`);
-	const ws = new WebSocket(`wss://localhost/pong/ws/pong/`);
-
-	ws.onerror = function(event) {
-		console.error("WebSocket Error:", event);
-	};
-
-	ws.onclose = function(event) {
-		console.warn("WebSocket closed:", event);
-	};
-
+	const ws = new WebSocketAPI(`wss://localhost/pong/ws/pong/${id_match}/`);
+	pong42.player.match_id = id_match;
+	pong42.player.paddle = "left";
+	pong42.player.socketMatch = ws;
 	socketActivate.socket.send(JSON.stringify(payload));
 }

@@ -29,20 +29,23 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Vérifie en base si ce match existe réellement
             match_exists = await self.match_exists_in_db(self.match_id)
             if not match_exists:
+                await self.send(text_data=json.dumps({"error": f"Match {self.match_id} inexistant"}))
                 # Si le match n'existe pas => on ferme immédiatement
                 await self.close()
                 return
-            
+
             # On rejoint un match existant
             # Vérifie si le match est déjà complet (2 joueurs)
             if await self.is_match_ready(self.match_id):
                 # Si le match a déjà 2 joueurs, on empêche un 3ᵉ joueur d'entrer
+                await self.send(text_data=json.dumps({"error": f"Match {self.match_id} déjà complet"}))
                 await self.close()
                 return
 
             # Assigne la raquette au second joueur
             self.paddle = await self.assign_player_side(self.match_id, self.player)
             if not self.paddle:
+                await self.send(text_data=json.dumps({"error": "Impossible d'assigner un côté (match plein ?)"}))
                 # Problème lors de l'assignation (match complet ?)
                 await self.close()
                 return
@@ -105,16 +108,16 @@ class PongConsumer(AsyncWebsocketConsumer):
     def assign_player_side(self, match_id, player):
         """Assigne la raquette 'L' ou 'R' selon le nombre de joueurs déjà présents."""
         print(f"[DEBUG] Tentative d'assignation pour player={player.username} dans match_id={match_id}")
-        
+
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
         print(f"[DEBUG] Joueurs existants dans le match: {existing_pm.count()}")
-        
+
         # Vérifier si le joueur est déjà dans le match
         player_match = existing_pm.filter(player=player).first()
         if player_match:
             return "left" if player_match.player_side == 'L' else "right"
 
-        
+
         if existing_pm.count() == 0:
             print(f"[DEBUG] Premier joueur: {player.username} -> LEFT")
             PlayerMatch.objects.create(
@@ -136,7 +139,7 @@ class PongConsumer(AsyncWebsocketConsumer):
                 player_side='R'
             )
             return "right"
-        
+
         print(f"[DEBUG] ❌ Match complet, impossible d'ajouter {player.username}")
         return None
 
@@ -463,11 +466,3 @@ class PongConsumer(AsyncWebsocketConsumer):
                     state["paddle_speed_right"] = 10
                 else:
                     state["paddle_speed_right"] = 0
-
-
-
-
-
-
-
-

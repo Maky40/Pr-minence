@@ -1,15 +1,17 @@
-// main.js
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage, inviteForPlay } from './chatServices/liveChatService.js';
 import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
+import pong42 from "../services/pong42.js";
+import WebSocketAPI from '../services/websocket.js';
 
 export async function init() {
     console.log("init() called");
 	let socketActivate = {};
 	let currentUser = {};
 	let otherUser = {};
+
 
 	// Initialize currentUser
 	await initializeCurrentUser(currentUser);
@@ -275,6 +277,7 @@ async function friendshipVerifications(socketActivate) {
 
 function handleAcceptPlay(event, currentUser, socketActivate) {
 	try {
+
 		const buttonAccept = event.target;
 		const matchId = buttonAccept.getAttribute("data-id");
 		api.apiFetch("pong/match/individual/accept/", true, "POST", { match_id: matchId })
@@ -287,13 +290,16 @@ function handleAcceptPlay(event, currentUser, socketActivate) {
 				message: "accept",
 				matchId: matchId,
 			};
-
+		const ws = new WebSocketAPI(`wss://localhost/pong/ws/pong/${matchId}/`);
+		pong42.player.match_id = id_match;
+		pong42.player.paddle = "right";
+		pong42.player.socketMatch = ws;
 		socketActivate.socket.send(JSON.stringify(payload));
-		// const ws = new WebSocket(`wss://localhost/pong/ws/pong/${matchId}/`);
 	}
 	catch (error) {
 		const toast = new Toast("Error", error, "error");
 		toast.show();
+		console.log(error);
 	}
 }
 
