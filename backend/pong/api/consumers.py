@@ -120,8 +120,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         print(f"[DEBUG] Tentative d'assignation pour player={player.username} dans match_id={match_id}")
 
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
-        print(f"[DEBUG] Joueurs existants dans le match: {existing_pm.count()}")
-
         # Vérifier si le joueur est déjà dans le match
         player_match = existing_pm.filter(player=player).first()
         if player_match:
@@ -157,7 +155,9 @@ class PongConsumer(AsyncWebsocketConsumer):
     #
     async def is_match_ready(self, match_id):
         """Retourne True si 2 joueurs sont connectés à ce match."""
-        return connected_users.get(match_id, 0) >= 2
+        count = connected_users.get(match_id, 0)
+        print(f"[DEBUG] is_match_ready? match_id={match_id}, connected_sockets={count}")
+        return count >= 2
 
     #
     # --- start_game ---
@@ -475,3 +475,6 @@ class PongConsumer(AsyncWebsocketConsumer):
                     state["paddle_speed_right"] = 10
                 else:
                     state["paddle_speed_right"] = 0
+
+
+
