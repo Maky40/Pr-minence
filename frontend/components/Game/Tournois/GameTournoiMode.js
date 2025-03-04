@@ -119,6 +119,7 @@ class GameTournoisMode extends Component {
   async afterRender() {
     // Ne charger les tournois qu'une seule fois au démarrage
     if (!this.state.initialized && !this.state.loading) {
+      console.log("Loading tournaments... from afterRender from ");
       try {
         this.playerInTournamentListener = (tournament) => {
           if (this.container) {

@@ -10,6 +10,7 @@ class GameTournoiLobby extends Component {
     this.tournamentId = tournamentId;
     this.container = null;
     this.playerLeave = false;
+    this.waitingForPlayers = false;
     this.state = {
       tournament: null,
       error: null,
@@ -98,75 +99,23 @@ class GameTournoiLobby extends Component {
     const joinMatchButtons = this.container.querySelector("#joinMatchButton");
     if (joinMatchButtons) {
       joinMatchButtons.addEventListener("click", async (event) => {
-        // Prévenir le comportement par défaut
-        event.preventDefault();
-
-        // Éviter les clics multiples en désactivant le bouton
-        const button = event.target;
-        if (button.disabled) {
+        if (this.waitingForPlayers) {
           return;
         }
-
-        // Désactiver le bouton et indiquer le chargement
-        button.disabled = true;
-        button.innerHTML =
-          '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connexion...';
-
-        try {
-          // Récupérer l'ID du match
-          const matchId = button.getAttribute("data-match-id");
-
-          // Vérifier si une instance est déjà active pour ce match
-          if (pong42.player.socketMatch) {
-            console.warn(
-              "[DEBUG] Une connexion WebSocket existe déjà pour un match"
-            );
-            new Toast(
-              "Match",
-              "Vous êtes déjà connecté à un match",
-              "warning"
-            ).show();
-            return;
-          }
-
-          const matchInfo = this.getMatchInfo(matchId);
-          if (!matchInfo) {
-            throw new Error("Informations du match introuvables");
-          }
-
-          const playerInfo = this.getPlayerFromList(
-            pong42.player.id,
-            matchInfo.players
-          );
-          if (!playerInfo) {
-            throw new Error("Vous n'êtes pas un joueur de ce match");
-          }
-
-          // Stocker l'ID du match actif pour éviter les connexions multiples
-          pong42.player.activeMatchId = matchId;
-
-          // Créer une nouvelle instance de GameTournoiWaiting
-          const gameTournoiWaiting = new GameTournoiWaiting(
-            matchId,
-            playerInfo.side // Passer le côté du joueur (left/right) si disponible
-          );
-
-          // Rendre le composant dans le conteneur
-          gameTournoiWaiting.render(this.container);
-        } catch (error) {
-          // En cas d'erreur, réactiver le bouton et afficher l'erreur
-          console.error("[DEBUG] Erreur lors de la connexion au match:", error);
-          new Toast(
-            "Erreur",
-            error.message || "Erreur de connexion au match",
-            "error"
-          ).show();
-
-          // Réactiver le bouton
-          button.disabled = false;
-          button.innerHTML =
-            '<i class="bi bi-controller me-2"></i>Rejoindre le match';
-        }
+        this.waitingForPlayers = true;
+        const matchId = event.target.getAttribute("data-match-id");
+        const matchInfo = this.getMatchInfo(matchId);
+        const playerInfo = this.getPlayerFromList(
+          pong42.player.id,
+          matchInfo.players
+        );
+        const gameTournoiWaiting = new GameTournoiWaiting(
+          matchId,
+          matchInfo,
+          playerInfo
+        );
+        gameTournoiWaiting.render(this.container);
+        this.destroy();
       });
     }
   }

@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 # Liste de prénoms
                 first_names = [
                     "Jean", "Marie", "Pierre", "Sophie", "Thomas", "Emma", 
-                    "Lucas", "Léa", "Hugo", "Chloé", "Paul", "Julia", 
+                    "Lucas", "Lea", "Hugo", "Chloe", "Paul", "Julia", 
                     "Antoine", "Laura", "Gabriel", "Camille"
                 ]
                 
