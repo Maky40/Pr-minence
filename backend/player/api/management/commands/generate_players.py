@@ -17,7 +17,7 @@ class Command(BaseCommand):
         # Liste de prénoms
         first_names = [
             "Jean", "Marie", "Pierre", "Sophie", "Thomas",
-            "Emma", "Lucas", "Léa", "Hugo", "Chloé"
+            "Emma", "Lucas", "Lea", "Hugo", "Chloe"
         ]
 
         # Liste de noms de famille
@@ -34,11 +34,11 @@ class Command(BaseCommand):
 
         # Liste d'avatars (URLs d'exemple)
         avatars = [
-            "https://robohash.org/{}.png",
-            "https://avatars.dicebear.com/api/human/{}.svg",
-            "https://avatars.dicebear.com/api/identicon/{}.svg",
-            "https://avatars.dicebear.com/api/bottts/{}.svg",
-            "https://avatars.dicebear.com/api/gridy/{}.svg",
+                    "https://api.dicebear.com/9.x/adventurer/svg?seed=Aiden",
+                    "https://api.dicebear.com/9.x/adventurer/svg?seed=Maria",
+                    "https://api.dicebear.com/9.x/adventurer/svg?seed=Jessica",
+                    "https://api.dicebear.com/9.x/adventurer/svg?seed=Riley",
+                    "https://api.dicebear.com/9.x/pixel-art/svg?seed=Felix",
         ]
 
         players_created = []

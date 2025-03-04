@@ -1,5 +1,6 @@
 class WebSocketAPI {
   constructor(wsURL) {
+    console.log("[WebSocket] Initializing WebSocketAPI url:", wsURL);
     this.socket = null;
     this.status = "DISCONNECTED";
     this.wsURL = wsURL;
