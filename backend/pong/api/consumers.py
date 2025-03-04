@@ -28,7 +28,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         # --- Vérification du match (s'il y a un match_id) ---
         if self.match_id:
-            # Vérifie en base si ce match existe
             match_exists = await self.match_exists_in_db(self.match_id)
             if not match_exists:
                 await self.send(text_data=json.dumps({"error": f"Match {self.match_id} inexistant"}))
@@ -40,7 +39,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             if self.match_id not in connected_users:
                 connected_users[self.match_id] = 0
 
-            # Vérifie si le match est déjà "complet" (2 joueurs connectés)
             if connected_users[self.match_id] >= 2:
                 # Empêche un 3ᵉ joueur d'entrer
                 await self.close()
@@ -53,8 +51,6 @@ class PongConsumer(AsyncWebsocketConsumer):
                 # Problème lors de l'assignation (match complet ?)
                 await self.close()
                 return
-
-            # Incrémente le nombre de joueurs connectés
             connected_users[self.match_id] += 1
 
         else:
@@ -70,7 +66,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-        # Accepte la connexion WebSocket
         await self.accept()
 
         # Message de confirmation au client
