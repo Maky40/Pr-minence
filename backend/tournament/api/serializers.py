@@ -14,7 +14,7 @@ class PlayerMatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PlayerMatch
-        fields = ('player', 'score')
+        fields = ('player', 'score', 'player_side')
 
     def get_player(self, player_match):
         return PlayerSerializer(player_match.player).data
