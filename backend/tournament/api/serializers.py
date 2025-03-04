@@ -6,7 +6,7 @@ from django.db.models import Q
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Player
-        fields = ('id', 'avatar')
+        fields = ('id', 'avatar', 'username')
 
 
 class PlayerMatchSerializer(serializers.ModelSerializer):
