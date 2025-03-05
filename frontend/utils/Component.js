@@ -16,7 +16,7 @@ export default class Component {
     return listenerInfo;
   }
 
-  // Nouvelle méthode pour détacher un seul écouteur
+  // Fonction pour détacher un seul écouteur
   detachEvent(listenerInfo) {
     if (!listenerInfo || !listenerInfo.element) return;
 
@@ -90,35 +90,25 @@ export default class Component {
       this.afterRender();
     }
   }
-
   render(container) {
     // Assigner le conteneur avec fallback
     this.container = container || document.getElementById("content");
-
-    console.log("Rendering component in:", this.container);
-
     if (!this.container) {
       throw new Error(
         "Container is required (neither provided nor found in DOM)"
       );
     }
-
     this.beforeRender();
-
     // Insérer directement le template dans le conteneur
     this.container.innerHTML = this.template();
-
     // Après le rendu, attacher les écouteurs d'événements et exécuter afterRender
     this.attachEventListeners();
     this.afterRender();
-
     return this;
   }
-
   attachEventListeners() {
     // Override in child class
   }
-
   destroy() {
     this.events.clear();
     this.detachAllEvents();

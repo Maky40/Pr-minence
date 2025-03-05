@@ -33,7 +33,6 @@ class GameTournoiWaiting extends Component {
     return "gtw_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
   }
   connectWs() {
-    // Prevent multiple connection attempts
     if (this.isConnecting) return;
     console.log("[DEBUG] Connecting to WebSocket match", this.state.matchId);
     this.isConnecting = true;
@@ -59,19 +58,6 @@ class GameTournoiWaiting extends Component {
       });
     });
 
-    this.webSocketMatch.addMessageListener("close", (data) => {
-      console.error(
-        "[DEBUG] Connexion au match perdue",
-        this.webSocketMatch.socketId
-      );
-      console.error(data);
-      //this.setState({
-      //error: "La connexion au match a été perdue",
-      //loading: false,
-      //});
-      //this.cleanupWebSocket();
-    });
-
     this.webSocketMatch.addMessageListener("message", (data) => {
       try {
         const message = JSON.parse(data);
@@ -95,13 +81,7 @@ class GameTournoiWaiting extends Component {
         }
 
         if (message.type === "game_start") {
-          console.log("[DEBUG] game_start:", message.message);
-          console.log(
-            "[DEBUG] starting game with socketId:",
-            this.webSocketMatch.socketId
-          );
           this.cleanupWebSocket();
-
           this.setState({
             loading: false,
             startingGame: true,
@@ -138,10 +118,6 @@ class GameTournoiWaiting extends Component {
   }
 
   afterRender() {
-    console.log(
-      "[DEBUG] GameTournoiWaiting afterRender called",
-      this.isConnecting
-    );
     super.afterRender();
     if (!this.isConnecting && !this.hasJoinedMatch) {
       this.joinMatch();

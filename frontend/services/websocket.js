@@ -1,6 +1,5 @@
 class WebSocketAPI {
   constructor(wsURL) {
-    console.log("[WebSocket] Initializing WebSocketAPI url:", wsURL);
     this.socket = null;
     this.socketId = this.generateUniqueId();
     this.status = "DISCONNECTED";
@@ -23,7 +22,6 @@ class WebSocketAPI {
 
     try {
       this.socket = new WebSocket(this.wsURL);
-      console.log("WebSocket connection initialized : ", this.socketId);
       this.setupEventListeners();
     } catch (error) {
       console.error("WebSocket initialization error:", error);
@@ -75,7 +73,6 @@ class WebSocketAPI {
     }
   }
   addMessageListener(type, callback) {
-    console.log(`[WebSocket] Adding listener for type: ${type}`);
     if (typeof callback !== "function") {
       console.error("[WebSocket] Callback must be a function");
       return;

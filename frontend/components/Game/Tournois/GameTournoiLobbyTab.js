@@ -1,24 +1,29 @@
 import Component from "../../../utils/Component.js";
-import GameTournoiWaiting from "./GameTournoiWaiting.js";
+
 import pong42 from "/services/pong42.js";
 import {
   statusAffichage,
   roundAffichage,
   isPlayerIdPresent,
-  getPlayerFromList,
-  getMatchInfo,
 } from "./GameTournoiLib.js";
 class GameTournoiLobbyTab extends Component {
-  constructor(tournament, leaveTournamentFtn, startTournamentFtn) {
+  constructor(
+    tournament,
+    leaveTournamentFtn,
+    startTournamentFtn,
+    joinTournamentMatchFtn
+  ) {
     super();
     this.tournament = tournament;
     this.leaveTournament = leaveTournamentFtn;
     this.startTournament = startTournamentFtn;
+    this.joinTournamentMatch = joinTournamentMatchFtn;
+    this.loading = false;
+    this.waitingForPlayers = false;
   }
 
   playerDisplayBadge(currentPlayer, otherPlayer, match) {
-    return `                                        
-        <div class="d-flex flex-column align-items-center">
+    return `<div class="d-flex flex-column align-items-center">
             <div class="avatar-wrapper mb-2">
             <img src="${currentPlayer.player.avatar}" 
             alt="${currentPlayer.player.username}" 
@@ -64,24 +69,30 @@ class GameTournoiLobbyTab extends Component {
     });
     this.attachEvent(joinMatchButtons, "click", (e) => {
       e.preventDefault();
-      if (this.waitingForPlayers) {
-        return;
-      }
+      if (this.waitingForPlayers) return;
       this.waitingForPlayers = true;
-      const matchId = event.target.getAttribute("data-match-id");
-      const matchInfo = getMatchInfo(matchId, this.tournament.matches);
-      const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);
-      const gameTournoiWaiting = new GameTournoiWaiting(
-        matchId,
-        matchInfo,
-        playerInfo
-      );
-      gameTournoiWaiting.render(this.container);
+      const matchId = e.target.getAttribute("data-match-id");
+      this.joinTournamentMatch(matchId);
       this.destroy();
     });
   }
 
   template() {
+    if (this.loading) {
+      return `
+      <div class="container mt-5">
+        <div class="card shadow">
+          <div class="card-body">
+            <div class="d-flex justify-content-center align-items-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
     return `
       <div class="container mt-5">
         <div class="card shadow">
@@ -184,8 +195,6 @@ class GameTournoiLobbyTab extends Component {
                                           <span class="badge rounded-pill bg-danger p-2 fs-6 fw-bold">VS</span>
                                         </div>
                                       </div>
-                                      
-                                      <!-- Deuxième joueur -->
                                       <div class="col-5">
                                         ${this.playerDisplayBadge(
                                           match.players[1],
@@ -194,7 +203,6 @@ class GameTournoiLobbyTab extends Component {
                                         )}
                                       </div>
                                     </div>
-                                    
                                     <!-- Bouton Rejoindre si nécessaire -->
                                     ${
                                       isPlayerIdPresent(

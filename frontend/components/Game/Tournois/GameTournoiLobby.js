@@ -3,6 +3,8 @@ import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
 import Toast from "../../toast.js";
 import GameTournoiLobbyTab from "./GameTournoiLobbyTab.js";
+import { getPlayerFromList, getMatchInfo } from "./GameTournoiLib.js";
+import GameTournoiWaiting from "./GameTournoiWaiting.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
@@ -17,11 +19,7 @@ class GameTournoiLobby extends Component {
       loading: false,
       initialized: false,
     };
-
-    // Stocker les fonctions de nettoyage
     this.cleanupFunctions = [];
-
-    // Utilisez la méthode "on" qui renvoie une fonction de nettoyage
     const cleanupTournamentLeft = pong42.player.tournament.on(
       "tournamentLeft",
       () => {
@@ -29,7 +27,7 @@ class GameTournoiLobby extends Component {
         if (!this.playerLeave) {
           new Toast("Tournoi annulé", this.leaveMsg(), "info").show();
         }
-        setTimeout(() => {
+        this.leaveTimeout = setTimeout(() => {
           pong42.player.checkUnplayedAndActiveTournament();
           this.setState({ loading: false });
           changePage("game");
@@ -37,12 +35,9 @@ class GameTournoiLobby extends Component {
         }, 100);
       }
     );
-
     const cleanupUpdate = pong42.player.tournament.on("update", () => {
       this.fetchTournamentDetails();
     });
-
-    // Stocker pour nettoyage ultérieur
     this.cleanupFunctions.push(cleanupTournamentLeft);
     this.cleanupFunctions.push(cleanupUpdate);
   }
@@ -70,30 +65,25 @@ class GameTournoiLobby extends Component {
     try {
       this.setState({ loading: true });
       const data = await pong42.player.tournament.getTournaments();
-      console.log("Tournament data received:", data);
-
-      // Vérifier si on a reçu des données valides
       if (!data || typeof data !== "object") {
         throw new Error("Données de tournoi invalides reçues");
       }
-
       this.setState({
         tournament: data,
         loading: false,
         initialized: true,
       });
-
       if (this.container) {
         this.render(this.container);
       }
-
       if (data) {
         const GameTournoiLobbyTabInstance = new GameTournoiLobbyTab(
           data,
           this.leaveTournament.bind(this),
           pong42.player.tournament.startTournament.bind(
             pong42.player.tournament
-          )
+          ),
+          this.joinTournamentMatch.bind(this)
         );
         GameTournoiLobbyTabInstance.render(this.container);
       }
@@ -104,6 +94,17 @@ class GameTournoiLobby extends Component {
         loading: false,
       });
     }
+  }
+  joinTournamentMatch(matchId) {
+    const matchInfo = getMatchInfo(matchId, this.state.tournament.matches);
+    const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);
+    const gameTournoiWaiting = new GameTournoiWaiting(
+      matchId,
+      matchInfo,
+      playerInfo
+    );
+    gameTournoiWaiting.render(this.container);
+    this.destroy();
   }
 
   async leaveTournament() {
@@ -128,17 +129,15 @@ class GameTournoiLobby extends Component {
   }
 
   async destroy() {
-    if (this.interval) {
-      clearInterval(this.interval);
+    if (this.leaveTimeout) {
+      clearTimeout(this.leaveTimeout);
+      this.leaveTimeout = null;
     }
-
-    // Nettoyer tous les écouteurs d'événements
     this.cleanupFunctions.forEach((cleanup) => {
       if (typeof cleanup === "function") {
         cleanup();
       }
     });
-
     await pong42.player.checkUnplayedAndActiveTournament();
     super.destroy();
   }
@@ -165,7 +164,6 @@ class GameTournoiLobby extends Component {
         </div>
       `;
     }
-    console.log(this.state.tournament);
     const tournament = this.state.tournament;
     if (!this.state.tournament) {
       return `
