@@ -50,9 +50,7 @@ const getPlayerFromList = (playerId, playersList) => {
   return null;
 };
 const getMatchInfo = (matchId, matches) => {
-  return this.state.tournament.matches.find(
-    (match) => parseInt(match.id) === parseInt(matchId)
-  );
+  return matches.find((match) => parseInt(match.id) === parseInt(matchId));
 };
 
 export {
