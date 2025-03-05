@@ -1,5 +1,6 @@
 import Component from "../../../utils/Component.js";
 import GameTournoiWaiting from "./GameTournoiWaiting.js";
+import pong42 from "/services/pong42.js";
 import {
   statusAffichage,
   roundAffichage,
@@ -8,10 +9,11 @@ import {
   getMatchInfo,
 } from "./GameTournoiLib.js";
 class GameTournoiLobbyTab extends Component {
-  constructor(tournament, leaveTournamentFtn) {
+  constructor(tournament, leaveTournamentFtn, startTournamentFtn) {
     super();
     this.tournament = tournament;
     this.leaveTournament = leaveTournamentFtn;
+    this.startTournament = startTournamentFtn;
   }
 
   playerDisplayBadge(currentPlayer, otherPlayer, match) {
@@ -48,9 +50,7 @@ class GameTournoiLobbyTab extends Component {
       e.preventDefault();
       try {
         this.setState({ loading: true });
-        await pong42.player.tournament.startTournament(
-          this.state.tournament.id
-        );
+        await this.startTournament(this.tournament.id);
       } catch (error) {
         this.setState({
           error: error.message,

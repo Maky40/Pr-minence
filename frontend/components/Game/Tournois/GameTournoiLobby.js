@@ -90,7 +90,10 @@ class GameTournoiLobby extends Component {
       if (data) {
         const GameTournoiLobbyTabInstance = new GameTournoiLobbyTab(
           data,
-          this.leaveTournament.bind(this)
+          this.leaveTournament.bind(this),
+          pong42.player.tournament.startTournament.bind(
+            pong42.player.tournament
+          )
         );
         GameTournoiLobbyTabInstance.render(this.container);
       }
