@@ -16,8 +16,7 @@ class GameSelectionComponent extends Component {
     };
   }
 
-  handleModeSelection(mode, container) {
-    this.container = container || this.container;
+  handleModeSelection(mode) {
     this.selectedMode = mode;
     if (mode === "duelMode") {
       const duelMode = new GameDuelMode();
@@ -27,27 +26,30 @@ class GameSelectionComponent extends Component {
       const gameTournoiMode = new GameTournoiMode();
       gameTournoiMode.render(this.container);
     }
+    this.destroy();
   }
   async afterRender() {
-    document.getElementById("start-match")?.addEventListener("click", (e) => {
+    this.attachEvent(document.getElementById("start-match"), "click", (e) => {
       e.preventDefault();
       this.handleModeSelection("duelMode");
     });
-    document.getElementById("cancel-match")?.addEventListener("click", (e) => {
+    this.attachEvent(document.getElementById("cancel-match"), "click", (e) => {
       e.preventDefault();
       pong42.player.cancelMatch();
       changePage("game");
     });
-    document
-      .getElementById("start-tournament")
-      ?.addEventListener("click", (e) => {
+    this.attachEvent(
+      document.getElementById("start-tournament"),
+      "click",
+      (e) => {
         e.preventDefault();
         const button = e.target;
         button.disabled = true;
         button.textContent = "Chargement...";
         button.classList.add("disabled");
         this.handleModeSelection("TournoiMode");
-      });
+      }
+    );
   }
   async render(container) {
     this.state.loading = false;

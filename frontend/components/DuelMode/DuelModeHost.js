@@ -45,7 +45,6 @@ class DuelModeHost extends Component {
 
   async cancelMatch() {
     this.canceledMatch = true;
-
     const response = await pong42.player.cancelMatch();
     if (response) {
       this.setState({
@@ -55,8 +54,8 @@ class DuelModeHost extends Component {
         error: null,
         waitingGuest: false,
       });
-      this.destroy();
       changePage("game");
+      this.destroy();
     } else {
       console.error("Failed to cancel match");
     }
@@ -64,12 +63,14 @@ class DuelModeHost extends Component {
 
   afterRender() {
     if (!this.state.matchId) this.getMatchId();
-    document
-      .getElementById("cancel-match-hoster")
-      ?.addEventListener("click", async (e) => {
+    this.attachEvent(
+      document.getElementById("cancel-match-hoster"),
+      "click",
+      async (e) => {
         e.preventDefault();
         await this.cancelMatch();
-      });
+      }
+    );
   }
 
   template() {

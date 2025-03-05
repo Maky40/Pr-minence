@@ -3,8 +3,44 @@ export default class Component {
     this.state = {};
     this.container = null;
     this.events = new Map();
+    this.domEventListeners = [];
   }
 
+  //Gestion des ecouteurs d'evenements du DOM
+  attachEvent(element, type, handler) {
+    if (!element) return null;
+
+    element.addEventListener(type, handler);
+    const listenerInfo = { element, type, handler };
+    this.domEventListeners.push(listenerInfo);
+    return listenerInfo;
+  }
+
+  // Nouvelle méthode pour détacher un seul écouteur
+  detachEvent(listenerInfo) {
+    if (!listenerInfo || !listenerInfo.element) return;
+
+    listenerInfo.element.removeEventListener(
+      listenerInfo.type,
+      listenerInfo.handler
+    );
+    const index = this.domEventListeners.indexOf(listenerInfo);
+    if (index !== -1) {
+      this.domEventListeners.splice(index, 1);
+    }
+  }
+
+  // Méthode pour détacher tous les écouteurs
+  detachAllEvents() {
+    this.domEventListeners.forEach(({ element, type, handler }) => {
+      if (element) {
+        element.removeEventListener(type, handler);
+      }
+    });
+    this.domEventListeners = [];
+  }
+
+  // Méthode pour ajouter un écouteur d'événement personnalisé
   on(eventName, callback) {
     if (!this.events.has(eventName)) {
       this.events.set(eventName, new Set());
@@ -58,6 +94,9 @@ export default class Component {
   render(container) {
     if (!container) throw new Error("Container is required");
     this.container = container;
+    this.container.innerHTML = `<section id="content" class="py-4">
+    <!-- Dynamic content will be inserted here -->
+    </section>;`;
     this.beforeRender();
     container.innerHTML = this.template();
     this.attachEventListeners();
@@ -70,9 +109,6 @@ export default class Component {
 
   destroy() {
     this.events.clear();
-    if (this.container) {
-      this.container.innerHTML = "";
-      this.container = null;
-    }
+    this.detachAllEvents();
   }
 }
