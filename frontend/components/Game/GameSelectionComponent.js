@@ -17,6 +17,7 @@ class GameSelectionComponent extends Component {
   }
 
   handleModeSelection(mode) {
+    console.log(this.container);
     this.selectedMode = mode;
     if (mode === "duelMode") {
       const duelMode = new GameDuelMode();
@@ -55,7 +56,7 @@ class GameSelectionComponent extends Component {
     this.state.loading = false;
     await pong42.player.checkUnplayedAndActiveTournament();
     if (pong42.player.has_active_tournament) {
-      this.handleModeSelection("TournoiMode", container);
+      this.handleModeSelection("TournoiMode");
       return;
     }
     super.render(container);

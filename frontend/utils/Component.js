@@ -92,15 +92,27 @@ export default class Component {
   }
 
   render(container) {
-    if (!container) throw new Error("Container is required");
-    this.container = container;
-    this.container.innerHTML = `<section id="content" class="py-4">
-    <!-- Dynamic content will be inserted here -->
-    </section>;`;
+    // Assigner le conteneur avec fallback
+    this.container = container || document.getElementById("content");
+
+    console.log("Rendering component in:", this.container);
+
+    if (!this.container) {
+      throw new Error(
+        "Container is required (neither provided nor found in DOM)"
+      );
+    }
+
     this.beforeRender();
-    container.innerHTML = this.template();
+
+    // Insérer directement le template dans le conteneur
+    this.container.innerHTML = this.template();
+
+    // Après le rendu, attacher les écouteurs d'événements et exécuter afterRender
     this.attachEventListeners();
     this.afterRender();
+
+    return this;
   }
 
   attachEventListeners() {
