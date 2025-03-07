@@ -16,6 +16,19 @@ class Auth {
     this.urlauthdjangosignup = `${ENV.URL_AUTH_DJANGO_SIGNUP}`;
     this.urlauthdjangologout = `${ENV.URL_AUTH_DJANGO_LOGOUT}`;
     this.webSocketStatus = null;
+
+    window.addEventListener("beforeunload", () => {
+      this.cleanupWebSockets();
+    });
+  }
+
+  cleanupWebSockets() {
+    if (this.webSocketStatus) {
+      console.log("Cleaning up authentication WebSocket connection");
+      this.webSocketStatus.removeAllListeners();
+      this.webSocketStatus.close();
+      this.webSocketStatus = null;
+    }
   }
 
   async initFromAPI() {
@@ -135,7 +148,8 @@ class Auth {
 
   async logout() {
     try {
-      const response = await api.apiFetch(this.urlauthdjangologout, true);
+      await api.apiFetch(this.urlauthdjangologout, true);
+      this.cleanupWebSockets();
       this.authenticated = false;
       this.user = null;
       const toast = new Toast("Success", "Déconnexion réussie", "success");
