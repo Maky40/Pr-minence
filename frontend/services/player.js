@@ -69,7 +69,6 @@ class Player extends EventEmitter {
   }
   cancelMatch = async () => {
     try {
-      // path('match/individual/delete', delete_individual_match, name='delete-individual-match'),
       const data = await api.apiFetch(
         "pong/match/individual/delete",
         true,
@@ -83,7 +82,6 @@ class Player extends EventEmitter {
       return false;
     }
   };
-
   checkUnplayed = async () => {
     try {
       const data = await api.apiFetch("player/matches/", true);
