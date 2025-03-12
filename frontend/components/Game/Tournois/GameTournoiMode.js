@@ -22,9 +22,14 @@ class GameTournoisMode extends Component {
       });
     };
 
-    pong42.player.tournament.on("tournamentCreatedOrJoinOrIn", (tournament) => {
-      this.playerInTournamentListener(tournament);
-    });
+    this.playerInTournamentListener = (tournament) => {
+      if (this.container) {
+        this.goToLobby(tournament.id);
+      }
+    };
+
+    // Stocker les fonctions de nettoyage des écouteurs
+    this.cleanupFunctions = [];
   }
 
   goToLobby(tournamentId) {
@@ -119,16 +124,19 @@ class GameTournoisMode extends Component {
   async afterRender() {
     // Ne charger les tournois qu'une seule fois au démarrage
     if (!this.state.initialized && !this.state.loading) {
+      console.log("Loading tournaments... from afterRender from ");
       try {
-        this.playerInTournamentListener = (tournament) => {
-          if (this.container) {
-            this.goToLobby(tournament.id);
-          }
-        };
-        pong42.player.tournament.on(
+        // Enregistrer les écouteurs et stocker les fonctions de nettoyage
+        const cleanupTournamentsLoaded = pong42.player.tournament.on(
           "tournamentsLoaded",
           this.tournamentLoadedListener
         );
+        const cleanupTournamentCreated = pong42.player.tournament.on(
+          "tournamentCreatedOrJoinOrIn",
+          this.playerInTournamentListener
+        );
+        this.cleanupFunctions.push(cleanupTournamentsLoaded);
+        this.cleanupFunctions.push(cleanupTournamentCreated);
         this.setState({ loading: true });
         await pong42.player.tournament.getTournaments();
         if (pong42.player.tournament.tournamentId) this.goToLobby();
@@ -141,8 +149,6 @@ class GameTournoisMode extends Component {
         });
       }
     }
-
-    // Gestion du formulaire de création
     this.setupFormHandlers();
   }
 
@@ -150,32 +156,28 @@ class GameTournoisMode extends Component {
     const input = document.getElementById("tournamentName");
     const createButton = document.getElementById("createTournamentBtn");
     const actualiserButton = document.getElementById("actualiserBtn");
+    const buttons = document.querySelectorAll("[data-tournament-id]");
 
     if (!input || !createButton) return;
-
-    // Nettoyage des anciens écouteurs
     const newInput = input.cloneNode(true);
     const newButton = createButton.cloneNode(true);
 
     input.parentNode.replaceChild(newInput, input);
     createButton.parentNode.replaceChild(newButton, createButton);
 
-    // Validation de l'input
-    newInput.addEventListener("input", (e) => {
+    this.attachEvent(newInput, "input", (e) => {
       const isValid = e.target.value.trim() !== "";
       e.target.classList.toggle("is-invalid", !isValid);
       e.target.classList.toggle("is-valid", isValid);
     });
 
-    // Création du tournoi
-    newButton.addEventListener("click", async (e) => {
+    this.attachEvent(newButton, "click", async (e) => {
       e.preventDefault();
 
       if (!newInput.value.trim()) {
         newInput.classList.add("is-invalid");
         return;
       }
-
       try {
         this.setState({ loading: true, error: null });
         await this.createTournament(newInput.value.trim());
@@ -188,7 +190,7 @@ class GameTournoisMode extends Component {
         });
       }
     });
-    actualiserButton.addEventListener("click", async (e) => {
+    this.attachEvent(actualiserButton, "click", async (e) => {
       e.preventDefault();
       try {
         this.setState({ loading: true, error: null });
@@ -202,10 +204,8 @@ class GameTournoisMode extends Component {
         });
       }
     });
-
-    const buttons = document.querySelectorAll("[data-tournament-id]");
     buttons.forEach((button) => {
-      button.addEventListener("click", (e) => {
+      this.attachEvent(button, "click", (e) => {
         e.preventDefault();
         const tournamentId = e.target.dataset.tournamentId;
         this.handleJoinTournament(tournamentId);
@@ -213,18 +213,11 @@ class GameTournoisMode extends Component {
     });
   }
   destroy() {
-    // Clear the polling interval
+    this.cleanupFunctions.forEach((cleanup) => cleanup());
+    this.cleanupFunctions = [];
     if (this.interval) {
       clearInterval(this.interval);
     }
-    pong42.player.tournament.off(
-      "tournamentsLoaded",
-      this.tournamentLoadedListener
-    );
-    pong42.player.tournament.off(
-      "tournamentCreatedOrJoinOrIn",
-      this.playerInTournamentListener
-    );
     super.destroy();
   }
 

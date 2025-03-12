@@ -2,6 +2,9 @@ import Component from "../../../utils/Component.js";
 import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
 import Toast from "../../toast.js";
+import GameTournoiLobbyTab from "./GameTournoiLobbyTab.js";
+import { getPlayerFromList, getMatchInfo } from "./GameTournoiLib.js";
+import GameTournoiWaiting from "./GameTournoiWaiting.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
@@ -9,43 +12,52 @@ class GameTournoiLobby extends Component {
     this.tournamentId = tournamentId;
     this.container = null;
     this.playerLeave = false;
+    this.waitingForPlayers = false;
     this.state = {
       tournament: null,
       error: null,
       loading: false,
       initialized: false,
     };
-
-    pong42.player.tournament.on("tournamentLeft", () => {
-      this.state.loading = true;
-      console.log(pong42.player.tournament);
-      if (!this.playerLeave) {
-        new Toast(
-          "Tournoi annulé",
-          "Le tournoi a été annulé par le créateur",
-          "info"
-        ).show();
+    this.cleanupFunctions = [];
+    const cleanupTournamentLeft = pong42.player.tournament.on(
+      "tournamentLeft",
+      () => {
+        this.setState({ loading: true });
+        if (!this.playerLeave) {
+          new Toast("Tournoi annulé", this.leaveMsg(), "info").show();
+        }
+        this.leaveTimeout = setTimeout(() => {
+          pong42.player.checkUnplayedAndActiveTournament();
+          this.setState({ loading: false });
+          changePage("game");
+          this.destroy();
+        }, 100);
       }
-      setTimeout(() => {
-        pong42.player.checkUnplayedAndActiveTournament();
-        this.state.loading = false;
-        this.destroy();
-        changePage("game");
-      }, 100);
-      //changePage("game");
-    });
-    pong42.player.tournament.on("update", () => {
+    );
+    const cleanupUpdate = pong42.player.tournament.on("update", () => {
       this.fetchTournamentDetails();
     });
+    this.cleanupFunctions.push(cleanupTournamentLeft);
+    this.cleanupFunctions.push(cleanupUpdate);
+  }
+
+  leaveMsg() {
+    // Vérifier si tournament est défini avant d'accéder à ses propriétés
+    if (!this.state.tournament || !this.state.tournament.creator) {
+      return "Vous avez quitté le tournoi";
+    }
+
+    if (this.state.tournament.creator) {
+      return "Le tournoi a été annulé par le créateur";
+    } else {
+      return "Vous avez quitté le tournoi";
+    }
   }
 
   async afterRender() {
-    console.log("GameTournoiLobby constructor");
-    if (!this.state.initialized && !this.state.loading)
+    if (!this.state.initialized && !this.state.loading) {
       await this.fetchTournamentDetails();
-    const leaveButton = this.container.querySelector("#leaveTournamentButton");
-    if (leaveButton) {
-      leaveButton.addEventListener("click", () => this.leaveTournament());
     }
   }
 
@@ -53,6 +65,9 @@ class GameTournoiLobby extends Component {
     try {
       this.setState({ loading: true });
       const data = await pong42.player.tournament.getTournaments();
+      if (!data || typeof data !== "object") {
+        throw new Error("Données de tournoi invalides reçues");
+      }
       this.setState({
         tournament: data,
         loading: false,
@@ -61,36 +76,69 @@ class GameTournoiLobby extends Component {
       if (this.container) {
         this.render(this.container);
       }
+      if (data) {
+        const GameTournoiLobbyTabInstance = new GameTournoiLobbyTab(
+          data,
+          this.leaveTournament.bind(this),
+          pong42.player.tournament.startTournament.bind(
+            pong42.player.tournament
+          ),
+          this.joinTournamentMatch.bind(this)
+        );
+        GameTournoiLobbyTabInstance.render(this.container);
+      }
     } catch (error) {
+      console.error("Erreur dans fetchTournamentDetails:", error);
       this.setState({
-        error: error.message,
+        error: "Erreur lors de la récupération des données: " + error.message,
         loading: false,
       });
     }
   }
+  joinTournamentMatch(matchId) {
+    const matchInfo = getMatchInfo(matchId, this.state.tournament.matches);
+    const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);
+    const gameTournoiWaiting = new GameTournoiWaiting(
+      matchId,
+      matchInfo,
+      playerInfo
+    );
+    gameTournoiWaiting.render(this.container);
+    this.destroy();
+  }
 
   async leaveTournament() {
     try {
-      pong42.player.tournament.off("update");
       this.setState({ loading: true });
       this.playerLeave = true;
-      await pong42.player.tournament.leaveTournament(this.state.tournament.id);
-      // Pas besoin de naviguer ici car l'événement tournamentLeft le fera
+
+      if (this.state.tournament && this.state.tournament.id) {
+        await pong42.player.tournament.leaveTournament(
+          this.state.tournament.id
+        );
+      } else {
+        throw new Error("ID de tournoi non disponible");
+      }
     } catch (error) {
+      console.error("Erreur dans leaveTournament:", error);
       this.setState({
-        error: error.message,
+        error: "Erreur lors de la quitte du tournoi: " + error.message,
         loading: false,
       });
     }
   }
 
   async destroy() {
-    if (this.interval) {
-      clearInterval(this.interval);
+    if (this.leaveTimeout) {
+      clearTimeout(this.leaveTimeout);
+      this.leaveTimeout = null;
     }
+    this.cleanupFunctions.forEach((cleanup) => {
+      if (typeof cleanup === "function") {
+        cleanup();
+      }
+    });
     await pong42.player.checkUnplayedAndActiveTournament();
-    pong42.player.tournament.off("tournamentLeft");
-    pong42.player.tournament.off("update");
     super.destroy();
   }
 
@@ -116,9 +164,8 @@ class GameTournoiLobby extends Component {
         </div>
       `;
     }
-
     const tournament = this.state.tournament;
-    if (!tournament) {
+    if (!this.state.tournament) {
       return `
         <div class="container mt-5">
           <div class="alert alert-warning" role="alert">
@@ -127,106 +174,6 @@ class GameTournoiLobby extends Component {
         </div>
       `;
     }
-
-    return `
-      <div class="container mt-5">
-        <div class="card shadow">
-          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">${tournament.name}</h3>
-            <button class="btn btn-outline-danger" id="leaveTournamentButton">
-              ${
-                tournament.creator ? "Annuler le tournoi" : "Quitter le tournoi"
-              }
-            </button>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <!-- Liste des joueurs -->
-              <div class="col-md-6">
-                <div class="card mb-4">
-                  <div class="card-header">
-                    <h4 class="mb-0">Joueurs (${
-                      tournament.players_count || 0
-                    })</h4>
-                  </div>
-                  <div class="card-body">
-                    <ul class="list-group">
-                      ${
-                        tournament.players
-                          ?.map(
-                            (player) => `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                          ${player.username}
-                          ${
-                            player.isReady
-                              ? '<span class="badge bg-success">Prêt</span>'
-                              : '<span class="badge bg-warning">En attente</span>'
-                          }
-                        </li>
-                      `
-                          )
-                          .join("") || "Aucun joueur"
-                      }
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Matchs en cours -->
-              <div class="col-md-6">
-                <div class="card">
-                  <div class="card-header">
-                    <h4 class="mb-0">Matchs en cours</h4>
-                  </div>
-                  <div class="card-body">
-                    ${
-                      tournament.matches?.length
-                        ? `
-                      <ul class="list-group">
-                        ${tournament.matches
-                          .map(
-                            (match) => `
-                          <li class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                              <span>${match.player1}</span>
-                              <span class="badge bg-primary">VS</span>
-                              <span>${match.player2}</span>
-                            </div>
-                          </li>
-                        `
-                          )
-                          .join("")}
-                      </ul>
-                    `
-                        : '<p class="text-muted">Aucun match en cours</p>'
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            ${
-              tournament.status === "PN"
-                ? `
-              <div class="alert alert-info mt-4 text-center">
-                <h4 class="alert-heading">En attente du début du tournoi</h4>
-                <p class="mb-0">
-                  ${
-                    tournament.requiredPlayers
-                      ? `${tournament.players?.length || 0}/${
-                          tournament.requiredPlayers
-                        } joueurs requis`
-                      : "En attente de joueurs supplémentaires..."
-                  }
-                </p>
-              </div>
-            `
-                : ""
-            }
-          </div>
-        </div>
-      </div>
-    `;
   }
 }
 

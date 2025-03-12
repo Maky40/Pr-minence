@@ -21,9 +21,6 @@ const updateUI = () => {
 
 const init = () => {
   // Wait for content to be loaded
-  if (!auth.authenticated) {
-    auth.initFromAPI();  // Seulement si l'utilisateur n'est pas déjà authentifié
-  }
   setTimeout(() => {
     updateUI();
     auth.addListener(() => updateUI());

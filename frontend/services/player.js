@@ -28,7 +28,7 @@ class Player extends EventEmitter {
     this.has_active_tournament = false;
     this.defaultAvatar = `${ENV.API_URL}${ENV.DEFAULT_AVATAR}`;
     this.tournament = new TournamentService();
-	this.game = false;
+    this.game = false;
   }
 
   async init() {
@@ -67,6 +67,21 @@ class Player extends EventEmitter {
       return this.avatar;
     }
   }
+  cancelMatch = async () => {
+    try {
+      const data = await api.apiFetch(
+        "pong/match/individual/delete",
+        true,
+        "POST"
+      );
+      return true;
+    } catch (error) {
+      console.error("Failed to cancel match:", error);
+      const toast = new Toast("Error", error, "error");
+      toast.show();
+      return false;
+    }
+  };
   checkUnplayed = async () => {
     try {
       const data = await api.apiFetch("player/matches/", true);
@@ -113,18 +128,6 @@ class Player extends EventEmitter {
         "Failed to check unplayed matches and active tournament",
         "error"
       );
-      toast.show();
-      return false;
-    }
-  };
-
-  cancelMatch = async () => {
-    try {
-      const data = await api.apiFetch("player/pong/", true, "GET");
-      return data;
-    } catch (error) {
-      console.error("Failed to cancel match:", error);
-      const toast = new Toast("Error", "Failed to cancel match", "error");
       toast.show();
       return false;
     }

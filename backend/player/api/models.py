@@ -14,7 +14,6 @@ class Player(AbstractBaseUser):
     username = models.CharField(max_length=20, blank=False, null=False, unique=True)
     first_name = models.CharField(max_length=20, blank=False, null=False)
     last_name = models.CharField(max_length=20, blank=False, null=False)
-    alias_name = models.CharField(max_length=20, blank=True, null=True)
     avatar = models.URLField(
         blank=False,
         null=False,

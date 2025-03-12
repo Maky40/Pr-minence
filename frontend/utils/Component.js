@@ -3,8 +3,44 @@ export default class Component {
     this.state = {};
     this.container = null;
     this.events = new Map();
+    this.domEventListeners = [];
   }
 
+  //Gestion des ecouteurs d'evenements du DOM
+  attachEvent(element, type, handler) {
+    if (!element) return null;
+
+    element.addEventListener(type, handler);
+    const listenerInfo = { element, type, handler };
+    this.domEventListeners.push(listenerInfo);
+    return listenerInfo;
+  }
+
+  // Fonction pour détacher un seul écouteur
+  detachEvent(listenerInfo) {
+    if (!listenerInfo || !listenerInfo.element) return;
+
+    listenerInfo.element.removeEventListener(
+      listenerInfo.type,
+      listenerInfo.handler
+    );
+    const index = this.domEventListeners.indexOf(listenerInfo);
+    if (index !== -1) {
+      this.domEventListeners.splice(index, 1);
+    }
+  }
+
+  // Méthode pour détacher tous les écouteurs
+  detachAllEvents() {
+    this.domEventListeners.forEach(({ element, type, handler }) => {
+      if (element) {
+        element.removeEventListener(type, handler);
+      }
+    });
+    this.domEventListeners = [];
+  }
+
+  // Méthode pour ajouter un écouteur d'événement personnalisé
   on(eventName, callback) {
     if (!this.events.has(eventName)) {
       this.events.set(eventName, new Set());
@@ -54,25 +90,27 @@ export default class Component {
       this.afterRender();
     }
   }
-
   render(container) {
-    if (!container) throw new Error("Container is required");
-    this.container = container;
+    // Assigner le conteneur avec fallback
+    this.container = container || document.getElementById("content");
+    if (!this.container) {
+      throw new Error(
+        "Container is required (neither provided nor found in DOM)"
+      );
+    }
     this.beforeRender();
-    container.innerHTML = this.template();
+    // Insérer directement le template dans le conteneur
+    this.container.innerHTML = this.template();
+    // Après le rendu, attacher les écouteurs d'événements et exécuter afterRender
     this.attachEventListeners();
     this.afterRender();
+    return this;
   }
-
   attachEventListeners() {
     // Override in child class
   }
-
   destroy() {
     this.events.clear();
-    if (this.container) {
-      this.container.innerHTML = "";
-      this.container = null;
-    }
+    this.detachAllEvents();
   }
 }

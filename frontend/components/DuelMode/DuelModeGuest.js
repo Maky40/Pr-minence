@@ -2,7 +2,6 @@ import Component from "../../utils/Component.js";
 import WebSocketAPI from "../../services/websocket.js";
 import pong42 from "../../services/pong42.js";
 import GameComponent from "../Game/GameComponent.js";
-import { changePage } from "../../utils/Page.js";
 import { ENV } from "../../env.js";
 
 class DuelModeGuest extends Component {

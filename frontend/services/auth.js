@@ -15,6 +15,20 @@ class Auth {
     this.urlauthdjango = `${ENV.URL_AUTH_DJANGO}`;
     this.urlauthdjangosignup = `${ENV.URL_AUTH_DJANGO_SIGNUP}`;
     this.urlauthdjangologout = `${ENV.URL_AUTH_DJANGO_LOGOUT}`;
+    this.webSocketStatus = null;
+
+    window.addEventListener("beforeunload", () => {
+      this.cleanupWebSockets();
+    });
+  }
+
+  cleanupWebSockets() {
+    if (this.webSocketStatus) {
+      console.log("Cleaning up authentication WebSocket connection");
+      this.webSocketStatus.removeAllListeners();
+      this.webSocketStatus.close();
+      this.webSocketStatus = null;
+    }
   }
 
   async initFromAPI() {
@@ -126,10 +140,12 @@ class Auth {
     this.user = player;
     pong42.player.setPlayerInformations(player);
     this.notifyListeners("login");
-    this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
-    this.webSocketStatus.addMessageListener("message", (data) => {
-      pong42.player.updateStatus("ON");
-    });
+    if (!this.webSocketStatus) {
+      this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
+      this.webSocketStatus.addMessageListener("message", (data) => {
+        pong42.player.updateStatus("ON");
+      });
+    }
   }
 
   async logout() {
@@ -137,6 +153,7 @@ class Auth {
       const response = await api.apiFetch(this.urlauthdjangologout, true);
 	if (this.authenticated == true){
 		this.logoutAndNotify()}
+      this.cleanupWebSockets();
     } catch (error) {
       console.error("Logout error:", error);
       throw error;

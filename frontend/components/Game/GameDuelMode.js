@@ -5,30 +5,27 @@ import pong42 from "/services/pong42.js";
 import { changePage } from "../../utils/Page.js";
 
 class GameDuelMode extends Component {
-  constructor(container) {
+  constructor() {
     super();
     this.state = {
       mode: null,
-      container: container,
     };
   }
 
   handleModeSelection(mode) {
-    console.log("Selected mode:", mode);
     this.state.mode = mode;
     if (mode === "newGame") {
       const duelModeHost = new DuelModeHost();
       duelModeHost.render(this.container);
     }
     if (mode === "joinGame") {
-      console.log("Join game");
       const match_id = document.getElementById("matchCode").value;
       if (match_id) {
         const duelModeGuest = new DuelModeGuest(match_id);
         duelModeGuest.render(this.container);
       }
-      return;
     }
+    this.destroy();
   }
 
   afterRender() {
@@ -37,8 +34,9 @@ class GameDuelMode extends Component {
       changePage("game");
       this.destroy();
     }
+
     document.querySelectorAll(".game-mode-card button").forEach((button) => {
-      button.addEventListener("click", (e) => {
+      this.attachEvent(button, "click", (e) => {
         e.preventDefault();
         const mode = e.target.closest(".game-mode-card").dataset.mode;
         this.handleModeSelection(mode);
@@ -47,8 +45,18 @@ class GameDuelMode extends Component {
   }
 
   template() {
-    if (!this.state.mode)
+    if (this.state.mode === "joinGame") {
       return `
+          <section id="game" class="container mt-5">
+              <div class="row justify-content-center">
+                  <div class="col-md-8 text-center">
+                      <h1 class="mt-4">Le Jeu</h1>
+                  </div>
+              </div>
+        </section>
+      `;
+    }
+    return `
         <section id="game-selection" class="container mt-5">
                 <div class="row justify-content-center">
                     <div class="col-12 text-center mb-4">
@@ -85,17 +93,6 @@ class GameDuelMode extends Component {
                 </div>
             </section>
         `;
-    if (this.state.mode === "joinGame") {
-      return `
-          <section id="game" class="container mt-5">
-              <div class="row justify-content-center">
-                  <div class="col-md-8 text-center">
-                      <h1 class="mt-4">Le Jeu</h1>
-                  </div>
-              </div>
-        </section>
-      `;
-    }
   }
 }
 

@@ -2,6 +2,7 @@ import Component from "../../utils/Component.js";
 import GameDuelMode from "./GameDuelMode.js";
 import GameTournoiMode from "./Tournois/GameTournoiMode.js";
 import pong42 from "../../services/pong42.js";
+import { changePage } from "../../utils/Page.js";
 
 class GameSelectionComponent extends Component {
   constructor() {
@@ -15,10 +16,9 @@ class GameSelectionComponent extends Component {
     };
   }
 
-  handleModeSelection(mode, container) {
-    this.container = container || this.container;
+  handleModeSelection(mode) {
+    console.log(this.container);
     this.selectedMode = mode;
-    console.log("GameSelectionComponent handleModeSelection", this.container);
     if (mode === "duelMode") {
       const duelMode = new GameDuelMode();
       duelMode.render(this.container);
@@ -27,39 +27,36 @@ class GameSelectionComponent extends Component {
       const gameTournoiMode = new GameTournoiMode();
       gameTournoiMode.render(this.container);
     }
-    // Ici vous pouvez ajouter la logique pour gérer la sélection du mode
+    this.destroy();
   }
   async afterRender() {
-    document.getElementById("start-match")?.addEventListener("click", (e) => {
+    this.attachEvent(document.getElementById("start-match"), "click", (e) => {
       e.preventDefault();
       this.handleModeSelection("duelMode");
     });
-    document.getElementById("cancel-match")?.addEventListener("click", (e) => {
+    this.attachEvent(document.getElementById("cancel-match"), "click", (e) => {
       e.preventDefault();
       pong42.player.cancelMatch();
+      changePage("game");
     });
-    document
-      .getElementById("start-tournament")
-      ?.addEventListener("click", (e) => {
+    this.attachEvent(
+      document.getElementById("start-tournament"),
+      "click",
+      (e) => {
         e.preventDefault();
-
-        // Désactiver le bouton immédiatement pour éviter les doubles clics
         const button = e.target;
         button.disabled = true;
         button.textContent = "Chargement...";
         button.classList.add("disabled");
-
-        // Appeler la fonction de sélection de mode
         this.handleModeSelection("TournoiMode");
-      });
+      }
+    );
   }
   async render(container) {
-    console.log("GameSelectionComponent render", container);
     this.state.loading = false;
-    console.log("GameSelectionComponent afterRender1");
     await pong42.player.checkUnplayedAndActiveTournament();
     if (pong42.player.has_active_tournament) {
-      this.handleModeSelection("TournoiMode", container);
+      this.handleModeSelection("TournoiMode");
       return;
     }
     super.render(container);

@@ -18,11 +18,6 @@ export default class Navbar extends Component {
       this.setState({ tournament: null });
       this.render(this.container);
     });
-    pong42.player.addListener("update", (player) => {
-		console.log("////////////////////update player je suis laaaaaaaaaaaaaa////////////");
-      this.setState({ player: player });
-      this.render(this.container);
-    });
     pong42.player.tournament.on("update", (tournament) => {
       this.setState({ tournament: tournament });
       this.render(this.container);
@@ -44,7 +39,6 @@ export default class Navbar extends Component {
       isAuthenticated: auth.authenticated,
     };
     this.initListeners();
-	console.log("================Navbar ===== Auth : ", this.state);
   }
 
   template() {

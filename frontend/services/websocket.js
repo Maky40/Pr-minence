@@ -3,6 +3,7 @@ import auth from "./auth.js";
 class WebSocketAPI {
   constructor(wsURL) {
     this.socket = null;
+    this.socketId = this.generateUniqueId();
     this.status = "DISCONNECTED";
     this.wsURL = wsURL;
     this.messageListeners = new Map();
@@ -44,6 +45,9 @@ class WebSocketAPI {
     }
   }
 
+  generateUniqueId() {
+    return "ws_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
+  }
   addMessageListener(type, callback) {
     const listener =
       type === "message"
@@ -73,7 +77,6 @@ class WebSocketAPI {
     }
   }
   addMessageListener(type, callback) {
-    console.log(`[WebSocket] Adding listener for type: ${type}`);
     if (typeof callback !== "function") {
       console.error("[WebSocket] Callback must be a function");
       return;

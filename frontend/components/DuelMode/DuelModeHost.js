@@ -3,10 +3,12 @@ import pong42 from "../../services/pong42.js";
 import WebSocketAPI from "../../services/websocket.js";
 import GameComponent from "../Game/GameComponent.js";
 import { ENV } from "../../env.js";
+import { changePage } from "../../utils/Page.js";
 
 class DuelModeHost extends Component {
   constructor() {
     super();
+    this.canceledMatch = false;
     this.state = {
       matchId: null,
       paddle: null,
@@ -17,6 +19,7 @@ class DuelModeHost extends Component {
     this.wsurlgame = `${ENV.WS_URL_GAME}`;
   }
   async getMatchId() {
+    if (this.canceledMatch) return;
     const webSocketMatch = new WebSocketAPI(this.wsurlgame);
     webSocketMatch.addMessageListener("message", (data) => {
       const message = JSON.parse(data);
@@ -29,24 +32,45 @@ class DuelModeHost extends Component {
         pong42.player.match_id = match_id;
         pong42.player.paddle = paddle;
         pong42.player.socketMatch = webSocketMatch;
+        this.canceledMatch = false;
         this.setState({
           matchId: match_id,
           paddle: paddle,
           waitingGuest: true,
+          loading: false,
         });
       }
     });
   }
 
   async cancelMatch() {
-    const webSocketMatch = new WebSocketAPI(this.wsurlgame);
-    webSocketMatch.sendMessage({
-      type: "cancel_match",
-    });
+    this.canceledMatch = true;
+    const response = await pong42.player.cancelMatch();
+    if (response) {
+      this.setState({
+        matchId: null,
+        paddle: null,
+        loading: false,
+        error: null,
+        waitingGuest: false,
+      });
+      changePage("game");
+      this.destroy();
+    } else {
+      console.error("Failed to cancel match");
+    }
   }
 
   afterRender() {
     if (!this.state.matchId) this.getMatchId();
+    this.attachEvent(
+      document.getElementById("cancel-match-hoster"),
+      "click",
+      async (e) => {
+        e.preventDefault();
+        await this.cancelMatch();
+      }
+    );
   }
 
   template() {
@@ -85,7 +109,7 @@ class DuelModeHost extends Component {
                         <small class="text-primary">Le match démarrera automatiquement dès qu'il sera connecté</small>
                       </div>
                     <div class="text-center mt-4">
-                        <button class="btn btn-outline-danger" onclick="this.cancelMatch()" >Annuler le match</button>
+                        <button class="btn btn-outline-danger" id="cancel-match-hoster">Annuler le match</button>
                     </div>
                 </div>
             </div>
