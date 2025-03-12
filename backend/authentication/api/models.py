@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.conf import settings
-
+from django.db.models import Q
 
 
 class Player(AbstractBaseUser):
@@ -42,6 +42,13 @@ class Player(AbstractBaseUser):
         Hash le mot de passe et l'enregistre.
         """
         super().set_password(raw_password)
+
+    def get_friends(self):
+        friendships = Friendship.objects.filter(
+            Q(player_sender=self, state='AC') | Q(player_receiver=self, state='AC')
+		)
+        friends = [f.player_receiver if f.player_sender == self else f.player_sender for f in friendships]
+        return friends
 
     def __str__(self):
         return f'Player: [ email: {self.email}, username: {self.username} ]'

@@ -25,6 +25,12 @@ export async function init() {
 
     // Initial render
     renderFriendRequests(elements["requests-list"]);
+
+	setInterval(() => {
+		const updateRequestList = document.getElementById("requests-list")
+		if (updateRequestList)
+			renderFriendRequests(updateRequestList);
+	}, 60000);
 }
 
 async function initializeCurrentUser(currentUser) {

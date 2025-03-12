@@ -42,6 +42,7 @@ ALLOWED_HOSTS = [
 # Installed apps required for the microservice.
 INSTALLED_APPS = [
 	'daphne',
+	"channels",  # Channels for WebSockets
     'django.contrib.admin',  # Admin panel
     'django.contrib.auth',  # Authentication framework
     'django.contrib.contenttypes',  # Content types for models
@@ -50,8 +51,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',  # Static files management
     "rest_framework",  # Django REST Framework for API development
 	"api",  # The specific app for this microservice
-    "channels",  # Channels for WebSockets
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],  # Change l'IP si nécessaire
+        },
+    },
+}
 
 # === 4. Middleware ===
 # Middleware intercepts and processes requests/responses.
@@ -146,4 +155,3 @@ DEFAULT_AVATAR_URL = getenv("DEFAULT_AVATAR_URL", f'https://{IP_ADDRESS}/player/
 
 
 AUTHENTICATION_BACKENDS = ['api.backends.EmailBackend']
-

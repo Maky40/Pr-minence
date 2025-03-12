@@ -19,6 +19,7 @@ class Auth {
 
   async initFromAPI() {
     try {
+		console.log("INIT API");
       const data = await api.apiFetch("/player/", true);
       if (data.status === 200) {
         this.setSession(data);
@@ -119,13 +120,14 @@ class Auth {
   }
 
   async setSession(data) {
+	console.log("JE PASSE");
     const player = data.player;
     this.authenticated = true;
     this.user = player;
     pong42.player.setPlayerInformations(player);
     this.notifyListeners("login");
-    const webSocketStatus = new WebSocketAPI(this.urlwsauth);
-    webSocketStatus.addMessageListener("message", (data) => {
+    this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
+    this.webSocketStatus.addMessageListener("message", (data) => {
       pong42.player.updateStatus("ON");
     });
   }
@@ -133,16 +135,27 @@ class Auth {
   async logout() {
     try {
       const response = await api.apiFetch(this.urlauthdjangologout, true);
-      this.authenticated = false;
-      this.user = null;
-      const toast = new Toast("Success", "Déconnexion réussie", "success");
-      toast.show();
-      this.notifyListeners("logout");
-      changePage("#home");
+	if (this.authenticated == true){
+		this.logoutAndNotify()}
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
     }
+  }
+
+  logoutAndNotify() {
+	try {
+		console.log("JE SUIS DANS LOGOUTANDNOTIFYYYYYYYYYYYYYYYYYYYYYYY")
+		this.authenticated = false;
+		this.user = null;
+		const toast = new Toast("Success", "Déconnexion réussie", "success");
+		toast.show();
+		this.notifyListeners("logout");
+		changePage("#home");
+	} catch (error) {
+		console.error("Logout error:", error);
+		throw error;
+	  }
   }
 
   isAuthenticated() {

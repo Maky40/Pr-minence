@@ -14,7 +14,8 @@ from rest_framework.views import APIView
 from .serializers import SignupSerializer, LoginSerializer
 import pyotp
 import re
-from django.conf import settings
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 
 @api_view(['GET'])
@@ -31,7 +32,7 @@ def intra_auth(request):
 
     # Construire l'URL finale pour l'authentification
     authorization_url = f"https://api.intra.42.fr/oauth/authorize?{urlencode(params)}"
-    
+
     # Rediriger l'utilisateur vers Intra 42 pour autorisation
     return redirect(authorization_url)
 
@@ -102,13 +103,35 @@ def intra_callback_auth(request):
 @jwt_cookie_required
 def logout_user(request):
     if request.token is not None:
+        id = request.decoded_token['id']
+        user = Player.objects.get(id=id)
+        print("JE PASSE DANS LOGOUT USER")
+
+        # Invalidate the token
         cache.set(request.token, True, timeout=None)
+
+        # Prepare the response
         response = redirect(f"https://{settings.IP_ADDRESS}/#connexion/", permanent=True)
         response.delete_cookie("jwt_token")
+
+        # Update user status
+        user.status = "OF"
+        user.save()
+
+        # Send force logout message to all tabs of this user
+        group_name = f"user_{user.id}"
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                "type": "force_logout"  # This will trigger the force_logout method in the consumer
+            }
+        )
+
+        print(f"Envoi du message au groupe {group_name}")
         return response
     else:
         return Response({"statusCode": 400, "detail": "No valid access token found"})
-    
 
 class SignupView(APIView):
     def post(self, request):
