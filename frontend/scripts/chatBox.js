@@ -1,11 +1,12 @@
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage, inviteForPlay } from './chatServices/liveChatService.js';
-import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements } from './chatServices/uiService.js';
+import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements, updateFriendsList } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 import pong42 from "../services/pong42.js";
 import WebSocketAPI from '../services/websocket.js';
 import { ENV } from "../env.js";
+import auth from "../services/auth.js";
 
 export async function init() {
     console.log("init() called");
@@ -31,6 +32,12 @@ export async function init() {
 		if (updateRequestList)
 			renderFriendRequests(updateRequestList);
 	}, 60000);
+
+	auth.webSocketStatus.addMessageListener("message", (event) => {
+		const data = JSON.parse(event);
+		if (data.type === "status_update")
+			updateFriendsList(elements["friends-list"]);
+	});
 }
 
 async function initializeCurrentUser(currentUser) {

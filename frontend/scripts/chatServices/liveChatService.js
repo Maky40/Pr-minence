@@ -30,15 +30,15 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
     return;
   }
 
-  socketActivate.socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("Message reçu : ", data); // Ajoute un log pour voir ce qui est reçu
-      displayMessage(data.senderName, data.senderId, data.message, otherUserId);
-    } catch (error) {
-      console.error("Erreur de traitement du message reçu :", error);
-    }
-  };
+//   socketActivate.socket.onmessage = (event) => {
+//     try {
+//       const data = JSON.parse(event.data);
+//       console.log("Message reçu : ", data); // Ajoute un log pour voir ce qui est reçu
+//       displayMessage(data.senderName, data.senderId, data.message, otherUserId);
+//     } catch (error) {
+//       console.error("Erreur de traitement du message reçu :", error);
+//     }
+//   };
 
     socketActivate.socket.onmessage = (event) => {
         try {
