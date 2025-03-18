@@ -23,6 +23,9 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from .decorators import jwt_cookie_required
 from .models import Player, PlayerMatch
+import json
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 class PlayerSearch(APIView):
@@ -343,6 +346,16 @@ class PlayerFriendship(APIView):
                     # Acceptation de la demande d'ami si la personne m'avait demande egalement en ami
                     friendships = Friendship.objects.filter(player_sender=receiver, player_receiver=sender)
                     friendships.update(state='AC')
+                    # Envoie l'evenement via django channel pour MAJ le statut pending en direct
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f"user_{receiver.id}",
+                        {
+                            "type": "status_update",
+                            "user_id": sender.id,
+                            "status": "ON",
+						}
+					)
                     return Response({
                     "status": 200,
                     "message": "Friend requests accepted successfully"
@@ -444,7 +457,7 @@ class ChangePasswordView(APIView):
 
         except Exception as e:
             return Response({"status": 500, "message": str(e)}, status=500)
-        
+
 
 
 
@@ -509,7 +522,7 @@ def get_player_tournaments(request):
 
     from .models import PlayerTournament
     pt_qs = PlayerTournament.objects.filter(player=player).select_related('tournament')
-    
+
     tournaments_info = []
     has_active_tournament = False
 
@@ -532,5 +545,3 @@ def get_player_tournaments(request):
         "has_active_tournament": has_active_tournament,
         "tournaments": tournaments_info
     }, status=status.HTTP_200_OK)
-
-

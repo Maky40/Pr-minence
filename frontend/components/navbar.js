@@ -6,7 +6,6 @@ import pong42 from "../services/pong42.js";
 export default class Navbar extends Component {
   initListeners() {
     auth.addListener((event) => {
-		console.log("////////////////////update player je suis laaaaaaaaaaaaaa////////////    :::  ", auth.authenticated);
       if (event === "login" || event === "logout")
         if (auth.authenticated) {
           this.setState({ isAuthenticated: true });

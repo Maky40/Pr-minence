@@ -3,32 +3,8 @@
 import api from "../../services/api.js";
 import GameComponent from "../../components/Game/GameComponent.js";
 import pong42 from"../../services/pong42.js"
+import ModalProfile from "../../components/modal_profile.js";
 
-/////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
-/////////////////////////////////////////////║                    TOURNAMENT/PRIVATE CHAT                 ║/////////////////////////////////////////////
-/////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
-
-
-export function showChat(chatType, friendsList) {
-    const chatContainer = document.getElementById("chat-container");
-    const privateChatContainer = document.getElementById("private-chat-container");
-    const chatBox = document.getElementById("chat-box");
-
-    if (!chatContainer || !privateChatContainer || !chatBox) {
-        console.error("Chat elements not found");
-        return;
-    }
-
-    chatContainer.style.display = "block";
-    if (chatType === "tournament") {
-        privateChatContainer.style.display = "none";
-        chatBox.innerHTML = "<h4>Tournament Chat</h4>";
-    } else {
-        privateChatContainer.style.display = "block";
-        chatBox.innerHTML = "";
-        updateFriendsList(friendsList);
-    }
-}
 
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
@@ -243,6 +219,12 @@ export async function displayFriendChat(friendName, blocked) {
 	else {
 		unblockedElements();
 	}
+	friendFrontName.addEventListener("click", () => {
+		const profile = response.players[0];
+		const modal = new ModalProfile(profile);
+		modal.render(document.body);
+		modal.show();
+	});
 }
 
 export function blockedElements() {

@@ -37,12 +37,8 @@ export default class TemplateManager {
   async loadTemplate(templateFile) {
     try {
       this.cleanup();
-	  console.log("Authentifie ? Oui ou non ===========> ", auth.authenticated);
       const templateName = templateFile.replace(".html", "");
       if (!auth.authenticated) {
-		console.log(
-			"LA================================"
-		  );
         await auth.initFromAPI();
       }
       if (this.routes[templateName]?.authRequired ?? false) {

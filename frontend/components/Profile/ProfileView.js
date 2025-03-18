@@ -1,4 +1,5 @@
 import Component from "../../utils/Component.js";
+import pong42 from "../../services/pong42.js";
 
 class ProfileView extends Component {
   constructor() {
@@ -25,18 +26,22 @@ class ProfileView extends Component {
   }
 
   template() {
+	const isCurrentUser = this.state.username === pong42.player.username;
     return `
             <div class="card shadow-lg mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-end">
+					${isCurrentUser ? `
                         <button id="editButton" class="btn btn-outline-primary">
                             <i class="fas fa-edit"></i> Modifier
                         </button>
+                    ` : ""}
+
                     </div>
                     <div class="row align-items-center">
                         <div class="col-md-3 text-center">
-                            <img src="${this.state.avatar}" 
-                                alt="Profile" 
+                            <img src="${this.state.avatar}"
+                                alt="Profile"
                                 class="rounded-circle img-fluid mb-3"
                                 style="width: 150px; height: 150px; object-fit: cover;">
                         </div>

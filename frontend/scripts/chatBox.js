@@ -1,6 +1,6 @@
 import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage, inviteForPlay } from './chatServices/liveChatService.js';
-import { showChat, showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements, updateFriendsList } from './chatServices/uiService.js';
+import { showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements, updateFriendsList } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
 import api from "../../services/api.js";
 import pong42 from "../services/pong42.js";
@@ -14,7 +14,8 @@ export async function init() {
 	let currentUser = {};
 	let otherUser = {};
 
-
+	console.log(pong42.player.socketMatch);
+	console.log(document.body.innerHTML);
 	// Initialize currentUser
 	await initializeCurrentUser(currentUser);
 
@@ -26,6 +27,7 @@ export async function init() {
 
     // Initial render
     renderFriendRequests(elements["requests-list"]);
+	updateFriendsList(elements["friends-list"]);
 
 	setInterval(() => {
 		const updateRequestList = document.getElementById("requests-list")
@@ -70,12 +72,6 @@ function initializeUIElements() {
 }
 
 function addEventListeners(elements, socketActivate, currentUser, otherUser) {
-
-    // Chat type buttons
-    if (elements["tournament-room"] && elements["private-chat"]) {
-        elements["tournament-room"].addEventListener("click", () => showChat("tournament", elements["friends-list"]));
-        elements["private-chat"].addEventListener("click", () => showChat("private", elements["friends-list"]));
-    }
 
     // // Search functionality
     elements["search-friend"].addEventListener("focus", () => handleSearchFocus(elements));

@@ -3,6 +3,8 @@ from channels.db import database_sync_to_async
 from .models import Player
 import logging
 import json
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.layers import get_channel_layer
 
 playersOpenTabs = {}
 

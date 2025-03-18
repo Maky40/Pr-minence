@@ -39,6 +39,15 @@ ALLOWED_HOSTS = [
     '*'     # Hôte utilisé dans votre conteneur Docker
 ]
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
+
 # === 3. Applications Django ===
 INSTALLED_APPS = [
     "django.contrib.admin",
