@@ -113,3 +113,35 @@
 .no-friends-message .friend-name {
     color: var(--neon-blue) !important;
 }
+
+/* Effet de glow autour du modal */
+.custom-modal {
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+/* Personnalisation du spinner */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Animation du modal */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+.modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Personnalisation du bouton Annuler */
+#cancel-match {
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 8px;
+    padding: 10px;
+}

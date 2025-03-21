@@ -209,3 +209,15 @@ def delete_individual_match(request):
     # Si on est ici, c'est qu'il n'y a qu'un seul joueur : le créateur
     match.delete()
     return Response({"message": "Your unplayed match has been deleted successfully."}, status=200)
+
+@api_view(['GET'])
+@jwt_cookie_required
+def get_individual_match(request):
+    try:
+        player_id = request.query_params.get('id')
+        player = Player.objects.get(id=player_id)
+    except Player.DoesNotExist:
+        return Response({"error" : "player not found"}, status = 404)
+    match_ids = PlayerMatch.objects.filter(player=player).values_list('match_id', flat=True)
+
+    return Response({"matches": list(match_ids)}, status=200)

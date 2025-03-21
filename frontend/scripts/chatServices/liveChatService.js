@@ -1,10 +1,10 @@
 import api from "../../services/api.js";
 import { templateManager } from "../app.js";
-import { displayMessage, displayInvitation, displayInvitationRefuse, displayInvitationAccept } from "./uiService.js";
+import { displayMessage, displayInvitation, displayInvitationRefuse, displayInvitationAccept, displayInvitationCanceled } from "./uiService.js";
 import pong42 from "../../../services/pong42.js";
 import WebSocketAPI from "../../services/websocket.js"
 import { ENV } from "../../env.js";
-
+import InviteForPlayComponent from "../../components/modal_play.js";
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
 /////////////////////////////////////////////║                    SOCKET CHAT MANAGEMENT                  ║/////////////////////////////////////////////
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
@@ -29,18 +29,7 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
     console.error("WebSocket non initialisée");
     return;
   }
-
-//   socketActivate.socket.onmessage = (event) => {
-//     try {
-//       const data = JSON.parse(event.data);
-//       console.log("Message reçu : ", data); // Ajoute un log pour voir ce qui est reçu
-//       displayMessage(data.senderName, data.senderId, data.message, otherUserId);
-//     } catch (error) {
-//       console.error("Erreur de traitement du message reçu :", error);
-//     }
-//   };
-
-    socketActivate.socket.onmessage = (event) => {
+  socketActivate.socket.onmessage = (event) => {
         try {
 			const data = JSON.parse(event.data);
 			console.log("Message reçu : ", data);  // Ajoute un log pour voir ce qui est reçu
@@ -56,6 +45,11 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
 				console.log("JE SUIS DANS REFUSE");
 				console.log("VOICI LE BODY : ", data.message);
 				displayInvitationRefuse(data.senderName, data.senderId, data.matchId, otherUserId);}
+			else if (data.message === "annuler") {
+				console.log("JE SUIS DANS ANNULER");
+				console.log("VOICI LE BODY : ", data.message);
+				displayInvitationCanceled(data.senderName, data.senderId, data.matchId, otherUserId);
+			}
 			else{
 				console.log("JE SUIS DANS ACCEPT");
 				console.log("VOICI LE BODY : ", data.message);
@@ -99,6 +93,7 @@ export function sendMessage(socketActivate, currentUser, message) {
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 export async function inviteForPlay(socketActivate, currentUser) {
+
 	const response = await api.apiFetch("pong/match/individual/create/", true, "POST");
 	let id_match = response.match_id;
 	const payload = {
@@ -114,4 +109,8 @@ export async function inviteForPlay(socketActivate, currentUser) {
 	pong42.player.paddle = "left";
 	pong42.player.socketMatch = ws;
 	socketActivate.socket.send(JSON.stringify(payload));
+
+	window.inviteForPlay = new InviteForPlayComponent(socketActivate, pong42.player);
+	window.inviteForPlay.render(document.body);
+	window.inviteForPlay.show();
 }

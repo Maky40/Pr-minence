@@ -136,6 +136,7 @@ class Message(models.Model):
     sender = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="sent_messages")
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    match = models.TextField(null=True, blank=True)
 
 
 class BlockedUser(models.Model):

@@ -4,6 +4,7 @@ import api from "../../services/api.js";
 import GameComponent from "../../components/Game/GameComponent.js";
 import pong42 from"../../services/pong42.js"
 import ModalProfile from "../../components/modal_profile.js";
+import DuelModeGuest from "../../components/DuelMode/DuelModeGuest.js";
 
 
 
@@ -169,34 +170,34 @@ export function displayInvitation(senderName, senderId, matchId, otherUserId) {
 }
 
 export function displayInvitationRefuse(senderName, senderId, matchId, otherUserId){
-	const messageContainer = document.getElementById("chat-box");
 	const newInvitation = document.getElementById(`invitation-${matchId}`);
 	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
-	// if (senderId == otherUserId){
-		newInvitation.textContent = "Invitation refusee";
-		newInvitation.style.color = "red";
-	// }
-	// else {
-
-	// }
+	if (window.inviteForPlay) {
+        window.inviteForPlay.closeModalMatchRefused();
+    }
+	newInvitation.textContent = "Invitation refusee";
+	newInvitation.style.color = "red";
 }
 
-export function displayInvitationAccept(senderName, senderId, matchId, otherUserId) {
+export function displayInvitationCanceled(senderName, senderId, matchId, otherUserId){
+	const newInvitation = document.getElementById(`invitation-${matchId}`);
+	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
+	newInvitation.textContent = "Invitation annulee";
+	newInvitation.style.color = "orange";
+}
+
+export async function displayInvitationAccept(senderName, senderId, matchId, otherUserId) {
 	const messageContainer = document.getElementById("chat-box");
 	const newInvitation = document.getElementById(`invitation-${matchId}`);
 	const chatContainer = document.getElementsByClassName("container")[0];
+	// Vérifie que le modal existe dans le DOM
+	if (window.inviteForPlay) {
+        window.inviteForPlay.closeModalMatchAccepted();
+    }
 	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
 	pong42.player.game = true;
 	const game = new GameComponent();
 	game.render(chatContainer);
-	console.log("laaaaa");
-	// if (senderId == otherUserId){
-		// newInvitation.innerHTML = "Invitation acceptee";
-		// newInvitation.style.color = "green";
-	// }
-	// else {
-		// newInvitation.innerHTML = "Invitation acceptee";
-	// }
 }
 
 export async function displayFriendChat(friendName, blocked) {

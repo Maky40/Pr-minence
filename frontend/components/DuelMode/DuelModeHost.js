@@ -85,8 +85,8 @@ class DuelModeHost extends Component {
                     <div class="text-center mt-4">
                         <p class="text-muted">Préparation de l'arène...</p>
                         <div class="progress" style="width: 200px;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" 
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar"
                                  style="width: 100%">
                             </div>
                         </div>

@@ -17,7 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path
-from .views import match_exists_view, create_individual_match, accept_individual_match, refuse_individual_match, delete_individual_match
+from .views import match_exists_view, create_individual_match, accept_individual_match, refuse_individual_match, delete_individual_match, get_individual_match
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,5 +26,5 @@ urlpatterns = [
     path('match/individual/accept/', accept_individual_match, name='accept-individual-match'),
     path('match/individual/refuse/', refuse_individual_match, name='refuse-individual-match'),
 	path('match/individual/delete', delete_individual_match, name='delete-individual-match'),
+	path('match/individual/', get_individual_match, name='get-individual-match'),
 ]
-
