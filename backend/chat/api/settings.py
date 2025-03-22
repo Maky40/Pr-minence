@@ -28,6 +28,11 @@ CORS_ALLOW_CREDENTIALS = True
 
 IP_ADDRESS = getenv("IP_ADDRESS")
 
+SECURE_SSL_REDIRECT = True  # Redirige automatiquement HTTP vers HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Indique à Django que le proxy utilise HTTPS
+CSRF_COOKIE_SECURE = True  # Les cookies CSRF ne sont envoyés qu'en HTTPS
+SESSION_COOKIE_SECURE = True  # Les cookies de session ne sont envoyés qu'en HTTPS
+
 # === 2. Sécurité ===
 # The secret key is used for cryptographic signing. Keep it secret in production.
 SECRET_KEY = getenv("DJANGO_SECRET_KEY")

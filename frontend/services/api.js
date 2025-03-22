@@ -38,10 +38,13 @@ class Api {
     data = null,
     isFile = false
   ) {
+	console.log(`apiFetch called with:`, { url, auth, method, data, isFile });
     try {
       const fetchUrl = this.makeUrl(url);
       const headers = this.makeHeader(data, auth, method, isFile);
-      const response = await fetch(fetchUrl, headers);
+      console.log(`Fetching: ${fetchUrl}`, headers);
+		const response = await fetch(fetchUrl, headers);
+		console.log("Response received:", response);
 
       // For logout, accept any successful response
       if (url === this.urlAuthDjangoLogout) {

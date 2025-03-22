@@ -194,7 +194,7 @@ async function handleFriendsListClick(event, socketActivate, currentUser, otherU
         otherUser.id = friend.dataset.friendId;
 		otherUser.username = friend.dataset.friendName;
 		console.log("data : " + otherUser.id + "     " + otherUser.username);
-		const response = await api.apiFetch("/chat/is_blocked/?id="+otherUser.id, true, "GET");
+		const response = await api.apiFetch("chat/is_blocked/?id="+otherUser.id, true, "GET");
 		console.log("API RESPONSE = ", response);
 		await displayFriendChat(otherUser.username, response.is_blocked_by_me);
 		if (response.is_blocked_by_me){

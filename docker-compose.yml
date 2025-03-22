@@ -37,8 +37,8 @@ services:
     container_name: redis
     networks:
       - app_network
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
     restart: always
 
   player:
@@ -89,6 +89,7 @@ services:
     container_name: chat
     volumes:
       - ./backend/chat:/usr/src/app # Volume pour synchronisation des fichiers
+      - ./nginx/certs:/etc/nginx/certs:ro # Ajout du volume pour le SSL
     env_file:
       - .env
     environment:
