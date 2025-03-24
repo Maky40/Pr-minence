@@ -1,6 +1,7 @@
 import Component from "../../../utils/Component.js";
 import GameTournoiLobby from "./GameTournoiLobby.js";
 import pong42 from "../../../services/pong42.js";
+import { escapeHTML } from "../../../utils/EscapeHtml.js"
 
 class GameTournoisMode extends Component {
   constructor() {
@@ -173,14 +174,14 @@ class GameTournoisMode extends Component {
 
     this.attachEvent(newButton, "click", async (e) => {
       e.preventDefault();
-
-      if (!newInput.value.trim()) {
+	  let InputValue = escapeHTML(newInput.value.trim());
+      if (!InputValue) {
         newInput.classList.add("is-invalid");
         return;
       }
       try {
         this.setState({ loading: true, error: null });
-        await this.createTournament(newInput.value.trim());
+        await this.createTournament(InputValue);
         newInput.value = "";
         newInput.classList.remove("is-valid");
       } catch (error) {
@@ -241,9 +242,9 @@ class GameTournoisMode extends Component {
                                   <p class="card-text fs-5 my-4 lh-lg">Prêt à écraser la concurrence ? Lance un défi et montre à tes potes qui est le boss du pong !</p>
                               </div>
                               <div class="form-group">
-                                  <input type="text" 
-                                        class="form-control form-control-lg" 
-                                        placeholder="Nom du tournoi *" 
+                                  <input type="text"
+                                        class="form-control form-control-lg"
+                                        placeholder="Nom du tournoi *"
                                         required
                                         id="tournamentName"
                                         aria-describedby="tournamentNameHelp">
@@ -288,7 +289,7 @@ class GameTournoisMode extends Component {
                                                         <tr>
                                                             <td class="fs-5 py-4">${tournament.name}</td>
                                                             <td class="text-end">
-                                                                <button class="btn btn-primary btn-lg px-4" 
+                                                                <button class="btn btn-primary btn-lg px-4"
                                                                         data-tournament-id="${tournament.id}">
                                                                     Rejoindre
                                                                 </button>

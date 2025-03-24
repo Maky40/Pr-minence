@@ -3,6 +3,7 @@ import DuelModeHost from "../DuelMode/DuelModeHost.js";
 import DuelModeGuest from "../DuelMode/DuelModeGuest.js";
 import pong42 from "/services/pong42.js";
 import { changePage } from "../../utils/Page.js";
+import { escapeHTML } from "../../utils/EscapeHtml.js"
 
 class GameDuelMode extends Component {
   constructor() {
@@ -19,7 +20,8 @@ class GameDuelMode extends Component {
       duelModeHost.render(this.container);
     }
     if (mode === "joinGame") {
-      const match_id = document.getElementById("matchCode").value;
+      let match_id = document.getElementById("matchCode").value;
+	  match_id = escapeHTML(match_id);
       if (match_id) {
         const duelModeGuest = new DuelModeGuest(match_id);
         duelModeGuest.render(this.container);

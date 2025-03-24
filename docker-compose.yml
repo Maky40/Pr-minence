@@ -47,12 +47,14 @@ services:
     container_name: player
     volumes:
       - ./backend/player/media:/usr/src/app/media # Volume pour synchronisation des fichiers
+      - ./backend/player/api/static:/usr/src/app/static # Volume pour les fichiers statiques
+      - ./nginx/certs:/etc/nginx/certs:ro
     env_file:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=api.settings
     ports:
-      - "8000:8000"
+      - "8010:8010"
     depends_on:
       db:
         condition: service_healthy
@@ -68,6 +70,7 @@ services:
     container_name: authentication
     volumes:
       - ./backend/authentication:/usr/src/app # Volume pour synchronisation des fichiers
+      - ./nginx/certs:/etc/nginx/certs:ro
     env_file:
       - .env
     environment:
@@ -112,6 +115,7 @@ services:
     container_name: pong
     volumes:
       - ./backend/pong:/usr/src/app # Volume pour synchronisation des fichiers
+      - ./nginx/certs:/etc/nginx/certs:ro
     env_file:
       - .env
     environment:
@@ -133,6 +137,7 @@ services:
     container_name: tournament
     volumes:
       - ./backend/tournament:/usr/src/app # Volume pour synchronisation des fichiers
+      - ./nginx/certs:/etc/nginx/certs:ro
     env_file:
       - .env
     environment:

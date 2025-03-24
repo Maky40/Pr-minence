@@ -20,7 +20,4 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8004
 
 # Commande par défaut pour démarrer Django après les migrations
-CMD ["sh", "-c", "daphne -b 0.0.0.0 -p 8004 api.asgi:application"]
-
-
-
+CMD ["sh", "-c", "daphne -e ssl:8004:privateKey=/etc/nginx/certs/server.key:certKey=/etc/nginx/certs/server.crt -b 0.0.0.0 api.asgi:application"]

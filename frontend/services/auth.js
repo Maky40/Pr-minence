@@ -38,7 +38,7 @@ class Auth {
       if (data.status === 200) {
         this.setSession(data);
       } else {
-        console.error("No user found in API");
+        console.warn("No user found in API");
       }
     } catch (error) {
       this.authenticated = false;
@@ -162,7 +162,6 @@ class Auth {
 
   logoutAndNotify() {
 	try {
-		console.log("JE SUIS DANS LOGOUTANDNOTIFYYYYYYYYYYYYYYYYYYYYYYY")
 		this.authenticated = false;
 		this.user = null;
 		const toast = new Toast("Success", "Déconnexion réussie", "success");
