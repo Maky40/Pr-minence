@@ -30,6 +30,7 @@ urlpatterns = [
     path('search-players/', views.PlayerSearch.as_view(), name='playerSearchView'),
     path('matches/', views.get_player_matches, name='get-player-matches'),
     path('tournaments/', views.get_player_tournaments, name='get-player-tournaments'),
+    path('match-history/', views.MatchHistoryView.as_view(), name='MatchHistoryView'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
