@@ -1,7 +1,7 @@
 export const routes = {
   home: { template: "home.html" },
   score: { template: "score.html" },
-  chat: { template: "chatBox.html", authRequired: true },
+  chat: { template: "chat.html", authRequired: true },
   connexion: { template: "connexion.html" },
   signup: { template: "signup.html" },
   game: { template: "game.html", authRequired: true },

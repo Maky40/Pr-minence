@@ -170,8 +170,10 @@ class Auth {
 		const toast = new Toast("Success", "Déconnexion réussie", "success");
 		toast.show();
 		this.notifyListeners("logout");
-		changePage("#");
-		changePage("#home");
+		if (pong42.getCurrentPage() === "home")
+			changePage("#");
+		else
+			changePage("#home");
 	} catch (error) {
 		console.error("Logout error:", error);
 		throw error;

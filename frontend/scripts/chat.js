@@ -7,6 +7,7 @@ import pong42 from "../services/pong42.js";
 import WebSocketAPI from '../services/websocket.js';
 import { ENV } from "../env.js";
 import auth from "../services/auth.js";
+import { changePage } from '../utils/Page.js';
 
 export async function init() {
     console.log("init() called");
@@ -14,8 +15,9 @@ export async function init() {
 	let currentUser = {};
 	let otherUser = {};
 
-	console.log(pong42.player.socketMatch);
-	console.log(document.body.innerHTML);
+	// Verify authentication
+	// if (!pong42.authenticated)
+	// 	changePage("connexion");
 	// Initialize currentUser
 	await initializeCurrentUser(currentUser);
 
