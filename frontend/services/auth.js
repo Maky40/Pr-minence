@@ -38,7 +38,9 @@ class Auth {
       if (data.status === 200) {
         this.setSession(data);
       } else {
-        console.warn("No user found in API");
+		if (this.authenticated)
+			this.notifyListeners("logout");
+        console.error("No user found in API");
       }
     } catch (error) {
       this.authenticated = false;
@@ -162,11 +164,13 @@ class Auth {
 
   logoutAndNotify() {
 	try {
+		console.log("JE SUIS DANS LOGOUTANDNOTIFY------------------------------------------------------")
 		this.authenticated = false;
 		this.user = null;
 		const toast = new Toast("Success", "Déconnexion réussie", "success");
 		toast.show();
 		this.notifyListeners("logout");
+		changePage("#");
 		changePage("#home");
 	} catch (error) {
 		console.error("Logout error:", error);
