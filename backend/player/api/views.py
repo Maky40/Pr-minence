@@ -1,7 +1,7 @@
 from django.utils.decorators import method_decorator
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import PlayerInfoSerializer
+from .serializers import PlayerInfoSerializer, PlayerMatchHistorySerializer
 from .models import Player, Friendship, PlayerMatch, Match
 from .decorators import jwt_cookie_required
 from django.conf import settings
@@ -102,7 +102,7 @@ class PlayerInfo(APIView):
                 if not first_name or len(first_name) > 20 :
                     return Response({
                         "status": 400,
-                        "message": "Invali first name",
+                        "message": "Invalid first name",
                     })
                 player.first_name = first_name
                 changed = True
@@ -240,19 +240,15 @@ class PlayerAvatarUpload(APIView):
             extension = file.name.split('.')[-1].lower()
             filename = f"{uuid.uuid4().hex}.{extension}"
 
-            # ✅ Création automatique des dossiers `media/` et `avatars/` si nécessaire
             media_path = settings.MEDIA_ROOT
             avatars_path = os.path.join(media_path, "avatars")
             os.makedirs(avatars_path, exist_ok=True)  # Création des dossiers
 
-            # ✅ Écriture manuelle du fichier
             absolute_path = os.path.join(avatars_path, filename)
             with open(absolute_path, "wb") as f:
                 f.write(buffer.getvalue())
 
-            # ✅ Correction de l'URL publique pour correspondre à Nginx
             file_url = f"{settings.PUBLIC_PLAYER_URL}{settings.MEDIA_URL}avatars/{filename}"
-            print(f"✅ URL publique générée : {file_url}")
 
             # Mise à jour du joueur
             player = Player.objects.get(id=id)
@@ -420,33 +416,26 @@ class ChangePasswordView(APIView):
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
-            # 1️⃣ Récupérer l'utilisateur authentifié via le token JWT
             user_id = request.decoded_token['id']
             player = Player.objects.get(id=user_id)
 
-            # 2️⃣ Extraire les données de la requête
             data = request.data
             current_password = data.get('current_password')
             new_password = data.get('new_password')
             confirm_password = data.get('confirm_password')
 
-            # 3️⃣ Vérifier que tous les champs sont fournis
             if not current_password or not new_password or not confirm_password:
                 return Response({"status": 400, "message": "Tous les champs sont requis."}, status=400)
 
-            # 4️⃣ Vérifier que le mot de passe actuel est correct
             if not check_password(current_password, player.password):
                 return Response({"status": 400, "message": "Mot de passe actuel incorrect."}, status=400)
 
-            # 5️⃣ Vérifier que le nouveau mot de passe et la confirmation sont identiques
             if new_password != confirm_password:
                 return Response({"status": 400, "message": "Les nouveaux mots de passe ne correspondent pas."}, status=400)
 
-            # 6️⃣ Vérifier la force du mot de passe (optionnel mais recommandé)
             if len(new_password) < 8:
                 return Response({"status": 400, "message": "Le mot de passe doit contenir au moins 8 caractères."}, status=400)
 
-            # 7️⃣ Modifier le mot de passe et sauvegarder
             player.set_password(new_password)
             player.save()
 
@@ -478,13 +467,11 @@ def get_player_matches(request):
     # Récupérer tous les PlayerMatch pour ce joueur, en préchargeant le match
     player_matches = PlayerMatch.objects.filter(player=player).select_related('match')
 
-    # Construire la liste des matchs
     matches_info = []
     has_unplayed = False
 
     for pm in player_matches:
         match_obj = pm.match
-        # Vérifie si ce match est unplayed
         if match_obj.state == 'UPL':
             has_unplayed = True
 
@@ -545,3 +532,18 @@ def get_player_tournaments(request):
         "has_active_tournament": has_active_tournament,
         "tournaments": tournaments_info
     }, status=status.HTTP_200_OK)
+
+class MatchHistoryView(APIView):
+    @method_decorator(jwt_cookie_required)
+    def get(self, request):
+        player_id = request.decoded_token['id']
+
+        # Récupérer tous les matchs PLY auxquels le joueur a participé
+        player_matches = PlayerMatch.objects.filter(
+            player__id=player_id,
+            match__state='PLY'
+        ).select_related('match').order_by('-match__created')
+
+        matches = [pm.match for pm in player_matches]
+        serializer = PlayerMatchHistorySerializer(matches, many=True)
+        return Response({"statusCode": 200, "matches": serializer.data})
