@@ -1,5 +1,7 @@
 import Component from "../utils/Component.js";
 import ProfileView from "./Profile/ProfileView.js";
+import ProfileStatsFriend from "./Profile/ProfileStatsFriend.js";
+import api from "../services/api.js"
 
 export default class ModalProfile extends Component {
 	constructor(profile) {
@@ -8,8 +10,14 @@ export default class ModalProfile extends Component {
 		if (!profile) {
 			throw new Error("Profil non défini !");
 		}
-
-		this.state = { profile };
+		console.log("////////////PROFILE///////////////", profile);
+		this.state = {
+			profile,
+			victories: 0,
+			defeats: 0,
+			lastTwoMatches: []
+		 };
+		// this.setStats();
 		this.modalContainer = document.createElement("div");
 	}
 
@@ -25,6 +33,9 @@ export default class ModalProfile extends Component {
 						<div class="modal-body" id="profileContainer">
 							<!-- ProfileView sera inséré ici -->
 						</div>
+						<div class="modal-body" id="profileStatsFriendContainer">
+							<!-- ProfileStatsFriend sera inséré ici -->
+						</div>
 						<div class="modal-footer">
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
 						</div>
@@ -34,7 +45,33 @@ export default class ModalProfile extends Component {
 		`;
 	}
 
-	render(container) {
+	async setStats() {
+		const data = await api.apiFetch("player/match-history/", true, "GET")
+		console.log("---------------DATA : ",data);
+		const opponentId = this.state.profile.id;
+		const matchesBetween = data.matches.filter(match => match.players.some(p => p.player_id === opponentId));
+		console.log("Matches between the two players: ", matchesBetween);
+		let victories = 0;
+		let defeats = 0;
+		matchesBetween.forEach(match => {
+			const myStats = match.players.find(p => p.player_id === opponentId);
+			if (myStats.is_winner)
+				defeats++;
+			else
+				victories++;
+		})
+		// Garder les deux derniers matchs (tri par date)
+		const lastTwoMatches = matchesBetween
+		.sort((a, b) => new Date(b.created) - new Date(a.created))
+		.slice(0, 2);
+		console.log("Derniers matchs : ", lastTwoMatches);
+
+		// Met à jour l'état dans ModalProfile
+		this.setState({ victories, defeats, lastTwoMatches });
+		console.log("--------------stats : ", victories, defeats, lastTwoMatches);
+		console.log("--------------stats : ", this.state.victories, this.state.defeats, this.state.lastTwoMatches, this.state.profile.id);
+	}
+	async render(container) {
 		// Vérifie si le modal existe déjà pour éviter les doublons
 		if (document.getElementById("profileModal")) {
 			return;
@@ -47,6 +84,11 @@ export default class ModalProfile extends Component {
 		const profileView = new ProfileView();
 		profileView.setState(this.state.profile);
 		profileView.render(this.modalContainer.querySelector("#profileContainer"));
+
+		// Création et rendu du ProfileStatsFriend dans le modal
+		await this.setStats();
+		const profileStatsFriend = new ProfileStatsFriend(this.state.victories, this.state.defeats, this.state.lastTwoMatches, this.state.profile.id);
+		profileStatsFriend.render(this.modalContainer.querySelector("#profileStatsFriendContainer"));
 
 		this.container = this.modalContainer;
 		this.attachEventListeners();

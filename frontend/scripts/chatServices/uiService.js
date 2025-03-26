@@ -220,10 +220,10 @@ export async function displayFriendChat(friendName, blocked) {
 	else {
 		unblockedElements();
 	}
-	friendFrontName.addEventListener("click", () => {
+	friendFrontName.addEventListener("click", async () => {
 		const profile = response.players[0];
 		const modal = new ModalProfile(profile);
-		modal.render(document.body);
+		await modal.render(document.body);
 		modal.show();
 	});
 }
