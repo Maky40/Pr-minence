@@ -9,8 +9,6 @@ class ProfileStatsFriend extends Component {
 			lastTwoMatches,
 			opponent_id,
 		};
-		console.log("Opponent ID:", this.state.opponent_id);
-
 	}
 
 	template() {

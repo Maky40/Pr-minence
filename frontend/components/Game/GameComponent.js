@@ -44,9 +44,26 @@ class GameComponent extends Component {
     this.music = new Music();
     this.isCountdownStarted = false;
 
-    // Bind the handleSilence method to ensure the correct context
+    this.handleSilence = this.handleSilence.bind(this);
+	this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleSilence = this.handleSilence.bind(this);
   }
+
+  handleKeyDown(event) {
+    if (event.key in this.gameState.keys) {
+      event.preventDefault();
+      this.gameState.keys[event.key] = true;
+    }
+  }
+
+  handleKeyUp(event) {
+    if (event.key in this.gameState.keys) {
+      event.preventDefault();
+      this.gameState.keys[event.key] = false;
+    }
+  }
+
 
   initializeGameObjects() {
     const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
@@ -150,19 +167,13 @@ class GameComponent extends Component {
   }
 
   setupEventListeners() {
-    document.addEventListener("keydown", (event) => {
-      if (event.key in this.gameState.keys) {
-        event.preventDefault();
-        this.gameState.keys[event.key] = true;
-      }
-    });
+    // Remove previous listeners first (if any)
+    document.removeEventListener("keydown", this.handleKeyDown);
+    document.removeEventListener("keyup", this.handleKeyUp);
 
-    document.addEventListener("keyup", (event) => {
-      if (event.key in this.gameState.keys) {
-        event.preventDefault();
-        this.gameState.keys[event.key] = false;
-      }
-    });
+    // Add new listeners
+    document.addEventListener("keydown", this.handleKeyDown);
+    document.addEventListener("keyup", this.handleKeyUp);
 
     const btnLeaveGame = document.getElementById("btnLeaveGame");
     if (btnLeaveGame) {
@@ -178,8 +189,8 @@ class GameComponent extends Component {
 
     const btnSilence = document.getElementById("btnSilence");
     if (btnSilence) {
-      btnSilence.removeEventListener("click", this.handleSilence); // Remove any existing listener
-      btnSilence.addEventListener("click", this.handleSilence); // Add the new listener
+      btnSilence.removeEventListener("click", this.handleSilence);
+      btnSilence.addEventListener("click", this.handleSilence);
     }
   }
 
@@ -299,6 +310,8 @@ class GameComponent extends Component {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
+
+    // Correctly remove the event listeners
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
 
