@@ -4,8 +4,6 @@ import api from "../../services/api.js";
 import GameComponent from "../../components/Game/GameComponent.js";
 import pong42 from"../../services/pong42.js"
 import ModalProfile from "../../components/modal_profile.js";
-import DuelModeGuest from "../../components/DuelMode/DuelModeGuest.js";
-
 
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
@@ -17,7 +15,6 @@ export async function renderFriendRequests(requestsList) {
 	requestsList.innerHTML = ''; // Clear existing requests
 	try {
 		const responseFriendRequests = await api.apiFetch("/player/friendship/?target=invites", true, "GET");
-		console.log(responseFriendRequests);
 		if (responseFriendRequests.friendships.length > 0){
 			responseFriendRequests.friendships.forEach(friendships => {
 				const requestCard = `
@@ -68,7 +65,6 @@ export async function updateFriendsList(friendsList) {
 }
 
 function renderFriendList(friendsList, data, api) {
-	console.log("Donnees recues :", data);
 	if (!data.friendships || data.friendships.length === 0) {
 		return;
 	}
@@ -171,7 +167,6 @@ export function displayInvitation(senderName, senderId, matchId, otherUserId) {
 
 export function displayInvitationRefuse(senderName, senderId, matchId, otherUserId){
 	const newInvitation = document.getElementById(`invitation-${matchId}`);
-	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
 	if (window.inviteForPlay) {
         window.inviteForPlay.closeModalMatchRefused();
     }
@@ -181,7 +176,6 @@ export function displayInvitationRefuse(senderName, senderId, matchId, otherUser
 
 export function displayInvitationCanceled(senderName, senderId, matchId, otherUserId){
 	const newInvitation = document.getElementById(`invitation-${matchId}`);
-	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
 	newInvitation.textContent = "Invitation annulee";
 	newInvitation.style.color = "orange";
 }
@@ -194,39 +188,62 @@ export async function displayInvitationAccept(senderName, senderId, matchId, oth
 	if (window.inviteForPlay) {
         window.inviteForPlay.closeModalMatchAccepted();
     }
-	console.log(`Sender ID : ${senderId} , otherUserId : ${otherUserId}`)
 	pong42.player.game = true;
 	const game = new GameComponent();
 	game.render(chatContainer);
 }
 
 export async function displayFriendChat(friendName, blocked) {
-	const messToHide = document.getElementById("message-select");
-	const userInfos = document.getElementById("user-informations");
-	const friendAvatar = document.getElementById("chat-friend-avatar");
-	const friendFrontName = document.getElementById("chat-friend-name");
-	const inputSendMess = document.getElementById("input-send-mess");
-	const chatBox = document.getElementById("chat-box");
+    const messToHide = document.getElementById("message-select");
+    const userInfos = document.getElementById("user-informations");
+    const friendAvatar = document.getElementById("chat-friend-avatar");
+    const friendFrontName = document.getElementById("chat-friend-name");
+    const inputSendMess = document.getElementById("input-send-mess");
+    const chatBox = document.getElementById("chat-box");
 
-	messToHide.classList.add("d-none");
-	chatBox.innerHTML = "";
-	const response = await api.apiFetch("/player/?username=" + friendName, true, "GET")
-	friendFrontName.textContent = friendName;
-	friendAvatar.src = response.players[0].avatar;
-	userInfos.classList.remove("d-none");
-	inputSendMess.style.display = "flex";
-	if (blocked)
-		blockedElements();
-	else {
-		unblockedElements();
-	}
-	friendFrontName.addEventListener("click", async () => {
-		const profile = response.players[0];
-		const modal = new ModalProfile(profile);
-		await modal.render(document.body);
-		modal.show();
-	});
+    try {
+        // Supprimer les anciens écouteurs si présents --> mandatory sinon le modal du profil ne se mettra pas a jour (les evenements s'empilent)
+        friendFrontName.replaceWith(friendFrontName.cloneNode(true));
+        const updatedFriendFrontName = document.getElementById("chat-friend-name");
+
+        messToHide.classList.add("d-none");
+        chatBox.innerHTML = "";
+
+        // Appel API pour récupérer les infos de l'ami
+        const response = await api.apiFetch("/player/?username=" + friendName, true, "GET");
+        if (!response || !response.players || response.players.length === 0) {
+            throw new Error(`Aucun joueur trouvé avec le nom : ${friendName}`);
+        }
+
+        const profile = response.players[0];
+
+        // Mise à jour de l'UI avec les nouvelles infos
+        updatedFriendFrontName.textContent = friendName;
+        friendAvatar.src = profile.avatar;
+        userInfos.classList.remove("d-none");
+        inputSendMess.style.display = "flex";
+
+        // Gestion du blocage ou non
+        if (blocked) blockedElements();
+        else unblockedElements();
+
+        // Ajout de l'écouteur pour afficher le profil
+        updatedFriendFrontName.addEventListener("click", async () => {
+            try {
+                const modal = new ModalProfile(profile);
+                await modal.render(document.body);
+                modal.show();
+            } catch (err) {
+                console.error("❌ Erreur lors de l'affichage du modal :", err);
+                alert(`Erreur lors de l'affichage du modal de ${friendName}`);
+            }
+        });
+    } catch (err) {
+        console.error("❌ Erreur dans displayFriendChat :", err);
+        alert(`Une erreur est survenue : ${err.message}`);
+    }
 }
+
 
 export function blockedElements() {
 	const blockFriendButton = document.getElementById("block-friend");

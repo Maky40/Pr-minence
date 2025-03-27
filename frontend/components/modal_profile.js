@@ -10,14 +10,13 @@ export default class ModalProfile extends Component {
 		if (!profile) {
 			throw new Error("Profil non défini !");
 		}
-		console.log("////////////PROFILE///////////////", profile);
 		this.state = {
 			profile,
 			victories: 0,
 			defeats: 0,
 			lastTwoMatches: []
 		 };
-		// this.setStats();
+		 this.state.profile.email = null;
 		this.modalContainer = document.createElement("div");
 	}
 
@@ -47,10 +46,8 @@ export default class ModalProfile extends Component {
 
 	async setStats() {
 		const data = await api.apiFetch("player/match-history/", true, "GET")
-		console.log("---------------DATA : ",data);
 		const opponentId = this.state.profile.id;
 		const matchesBetween = data.matches.filter(match => match.players.some(p => p.player_id === opponentId));
-		console.log("Matches between the two players: ", matchesBetween);
 		let victories = 0;
 		let defeats = 0;
 		matchesBetween.forEach(match => {
@@ -68,8 +65,6 @@ export default class ModalProfile extends Component {
 
 		// Met à jour l'état dans ModalProfile
 		this.setState({ victories, defeats, lastTwoMatches });
-		console.log("--------------stats : ", victories, defeats, lastTwoMatches);
-		console.log("--------------stats : ", this.state.victories, this.state.defeats, this.state.lastTwoMatches, this.state.profile.id);
 	}
 	async render(container) {
 		// Vérifie si le modal existe déjà pour éviter les doublons

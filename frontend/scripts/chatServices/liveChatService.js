@@ -32,27 +32,18 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
   socketActivate.socket.onmessage = (event) => {
         try {
 			const data = JSON.parse(event.data);
-			console.log("Message reçu : ", data);  // Ajoute un log pour voir ce qui est reçu
 			if (data.type === "chat_message")
 				displayMessage(data.senderName, data.senderId, data.message, otherUserId);
 			else if (data.message === "invitation")
 			{
-				console.log("JE SUIS DANS INVITATION");
-				console.log("VOICI LE BODY : ", data.message);
 				displayInvitation(data.senderName, data.senderId, data.matchId, otherUserId);
 			}
 			else if (data.message === "refuse"){
-				console.log("JE SUIS DANS REFUSE");
-				console.log("VOICI LE BODY : ", data.message);
 				displayInvitationRefuse(data.senderName, data.senderId, data.matchId, otherUserId);}
 			else if (data.message === "annuler") {
-				console.log("JE SUIS DANS ANNULER");
-				console.log("VOICI LE BODY : ", data.message);
 				displayInvitationCanceled(data.senderName, data.senderId, data.matchId, otherUserId);
 			}
 			else{
-				console.log("JE SUIS DANS ACCEPT");
-				console.log("VOICI LE BODY : ", data.message);
 				displayInvitationAccept(data.senderName, data.senderId, data.matchId, otherUserId);
 			}
 		} catch (error) {
@@ -103,7 +94,6 @@ export async function inviteForPlay(socketActivate, currentUser) {
 		message: "invitation",
 		matchId: id_match,
 	};
-	console.log("PAYLOAD :", payload);
 	const ws = new WebSocketAPI(`${ENV.WS_URL_GAME}${id_match}/`);
 	pong42.player.match_id = id_match;
 	pong42.player.paddle = "left";

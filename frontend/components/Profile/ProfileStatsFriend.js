@@ -19,7 +19,7 @@ class ProfileStatsFriend extends Component {
 			<div class="col-12 mb-4">
 				<div class="card shadow-sm">
 					<div class="card-header">
-						<h4 class="card-title mb-0 text-center">Historique de matchs contre ton ami</h4>
+						<h4 class="card-title mb-0 text-center">Historique de matchs contre ton kopain</h4>
 					</div>
 					<div class="card-body">
 						<p><strong>Victoires :</strong> ${this.state.victories}</p>

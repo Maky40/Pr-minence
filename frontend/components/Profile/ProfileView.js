@@ -57,9 +57,7 @@ class ProfileView extends Component {
                                     <p class="mb-1"><strong>Nom:</strong> ${
                                       this.state.last_name
                                     }</p>
-                                    <p class="mb-1"><strong>Email:</strong> ${
-                                      this.state.email
-                                    }</p>
+                                    ${this.state.email ? `<p class="mb-1"><strong>Email:</strong> ${this.state.email}</p>` : ''}
                                 </div>
                                 <div class="col-md-6">
                                     <p class="mb-1"><strong>Status:</strong> ${this.getStatusBadge()}</p>
