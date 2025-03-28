@@ -47,13 +47,16 @@ def update_tournament(tournament_id):
                 round=tournament.current_round
             )
 
+            # 🔥 Corrigé : On assigne côté 'L' / 'R'
             PlayerMatch.objects.create(
                 match=tournament_match,
-                player=player1
+                player=player1,
+                player_side='L'
             )
             PlayerMatch.objects.create(
                 match=tournament_match,
-                player=player2
+                player=player2,
+                player_side='R'
             )
 
 class TournamentView(APIView):
@@ -188,6 +191,7 @@ class TournamentView(APIView):
             return Response({"statusCode": 200, "message": "Tournament started with 8 players (Quarter Finals created)"})
 
         return Response({"statusCode": 400, "message": "Wrong Action"})
+
 
 
 

@@ -270,6 +270,8 @@ class PongConsumer(AsyncWebsocketConsumer):
             # Met à jour positions
             await self.update_positions(state)
             await self.check_collisions_and_score(state)
+            if not state["running"]:
+                break
             # Broadcast aux joueurs
             await self.broadcast_game_state(state)
 
