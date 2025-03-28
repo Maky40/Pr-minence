@@ -26,8 +26,8 @@ if [ -z "$SERVER_IP" ]; then
 fi
 
 # Supprimer toute ligne existante contenant 42pong.ddns.net
-sudo sed -i "/$DNS_NAME/d" /etc/hosts
+#sudo sed -i "/$DNS_NAME/d" /etc/hosts
 
 # Ajouter une nouvelle entrée
-echo "$SERVER_IP $DNS_NAME" | sudo tee -a /etc/hosts > /dev/null
-echo "Mise à jour de /etc/hosts avec : $SERVER_IP $DNS_NAME"
+#echo "$SERVER_IP $DNS_NAME" | sudo tee -a /etc/hosts > /dev/null
+#echo "Mise à jour de /etc/hosts avec : $SERVER_IP $DNS_NAME"
