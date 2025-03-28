@@ -37,11 +37,14 @@ def match_exists_view(request, match_id):
     Vérifie si un match avec 'match_id' existe dans la base.
     Renvoie 200 si oui, 404 sinon.
     """
-    if Match.objects.filter(id=match_id).exists():
-        return Response({"detail": "Match exists."}, status=status.HTTP_200_OK)
-    else:
+    try:
+        match = Match.objects.get(id=match_id)
+        return Response({
+            "detail": "Match exists.",
+            "state_code": match.state,          # Renvoie "UPL" ou "PLY"
+        }, status=status.HTTP_200_OK)
+    except Match.DoesNotExist:
         return Response({"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND)
-
 
 
 @api_view(['POST'])
