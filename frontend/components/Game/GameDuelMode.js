@@ -39,8 +39,7 @@ class GameDuelMode extends Component {
 	const matchIdNum = Number(match_id);
 	try {
 		if (Number.isInteger(matchIdNum) && matchIdNum > 0) {
-			const data = await api.apiFetch(`pong/match-exists/${matchIdNum}/`, true, "GET")
-			console.log("dataaaaa---------", data);
+			const data = await api.apiFetch("pong/match-exists/"+matchIdNum+"/", true, "GET")
 			if (data.state_code === "UPL")
 				return true;
 			else
