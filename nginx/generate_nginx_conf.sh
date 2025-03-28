@@ -1,4 +1,6 @@
 #!/bin/bash
+# Informations de votre compte No-IP
+source .env
 
 # Fonction pour obtenir l'adresse IP locale
 get_local_ip() {
@@ -16,8 +18,14 @@ get_local_ip() {
     echo "$SERVER_IP"
 }
 
+if [ -z "$HOSTNAME_noip" ]; then
+    echo "Erreur : La variable HOSTNAME_noip n'est pas définie dans le fichier .env"
+    exit 1
+fi
+
+rm nginx/nginx.conf
+sed "s/%SERVEUR_NAME%/$HOSTNAME_noip/g" nginx/nginx.template.conf > nginx/nginx.conf  
 # Obtenir l'IP actuelle
-DNS_NAME="42pong.ddns.net"
 SERVER_IP=$(get_local_ip)
 
 if [ -z "$SERVER_IP" ]; then
@@ -25,9 +33,14 @@ if [ -z "$SERVER_IP" ]; then
     exit 1
 fi
 
-# Supprimer toute ligne existante contenant 42pong.ddns.net
-#sudo sed -i "/$DNS_NAME/d" /etc/hosts
+# URL de l'API No-IP pour la mise à jour de l'IP
+URL="https://dynupdate.no-ip.com/nic/update?hostname=$HOSTNAME_noip&myip=$SERVER_IP"
 
-# Ajouter une nouvelle entrée
-#echo "$SERVER_IP $DNS_NAME" | sudo tee -a /etc/hosts > /dev/null
-#echo "Mise à jour de /etc/hosts avec : $SERVER_IP $DNS_NAME"
+# Mise à jour de l'adresse IP
+update_ip() {
+    RESPONSE=$(curl -u $USERNAME_noip:$PASSWORD_noip "$URL")
+    echo "Réponse de No-IP : $HOSTNAME_noip"
+}
+
+# Exécution de la mise à jour
+update_ip

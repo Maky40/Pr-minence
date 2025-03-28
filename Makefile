@@ -28,23 +28,23 @@ NOIP_DEB = noip-duc_$(NOIP_VERSION)_$(NOIP_ARCH).deb
 # Fichier de configuration No-IP (à adapter)
 NOIP_CONF = noip.conf
 
-.PHONY: build up start stop restart logs clean create_nginx_conf install_noip configure_noip start_noip
+.PHONY: build up start stop restart logs clean create_nginx_conf
 
 # Cible par défaut (si tu fais simplement "make")
 all: build
 
 # Build Docker images et démarre les conteneurs
-build: create_nginx_conf install_noip configure_noip start_noip
+build: create_nginx_conf
 	@echo "Building Docker images and starting containers..."
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d --build
 
 # Démarre les conteneurs en arrière-plan
-up: create_nginx_conf install_noip configure_noip start_noip
+up: create_nginx_conf
 	@echo "Starting Docker containers..."
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d
 
 # Démarre les conteneurs en mode interactif
-start: create_nginx_conf install_noip configure_noip start_noip
+start: create_nginx_conf
 	@echo "Starting Docker containers in interactive mode..."
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up
 
@@ -72,36 +72,6 @@ create_nginx_conf:
 	@echo "Creating nginx.conf using the script..."
 	@bash $(NGINX_SCRIPT)
 
-# Installation de No-IP DUC dans un répertoire local
-install_noip:
-	@echo "Installing No-IP DUC locally..."
-	@if [ ! -d "$(NOIP_INSTALL_DIR)" ]; then \
-		mkdir -p $(NOIP_INSTALL_DIR); \
-		wget --content-disposition https://www.noip.com/download/linux/latest -O $(NOIP_TARBALL); \
-		tar xf $(NOIP_TARBALL); \
-		cd $(NOIP_FOLDER)/binaries; \
-		dpkg -x $(NOIP_DEB) $(NOIP_INSTALL_DIR); \
-		cd ../..; \
-		rm -rf $(NOIP_FOLDER); \
-		rm -f $(NOIP_TARBALL); \
-	else \
-		echo "No-IP DUC is already installed in $(NOIP_INSTALL_DIR)"; \
-	fi
-
-# Configuration de No-IP (nécessite un fichier noip.conf pré-configuré)
-configure_noip:
-	@echo "Configuring No-IP DUC..."
-	@if [ ! -f "$(NOIP_CONF)" ]; then \
-		echo "Error: $(NOIP_CONF) not found.  Please create it."; \
-		exit 1; \
-	fi
-	@echo "Copying configuration file..."
-	@cp $(NOIP_CONF) $(NOIP_INSTALL_DIR)/etc/no-ip2.conf
-
-# Démarrage de No-IP DUC
-start_noip:
-	@echo "Starting No-IP DUC..."
-	@$(NOIP_BINARY) -c $(NOIP_INSTALL_DIR)/etc/no-ip2.conf
 
 re: fclean
 	@echo "Rebuilding project..."
