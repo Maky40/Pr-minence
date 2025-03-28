@@ -1,4 +1,4 @@
-const API_HOST = "42pong.ddns.net";
+const API_HOST = "42pong.ddns.net:8443";
 
 const ENV = {
   API_URL: `https://${API_HOST}/`,
