@@ -17,7 +17,7 @@ get_local_ip() {
 }
 
 # Obtenir l'IP actuelle
-DNS_NAME="42PONG.local"
+DNS_NAME="42pong.ddns.net"
 SERVER_IP=$(get_local_ip)
 
 if [ -z "$SERVER_IP" ]; then
@@ -25,7 +25,7 @@ if [ -z "$SERVER_IP" ]; then
     exit 1
 fi
 
-# Supprimer toute ligne existante contenant 42PONG.local
+# Supprimer toute ligne existante contenant 42pong.ddns.net
 sudo sed -i "/$DNS_NAME/d" /etc/hosts
 
 # Ajouter une nouvelle entrée
