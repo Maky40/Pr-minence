@@ -6,12 +6,10 @@ from .models import Player, Friendship, PlayerMatch, Match
 from .decorators import jwt_cookie_required
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 import os
 from PIL import Image
 from io import BytesIO
-import urllib.parse
 import uuid
 from django.core.exceptions import ValidationError
 import pyotp
@@ -26,6 +24,7 @@ from .models import Player, PlayerMatch
 import json
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+import re
 
 
 class PlayerSearch(APIView):
@@ -55,12 +54,20 @@ class PlayerSearch(APIView):
                 "message": str(e)
             }, status=500)
 
+import re
+from django.utils.decorators import method_decorator
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import Player
+from .serializers import PlayerInfoSerializer
+from .decorators import jwt_cookie_required
+
 class PlayerInfo(APIView):
 
     @method_decorator(jwt_cookie_required)
     def get(self, request):
         try:
-            # Recuperer les donnees d'un autre utilisateur a l'aide de son username
+            # Récupérer les données d'un autre utilisateur à l'aide de son username
             username = request.query_params.get('username')
             if username:
                 player = Player.objects.filter(username=username)
@@ -72,13 +79,15 @@ class PlayerInfo(APIView):
                     "players": serializer.data,
                     "message": "User found successfully"
                 })
-            # Si pas d'username fournit, recuperer les donnees personnelles de l'utilisateur connecte pour afficher son profil personnel
+
+            # Sinon, récupérer les données personnelles de l'utilisateur connecté
             player = Player.objects.get(id=request.decoded_token['id'])
             serializer = PlayerInfoSerializer(player)
             return Response({
                 "status": 200,
                 "player": serializer.data
             })
+
         except Player.DoesNotExist:
             return Response({
                 "status": 404,
@@ -97,30 +106,44 @@ class PlayerInfo(APIView):
             id = request.decoded_token['id']
             player_data = request.data.get('player')
             player = Player.objects.get(id=id)
+
             if "first_name" in player_data:
-                first_name = ' '.join(player_data['first_name'].split())
-                if not first_name or len(first_name) > 20 :
-                    return Response({
-                        "status": 400,
-                        "message": "Invalid first name",
-                    })
+                first_name_raw = player_data['first_name']
+                if not isinstance(first_name_raw, str):
+                    return Response({"status": 400, "message": "First name must be a string."})
+
+                first_name = ' '.join(first_name_raw.strip().split())
+                if len(first_name) == 0 or len(first_name) > 50:
+                    return Response({"status": 400, "message": "Invalid first name"})
+
+                if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", first_name):
+                    return Response({"status": 400, "message": "First name contains invalid characters."})
+
                 player.first_name = first_name
                 changed = True
+
             if "last_name" in player_data:
-                last_name = ' '.join(player_data['last_name'].split())
-                if not last_name or len(last_name) > 20 :
-                    return Response({
-                        "status": 400,
-                        "message": "Invalid last name",
-                    })
+                last_name_raw = player_data['last_name']
+                if not isinstance(last_name_raw, str):
+                    return Response({"status": 400, "message": "Last name must be a string."})
+
+                last_name = ' '.join(last_name_raw.strip().split())
+                if len(last_name) == 0 or len(last_name) > 50:
+                    return Response({"status": 400, "message": "Invalid last name"})
+
+                if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", last_name):
+                    return Response({"status": 400, "message": "Last name contains invalid characters."})
+
                 player.last_name = last_name
                 changed = True
+
             player.save()
             message = "User updated successfully" if changed else "No changes detected"
             return Response({
                 "status": 200,
                 "message": message,
             })
+
         except Player.DoesNotExist:
             return Response({
                 "status": 404,
@@ -131,6 +154,7 @@ class PlayerInfo(APIView):
                 "status": 500,
                 "message": str(e),
             })
+
 
 
 class TwoFactorActivation(APIView):
@@ -413,6 +437,7 @@ class ChangePasswordView(APIView):
     """
     Vue permettant à un utilisateur de changer son mot de passe.
     """
+
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
@@ -435,6 +460,9 @@ class ChangePasswordView(APIView):
 
             if len(new_password) < 8:
                 return Response({"status": 400, "message": "Le mot de passe doit contenir au moins 8 caractères."}, status=400)
+
+            if len(new_password) > 100:
+                return Response({"status": 400, "message": "Le mot de passe ne doit pas dépasser 100 caractères."}, status=400)
 
             player.set_password(new_password)
             player.save()
