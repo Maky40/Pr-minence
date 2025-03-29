@@ -1,6 +1,7 @@
 import pong42 from "../../services/pong42.js";
 import Component from "../../utils/Component.js";
 import AlertInfo from "../alertInfo.js";
+import { validateField } from "../../utils/Form.js";
 
 class ProfileEdit extends Component {
   template() {
@@ -37,7 +38,8 @@ class ProfileEdit extends Component {
                                             <input type="text" class="form-control" id="first_name" name="first_name" 
                                                 value="${
                                                   this.state.first_name || ""
-                                                }">
+                                                }" minlength="4"
+                                                  maxlength="20">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -46,10 +48,12 @@ class ProfileEdit extends Component {
                                             <input type="text" class="form-control" id="last_name" name="last_name" 
                                                 value="${
                                                   this.state.last_name || ""
-                                                }">
+                                                }" minlength="4"
+                                                  maxlength="20">
                                         </div>
                                     </div>
                                 </div>
+                                <div id="errorMessages" class="error-messages"></div>
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">Sauvegarder</button>
                                     <button type="button" id="cancelButton" class="btn btn-outline-secondary">Annuler</button>
@@ -118,14 +122,42 @@ class ProfileEdit extends Component {
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
+      let formIsValid = true; // Suivi de la validité du formulaire
+      const errors = []; // Tableau pour collecter les messages d'erreur
       const formData = new FormData(form);
-      await pong42.player.updatePlayerInformations(formData);
-      this.emit("save", pong42.player);
+      const check_first_name = validateField(formData.get("first_name"),"text", 4, 100)
+      if (!check_first_name.isValid)
+      {
+        formIsValid = false;
+        errors.push(check_first_name.message);
+      }
+      const check_last_name = validateField(formData.get("last_name"),"text", 4, 100)
+      if (!check_last_name.isValid)
+      {
+        formIsValid = false;
+        errors.push(check_first_name.message);
+      }
+
+      if (formIsValid)
+      {
+        await pong42.player.updatePlayerInformations(formData);
+        this.emit("save", pong42.player);
+      }
+      else
+        {
+          this.displayErrors(errors);
+        }
     });
 
     cancelButton?.addEventListener("click", () => {
       this.emit("cancel");
     });
+  }
+
+  displayErrors(errors) {
+    const errorDiv = document.getElementById('errorMessages');
+    errorDiv.innerHTML = errors.join('<br>'); // Affiche toutes les erreurs séparées par une nouvelle ligne
+    errorDiv.style.display = 'block'; // Affiche le div d'erreur
   }
 }
 

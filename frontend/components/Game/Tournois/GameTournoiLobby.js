@@ -5,6 +5,7 @@ import Toast from "../../toast.js";
 import GameTournoiLobbyTab from "./GameTournoiLobbyTab.js";
 import { getPlayerFromList, getMatchInfo } from "./GameTournoiLib.js";
 import GameTournoiWaiting from "./GameTournoiWaiting.js";
+import auth from "../../../services/auth.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
@@ -24,12 +25,16 @@ class GameTournoiLobby extends Component {
       "tournamentLeft",
       () => {
         this.setState({ loading: true });
-        if (!this.playerLeave) {
-          new Toast("Tournoi annulé", this.leaveMsg(), "info").show();
-        }
         this.leaveTimeout = setTimeout(() => {
+          if(!auth.authenticated)
+          {   
+            this.setState({ loading: false });
+            this.destroy();
+            return;
+          }
           pong42.player.checkUnplayedAndActiveTournament();
           this.setState({ loading: false });
+          console.log("go to gam")
           changePage("game");
           this.destroy();
         }, 100);
@@ -40,19 +45,6 @@ class GameTournoiLobby extends Component {
     });
     this.cleanupFunctions.push(cleanupTournamentLeft);
     this.cleanupFunctions.push(cleanupUpdate);
-  }
-
-  leaveMsg() {
-    // Vérifier si tournament est défini avant d'accéder à ses propriétés
-    if (!this.state.tournament || !this.state.tournament.creator) {
-      return "Vous avez quitté le tournoi";
-    }
-
-    if (this.state.tournament.creator) {
-      return "Le tournoi a été annulé par le créateur";
-    } else {
-      return "Vous avez quitté le tournoi";
-    }
   }
 
   async afterRender() {
@@ -104,6 +96,7 @@ class GameTournoiLobby extends Component {
       playerInfo
     );
     gameTournoiWaiting.render(this.container);
+    pong42.player.tournament.stopStatusCheckInterval();
     this.destroy();
   }
 

@@ -33,7 +33,6 @@ class Auth {
 
   async initFromAPI() {
     try {
-		console.log("INIT API");
       const data = await api.apiFetch("/player/", true);
       if (data.status === 200) {
         this.setSession(data);
@@ -153,6 +152,8 @@ class Auth {
   async logout() {
     try {
       const response = await api.apiFetch(this.urlauthdjangologout, true);
+      pong42.player.tournament.stopStatusCheckInterval();
+      pong42.player.tournament.destroy();
 	if (this.authenticated == true){
 		this.logoutAndNotify()}
       this.cleanupWebSockets();
@@ -165,7 +166,7 @@ class Auth {
   logoutAndNotify() {
 	try {
 		console.log("JE SUIS DANS LOGOUTANDNOTIFY------------------------------------------------------")
-		this.authenticated = false;
+    this.authenticated = false;
 		this.user = null;
 		const toast = new Toast("Success", "Déconnexion réussie", "success");
 		toast.show();

@@ -2,6 +2,7 @@ import Button42 from "../components/42button.js";
 import auth from "../services/auth.js";
 import pong42 from "../services/pong42.js";
 import AlertInfo from "../components/alertInfo.js";
+import { validateField } from "../../utils/Form.js";
 
 const UIinit = () => {
   //clean le ui avant de le recharger
@@ -34,16 +35,41 @@ const loginFormHandler = async () => {
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     loading(true);
+    let formIsValid = true; // Suivi de la validité du formulaire
+    const errors = [];
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
-
-    try {
-      await auth.login(username, password);
-    } catch (error) {
-      showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
-    } finally {
-      loading(false);
-    }
+    console.log(username)
+    const check_mail = validateField("email",username, 4, 100)
+    console.log(check_mail)
+      if (!check_mail.isValid)
+      {
+        formIsValid = false;
+        errors.push(check_mail.message);
+      }
+      const check_pass = validateField("text",password, 4, 100)
+      if (!check_pass.isValid)
+      {
+        formIsValid = false;
+        errors.push(check_pass.message);
+      }
+      if(!formIsValid)
+      {
+        showErrorMessage(errors.join('<br>'))
+        loading(false);
+        return
+      }
+      else
+      {
+        console.log(formIsValid);
+        try {
+          await auth.login(username, password);
+        } catch (error) {
+          showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
+        } finally {
+          loading(false);
+        }
+      }
   });
 };
 

@@ -141,6 +141,7 @@ class GameTournoisMode extends Component {
         this.setState({ loading: true });
         await pong42.player.tournament.getTournaments();
         if (pong42.player.tournament.tournamentId) this.goToLobby();
+        this.showNoTournament();
       } catch (error) {
         console.error("Failed to load tournaments:", error);
         this.setState({
@@ -150,7 +151,6 @@ class GameTournoisMode extends Component {
         });
       }
     }
-    this.setupFormHandlers();
   }
 
   setupFormHandlers() {
@@ -196,6 +196,7 @@ class GameTournoisMode extends Component {
       try {
         this.setState({ loading: true, error: null });
         await pong42.player.tournament.getTournaments();
+        this.showNoTournament();
       } catch (error) {
         console.error("Failed to load tournaments:", error);
         this.setState({
@@ -220,6 +221,24 @@ class GameTournoisMode extends Component {
       clearInterval(this.interval);
     }
     super.destroy();
+  }
+
+  showNoTournament() {
+    const noTourElement = document.getElementById("noTour");
+    if (this.state.tournaments.length === 1 && this.state.tournaments[0].players_count === 8)
+    {
+    if (noTourElement) {
+        noTourElement.innerHTML = `
+          <tr>
+            <td colspan="2" class="text-center py-4">
+              Aucun tournoi disponible pour le moment
+            </td>
+          </tr>
+        `;
+    } else {
+        console.error("Element with ID 'noTour' not found in the DOM.");
+    }
+  }
   }
 
   template() {
@@ -247,7 +266,9 @@ class GameTournoisMode extends Component {
                                         placeholder="Nom du tournoi *"
                                         required
                                         id="tournamentName"
-                                        aria-describedby="tournamentNameHelp">
+                                        aria-describedby="tournamentNameHelp"
+                                        minlength="3"
+                                        maxlength="100">
                                   <div class="invalid-feedback">
                                       Veuillez entrer un nom pour le tournoi
                                   </div>
@@ -282,30 +303,30 @@ class GameTournoisMode extends Component {
                                                         <span class="visually-hidden">Loading...</span>
                                                     </div>
                                                 </td></tr>`
-                                              : tournaments.length
-                                              ? tournaments
-                                                  .map(
-                                                    (tournament) => `
-                                                        <tr>
-                                                            <td class="fs-5 py-4">${tournament.name}</td>
-                                                            <td class="text-end">
-                                                                <button class="btn btn-primary btn-lg px-4"
-                                                                        data-tournament-id="${tournament.id}">
-                                                                    Rejoindre
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    `
+                                              : 
+                                               tournaments
+                                                  .map((tournament) =>
+                                                    tournament.tournamentPlayers_count < 8
+                                                      ? `
+                                                          <tr>
+                                                              <td class="fs-5 py-4">${tournament.name}</td>
+                                                              <td class="text-end">
+                                                                  <button class="btn btn-primary btn-lg px-4"
+                                                                          data-tournament-id="${tournament.id}">
+                                                                      Rejoindre
+                                                                  </button>
+                                                              </td>
+                                                          </tr>
+                                                      `
+                                                      : null
                                                   )
+                                                  .filter(Boolean) // Remove null values from the array
                                                   .join("")
-                                              : `<tr>
-                                                        <td colspan="2" class="text-center py-4">
-                                                            Aucun tournoi disponible pour le moment
-                                                        </td>
-                                                    </tr>`
                                           }
                                           </tbody>
                                       </table>
+                                      <div id='noTour'>
+                                      </div>
                                       ${
                                         this.state.error
                                           ? `<div class="alert alert-danger mt-3" role="alert">

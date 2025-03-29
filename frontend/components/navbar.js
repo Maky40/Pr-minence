@@ -6,13 +6,10 @@ import pong42 from "../services/pong42.js";
 export default class Navbar extends Component {
   initListeners() {
     auth.addListener((event) => {
-		console.log("///////////////////EVENT NAVBAR///////////////////")
 		if (event === "logout") {
-			console.log("AUTHENTICATED = FALSE------------");
 			this.setState({ isAuthenticated: false });
 		  }
         if (event === "login") {
-			console.log("AUTHENTICATED = TRUE------------")
           this.setState({ isAuthenticated: true });
         }
     });

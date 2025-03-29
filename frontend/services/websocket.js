@@ -117,7 +117,7 @@ class WebSocketAPI {
     });
 
 	this.socket.addEventListener("message", (event) => {
-		console.log("[WebSocket] Message reçu :", event.data);
+		//console.log("[WebSocket] Message reçu :", event.data);
 
 		this.messageListeners.forEach((callback, type) => {
 			callback(event.data);
@@ -126,8 +126,8 @@ class WebSocketAPI {
 		try {
 			const data = JSON.parse(event.data);
 
-			console.log("[WebSocket] Type de message :", data.type);
-			console.log("[WebSocket] Données complètes :", data);
+			//console.log("[WebSocket] Type de message :", data.type);
+			//console.log("[WebSocket] Données complètes :", data);
 
 			if (data.type === "force_logout") {
 				console.log("[WebSocket] Déconnexion forcée détectée, fermeture de tous les onglets.");
@@ -163,10 +163,6 @@ class WebSocketAPI {
       console.error("WebSocket error:", event);
       this.status = "ERROR";
       this.notifyListeners("error", errorMessage);
-      // Ne pas tenter de reconnecter si forceClose est true
-      if (!this.forceClose) {
-        this.handleConnectionFailure();
-      }
     });
 
   }
