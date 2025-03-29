@@ -214,7 +214,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     async def init_game_state(self):
         game_states[self.match_id] = {
-            "width": 1000,
+            "width": 800,
             "height": 600,
             "ball_x": 400,
             "ball_y": 300,
@@ -224,7 +224,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             "paddle_right_y": 250,
             "paddle_speed_left": 0,
             "paddle_speed_right": 0,
-            "paddle_width": 20,
+            "paddle_width": 10,
             "paddle_height": 100,
             "score_left": 0,
             "score_right": 0,
