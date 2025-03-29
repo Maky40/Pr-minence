@@ -156,6 +156,8 @@ class GameTournoiLobbyTab extends Component {
                         <ul class="list-group">
                           ${this.tournament.matches
                             .map((match) => {
+                              if (match.round === this.tournament.current_round)
+                              {
                               return `                   
                               <li class="list-group-item p-4 border-start border-5 border-primary position-relative">
                                 <!-- Carte de match élégante -->
@@ -219,8 +221,11 @@ class GameTournoiLobbyTab extends Component {
                                   </div>
                                 </div>
                               </li>
-                          `;
-                            })
+                          `
+                            }
+                          }
+                          
+                            )
                             .join("")}
                         </ul>
                       `
