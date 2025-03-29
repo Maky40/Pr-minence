@@ -22,6 +22,8 @@ class Player extends EventEmitter {
     this.match_id = null;
     this.paddle = null;
     this.socketMatch = null;
+    this.waitingMatch = false;
+    this.waitingMatchID = 0;
     this.from_42 = false;
     this.friends = [];
     this.has_unplayed = false;

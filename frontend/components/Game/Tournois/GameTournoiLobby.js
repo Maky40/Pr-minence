@@ -13,7 +13,6 @@ class GameTournoiLobby extends Component {
     this.tournamentId = tournamentId;
     this.container = null;
     this.playerLeave = false;
-    this.waitingForPlayers = false;
     this.state = {
       tournament: null,
       error: null,
@@ -34,7 +33,6 @@ class GameTournoiLobby extends Component {
           }
           pong42.player.checkUnplayedAndActiveTournament();
           this.setState({ loading: false });
-          console.log("go to gam")
           changePage("game");
           this.destroy();
         }, 100);
@@ -78,6 +76,8 @@ class GameTournoiLobby extends Component {
           this.joinTournamentMatch.bind(this)
         );
         GameTournoiLobbyTabInstance.render(this.container);
+        if(pong42.player.waitingMatch)
+          this.goToWaiting(pong42.player.waitingMatchID);
       }
     } catch (error) {
       console.error("Erreur dans fetchTournamentDetails:", error);
@@ -87,7 +87,10 @@ class GameTournoiLobby extends Component {
       });
     }
   }
-  joinTournamentMatch(matchId) {
+  goToWaiting (matchId)
+  {
+    if(matchId === 0)
+      return;
     const matchInfo = getMatchInfo(matchId, this.state.tournament.matches);
     const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);
     const gameTournoiWaiting = new GameTournoiWaiting(
@@ -95,9 +98,16 @@ class GameTournoiLobby extends Component {
       matchInfo,
       playerInfo
     );
+    pong42.player.waitingMatch = true;
+    pong42.player.waitingMatchID = matchId;
     gameTournoiWaiting.render(this.container);
     pong42.player.tournament.stopStatusCheckInterval();
     this.destroy();
+
+  }
+
+  joinTournamentMatch(matchId) {
+    this.goToWaiting(matchId);
   }
 
   async leaveTournament() {

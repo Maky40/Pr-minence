@@ -12,6 +12,7 @@ class GameTournoisMode extends Component {
       error: null,
       loading: false,
       initialized: false,
+      tournament:null
     };
 
     // Store event listener reference for cleanup
@@ -21,6 +22,14 @@ class GameTournoisMode extends Component {
         loading: false,
         initialized: true,
       });
+      if (data.current_tournament) {
+        this.setState({
+          tournament: data.current_tournament,
+        });
+        this.goToLobby(data.current_tournament.id);
+      } else {
+        this.goToLobby(null); 
+      }
     };
 
     this.playerInTournamentListener = (tournament) => {
@@ -35,6 +44,10 @@ class GameTournoisMode extends Component {
 
   goToLobby(tournamentId) {
     if (!this.container) return;
+    if (!tournamentId) {
+      console.error("Tournament ID is null or undefined");
+      return;
+    }
     const lobby = new GameTournoiLobby(tournamentId);
     lobby.render(this.container);
     this.destroy();
@@ -59,20 +72,28 @@ class GameTournoisMode extends Component {
       const response = await fetch(this.baseUrl, {
         credentials: "include",
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch tournaments");
       }
-
+  
       const data = await response.json();
+  
       // Check if player is already in a tournament
       if (data.current_tournament) {
         this.emit("playerInTournament", data.current_tournament);
         return data.current_tournament;
       }
-      this.emit("tournamentsLoaded", {
-        tournaments: data.tournaments || [],
-      });
+  
+      // Vérifier si 'data.tournaments' est défini et le traiter
+      if (Array.isArray(data.tournaments)) {
+        this.emit("tournamentsLoaded", {
+          tournaments: data.tournaments,
+        });
+      } else {
+        this.emit("tournamentsLoaded", { tournaments: [] });
+      }
+  
       return data;
     } catch (error) {
       console.error("Error fetching tournaments:", error);
@@ -124,9 +145,11 @@ class GameTournoisMode extends Component {
 
   async afterRender() {
     // Ne charger les tournois qu'une seule fois au démarrage
+    console.log( (!this.state.initialized && !this.state.loading))
     if (!this.state.initialized && !this.state.loading) {
       console.log("Loading tournaments... from afterRender from ");
       try {
+        await pong42.player.tournament.getTournaments();
         // Enregistrer les écouteurs et stocker les fonctions de nettoyage
         const cleanupTournamentsLoaded = pong42.player.tournament.on(
           "tournamentsLoaded",
@@ -139,8 +162,7 @@ class GameTournoisMode extends Component {
         this.cleanupFunctions.push(cleanupTournamentsLoaded);
         this.cleanupFunctions.push(cleanupTournamentCreated);
         this.setState({ loading: true });
-        await pong42.player.tournament.getTournaments();
-        if (pong42.player.tournament.tournamentId) this.goToLobby();
+        if (pong42.player.tournament.tournamentId) this.goToLobby(pong42.player.tournament.tournamentId);
         this.showNoTournament();
       } catch (error) {
         console.error("Failed to load tournaments:", error);

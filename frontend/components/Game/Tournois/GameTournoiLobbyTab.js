@@ -165,9 +165,7 @@ class GameTournoiLobbyTab extends Component {
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                       <h5 class="card-title mb-0">
                                         <span class="badge rounded-pill bg-primary">
-                                          ${roundAffichage(match.round)} ${
-                                match.id
-                              }
+                                          ${roundAffichage(match.round)}
                                         </span>
                                       </h5>
                                       <span class="badge rounded-pill bg-${
@@ -192,7 +190,7 @@ class GameTournoiLobbyTab extends Component {
                                       <!-- VS Badge au centre -->
                                       <div class="col-2">
                                         <div class="vs-badge">
-                                          <span class="badge rounded-pill bg-danger p-2 fs-6 fw-bold">VS</span>
+                                          <span class="badge rounded-pill bg-dark p-2 fs-6 fw-bold">VS</span>
                                         </div>
                                       </div>
                                       <div class="col-5">

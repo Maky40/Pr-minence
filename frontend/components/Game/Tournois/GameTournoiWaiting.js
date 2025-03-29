@@ -18,11 +18,8 @@ class GameTournoiWaiting extends Component {
     };
     this.gameTournoiWaitingId = this.generateUniqueId();
 
-    // Prevent multiple WebSocket connections
     this.isConnecting = false;
-    this.hasJoinedMatch = false; // Nouvelle variable pour suivre l'état de la connexion
-
-    // Bind methods to ensure correct context
+    this.hasJoinedMatch = false; 
     this.connectWs = this.connectWs.bind(this);
     this.joinMatch = this.joinMatch.bind(this);
 
@@ -86,9 +83,11 @@ class GameTournoiWaiting extends Component {
             loading: false,
             startingGame: true,
           });
+          pong42.player.waitingMatch = false;
+          pong42.player.waitingMatchID = 0;
           const game = new GameComponent();
           game.render(this.container);
-          this.destroy();
+          this.cleanupWebSocket();
         }
       } catch (error) {
         console.error(
@@ -105,8 +104,13 @@ class GameTournoiWaiting extends Component {
       }
     });
   }
+  
+  destroy()
+  {
+    this.cleanupWebSocket();
+    super.destroy();
+  }
 
-  // New method to centralize WebSocket cleanup
   cleanupWebSocket() {
     if (this.webSocketMatch) {
       this.webSocketMatch.removeAllListeners();
