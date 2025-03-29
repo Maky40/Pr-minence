@@ -68,19 +68,26 @@ class GameComponent extends Component {
   initializeGameObjects() {
     const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
       this.gameConfig;
-
+    let paddle1Color = "white";
+    let paddle2Color = "white";
+    if (pong42.player.paddle === "right")
+      paddle1Color = "red";
+    if (pong42.player.paddle === "left")
+      paddle2Color = "red";
     return {
       paddle1: {
         x: 50,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,
+        color: paddle1Color
       },
       paddle2: {
         x: WIDTH - 50 - PADDLE_WIDTH,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,
+        color: paddle2Color
       },
       ball: {
         x: WIDTH / 2,

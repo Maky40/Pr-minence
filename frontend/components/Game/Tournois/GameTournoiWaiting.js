@@ -44,7 +44,6 @@ class GameTournoiWaiting extends Component {
     // Prevent multiple join attempts
     if (this.isConnecting || this.hasJoinedMatch) return;
     this.hasJoinedMatch = true; // Marquer que la connexion a été tentée
-
     console.log("[DEBUG] Welcome to the match", this.state.matchId);
 
     this.connectWs();
