@@ -109,16 +109,54 @@ class GameTournoiWaiting extends Component {
         </div>
       `;
     }
+
     if (this.state.startingGame) {
       return `
         <div class="container mt-5">
-          <div class="d-flex flex-column align-items-center justify-content-center">
-            <h3 class="text-success mb-4">Le match va commencer !</h3>
-            <div class="text-center mt-4">
-              <h1 class="display-1 text-primary fw-bold">
-                Préparez-vous !
-              </h1>
-              <p class="text-muted mt-3">Synchronisation avec l'adversaire...</p>
+          <div class="card shadow-lg">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                <h3 class="mb-0">Début du Combat Imminent</h3>
+              </div>
+            </div>
+            
+            <div class="card-body py-4">
+              <div class="d-flex flex-column align-items-center justify-content-center">
+                <!-- Citation Kaamelott -->
+                <div class="alert alert-light border mb-4 text-center">
+                  <i class="fas fa-quote-left text-muted me-2"></i>
+                  <span class="fst-italic">
+                    On va pas installer notre carré de légion ici, si c'est pour se retrouver à 15 contre 2000, parce qu'il faut reconnaître qu'il y a un léger déficit numérique.  
+                  </span>
+                  <i class="fas fa-quote-right text-muted ms-2"></i>
+                  <div class="text-end text-muted mt-1">— Caius Camillus</div>
+                </div>
+                
+                <!-- Message de préparation -->
+                <h2 class="display-4 text-success mb-4 text-center fw-bold">
+                  En garde, chevalier !
+                </h2>
+                
+                <!-- Compte à rebours ou indicateur visuel -->
+                <div class="position-relative my-3">
+                  <div class="progress" style="height: 30px; width: 300px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 75%"></div>
+                  </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                  <p class="h4 text-primary mb-3">
+                    Préparez votre épée et votre bouclier
+                  </p>
+                  
+                  <div class="alert alert-success mt-3">
+                    <p class="mb-1"><i class="fas fa-bullhorn me-2"></i> <b>Le Roi Arthur déclare:</b></p>
+                    <p class="mb-0">
+                      "Bon, maintenant qu'on a fait les préliminaires, on va peut-être pouvoir commencer à la tarter!"
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -127,18 +165,53 @@ class GameTournoiWaiting extends Component {
 
     // Main waiting screen
     return `
-      <div class="container mt-5">
-        <div class="d-flex flex-column align-items-center justify-content-center">
-          <h3 class="text-primary mb-4">En attente d'un adversaire...</h3>
-          <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <div class="container mt-5">
+      <div class="card shadow-lg">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center text-center">
+          <div class="d-flex align-items-center ">
+            <h3 class="mb-0  ">En Attente du Combat</h3>
           </div>
-          <div class="text-center mt-4">
-            <p class="text-primary">Votre adversaire n'est pas encore là, merci de patienter</p>
-            <small class="text-primary">Le match démarrera automatiquement dès qu'il sera connecté</small>
+        </div>
+        
+        <div class="card-body py-4">
+          <div class="d-flex flex-column align-items-center justify-content-center">
+            <!-- Citation Kaamelott -->
+            <div class="alert alert-light border mb-4 text-center">
+              <i class="fas fa-quote-left text-muted me-2"></i>
+              <span class="fst-italic">
+                C'est pas faux! Mais là on attend quand même depuis un moment...
+              </span>
+              <i class="fas fa-quote-right text-muted ms-2"></i>
+              <div class="text-end text-muted mt-1">— Perceval de Galles</div>
+            </div>
+            
+            <!-- Spinner et message -->
+            <h4 class="text-info mb-4">
+              <i class="fas fa-goblet-sparkles me-2"></i>
+              En attente d'un adversaire digne de ce nom
+            </h4>
+            
+            <div class="spinner-border text-info" style="width: 4rem; height: 4rem;" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            
+            <div class="text-center mt-4">
+              <p class="text-info">
+                Votre adversaire est probablement en train de finir sa pinte d'hydromel
+              </p>
+              
+              <div class="alert alert-dark mt-3">
+                <p class="mb-1"><i class="fas fa-scroll me-2"></i> <b>Message du Roi Arthur:</b></p>
+                <small>
+                  "Le match démarrera automatiquement dès que ce bon à rien sera connecté... 
+                  C'est pas possible d'être à la bourre comme ça!"
+                </small>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
     `;
   }
 

@@ -57,7 +57,7 @@ const loginFormHandler = async () => {
       try {
         await auth.login(username, password);
       } catch (error) {
-        showErrorMessage("Erreur de connexion. Vérifiesz vos identifiants.");
+        showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
       } finally {
         loading(false);
       }

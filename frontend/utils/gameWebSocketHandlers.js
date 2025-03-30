@@ -182,6 +182,15 @@ export function handleGameWebSocketMessage(component, webSocketMatch, data) {
       return;
     }
 
+    if (message.type === "players_info") {
+      console.log("[GAME] Players info received:", message);
+      // Handle players info
+      component.setState({
+        player1: message.left_username,
+        player2: message.right_username,
+      });
+      return;
+    }
     // Handle "Connexion WebSocket établie" message
     if (message.message === "Connexion WebSocket établie") {
       handleConnectionEstablished(component, message);
@@ -193,7 +202,6 @@ export function handleGameWebSocketMessage(component, webSocketMatch, data) {
       handleGameStart(component, webSocketMatch);
       return;
     }
-
     // Other message handling can be added here
   } catch (error) {
     console.error("[GAME] Error parsing message:", error, "Raw data:", data);
@@ -249,6 +257,10 @@ export function handleGameStart(component, webSocketMatch) {
 
     // Create and render game component
     const game = new GameComponent();
+    game.updatePlayerNames({
+      player1: component.state.player1,
+      player2: component.state.player2,
+    });
     if (component.container) {
       // Check if component still mounted
       game.render(component.container);

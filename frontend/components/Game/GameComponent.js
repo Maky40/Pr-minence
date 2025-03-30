@@ -8,6 +8,7 @@ import Music from "../../utils/Music.js";
 
 class GameComponent extends Component {
   constructor() {
+    console.log("[DEBUG] GameComponent constructor");
     super();
     this.gameConfig = GAME_CONFIG;
     this.gameState = {
@@ -55,6 +56,12 @@ class GameComponent extends Component {
       event.preventDefault();
       this.gameState.keys[event.key] = true;
     }
+  }
+
+  updatePlayerNames(players) {
+    this.gameState.player1 = players.player1;
+    this.gameState.player2 = players.player2;
+    this.update();
   }
 
   handleKeyUp(event) {
@@ -135,11 +142,18 @@ class GameComponent extends Component {
           changePage("home");
           return;
         }
+        console.log("[DEBUG] WebSocket message received:", message.type);
 
         switch (message.type) {
           case "players_info":
+            console.log(
+              "[DEBUG] Players info received:",
+              message.left_username,
+              message.right_username
+            );
             this.gameState.player1 = message.left_username;
             this.gameState.player2 = message.right_username;
+            this.render();
             break;
 
           case "game_state":
@@ -460,13 +474,6 @@ class GameComponent extends Component {
       <div class="position-absolute w-100 top-0 py-3" style="z-index: 1000;">
         <div class="container">
           <div class="row align-items-center">
-            <!-- Leave Button -->
-            <div class="col-3">
-              <button class="btn btn-outline-danger" id="btnLeaveGame">
-                <i class="fas fa-door-open me-2"></i>Quitter
-              </button>
-            </div>
-
             <!-- Score Display -->
             <div class="col-6">
               <div class="d-flex justify-content-center">

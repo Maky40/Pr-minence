@@ -23,12 +23,14 @@ class GameTournoiLobbyTab extends Component {
   }
 
   afterRender() {
-    const startTournamentButton =
-      this.container.querySelector("#joinMatchButton");
+    const startTournamentButton = this.container.querySelector(
+      "#startTournamentButton"
+    );
     const joinMatchButtons = this.container.querySelector("#joinMatchButton");
     const leaveButton = this.container.querySelector("#leaveTournamentButton");
     this.attachEvent(startTournamentButton, "click", async (e) => {
       e.preventDefault();
+      console.log("startTournamentButton");
       try {
         this.setState({ loading: true });
         await this.startTournament(this.tournament.id);
@@ -76,12 +78,16 @@ class GameTournoiLobbyTab extends Component {
           <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-between align-items-center w-100 pb-2">
               <h3 class="mb-0">${this.tournament.name}</h3>
-              <div class="d-flex align-items-center">
-                <i class="fas fa-layer-group me-2"></i>
-                <h4 class="mb-0">${roundAffichage(
-                  this.tournament.current_round
-                )}</h4>
-              </div>
+              ${
+                this.tournament.status !== "PN"
+                  ? `<div class="d-flex align-items-center">
+                    <i class="fas fa-layer-group me-2"></i>
+                    <h4 class="mb-0">${roundAffichage(
+                      this.tournament.current_round
+                    )}</h4>
+                  </div>`
+                  : ""
+              }
             </div>
             ${
               this.tournament.status === "PN"

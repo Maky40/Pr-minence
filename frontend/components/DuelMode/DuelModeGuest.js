@@ -18,6 +18,8 @@ class DuelModeGuest extends Component {
       waitingGuest: true,
       isConnected: false,
       startingGame: false,
+      player1: null,
+      player2: null,
     };
     this.webSocketMatch = null;
   }
