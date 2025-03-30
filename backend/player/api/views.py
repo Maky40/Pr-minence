@@ -54,13 +54,7 @@ class PlayerSearch(APIView):
                 "message": str(e)
             }, status=500)
 
-import re
-from django.utils.decorators import method_decorator
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Player
-from .serializers import PlayerInfoSerializer
-from .decorators import jwt_cookie_required
+
 
 class PlayerInfo(APIView):
 
@@ -103,22 +97,19 @@ class PlayerInfo(APIView):
     def post(self, request):
         try:
             changed = False
-            id = request.decoded_token['id']
+            user_id = request.decoded_token['id']
             player_data = request.data.get('player')
-            player = Player.objects.get(id=id)
+            player = Player.objects.get(id=user_id)
 
             if "first_name" in player_data:
                 first_name_raw = player_data['first_name']
                 if not isinstance(first_name_raw, str):
                     return Response({"status": 400, "message": "First name must be a string."})
-
                 first_name = ' '.join(first_name_raw.strip().split())
                 if len(first_name) == 0 or len(first_name) > 50:
                     return Response({"status": 400, "message": "Invalid first name"})
-
                 if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", first_name):
                     return Response({"status": 400, "message": "First name contains invalid characters."})
-
                 player.first_name = first_name
                 changed = True
 
@@ -126,15 +117,25 @@ class PlayerInfo(APIView):
                 last_name_raw = player_data['last_name']
                 if not isinstance(last_name_raw, str):
                     return Response({"status": 400, "message": "Last name must be a string."})
-
                 last_name = ' '.join(last_name_raw.strip().split())
                 if len(last_name) == 0 or len(last_name) > 50:
                     return Response({"status": 400, "message": "Invalid last name"})
-
                 if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", last_name):
                     return Response({"status": 400, "message": "Last name contains invalid characters."})
-
                 player.last_name = last_name
+                changed = True
+
+            if "username" in player_data:
+                username_raw = player_data['username']
+                if not isinstance(username_raw, str):
+                    return Response({"status": 400, "message": "Username must be a string."})
+                username = username_raw.strip()
+                if len(username) == 0 or len(username) > 50:
+                    return Response({"status": 400, "message": "Username must be between 1 and 50 characters."})
+                # Vérifier que le nouveau username n'est pas déjà utilisé par un autre utilisateur
+                if Player.objects.filter(username=username).exclude(id=player.id).exists():
+                    return Response({"status": 400, "message": "Username already taken."})
+                player.username = username
                 changed = True
 
             player.save()
@@ -154,6 +155,7 @@ class PlayerInfo(APIView):
                 "status": 500,
                 "message": str(e),
             })
+
 
 
 
