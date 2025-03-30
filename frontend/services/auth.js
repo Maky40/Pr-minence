@@ -37,8 +37,7 @@ class Auth {
       if (data.status === 200) {
         this.setSession(data);
       } else {
-		if (this.authenticated)
-			this.notifyListeners("logout");
+        if (this.authenticated) this.notifyListeners("logout");
         console.error("No user found in API");
       }
     } catch (error) {
@@ -73,11 +72,13 @@ class Auth {
         toast.show();
         throw new Error("Login failed");
       }
-      if (!this.checkCookie("jwt_token"))
+      if (!this.checkCookie("jwt_token")) {
         changePage(pong42.getCurrentPage() || "home");
-      const jwt_token = this.getCookie("jwt_token");
-      const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
-      if (decodedToken.twofa) changePage("#twofactor");
+      } else {
+        const jwt_token = this.getCookie("jwt_token");
+        const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
+        if (decodedToken.twofa) changePage("#twofactor");
+      }
       return data;
     } catch (error) {
       console.error("Login error:", error);
@@ -135,7 +136,7 @@ class Auth {
   }
 
   async setSession(data) {
-	console.log("JE PASSE");
+    console.log("JE PASSE");
     const player = data.player;
     this.authenticated = true;
     this.user = player;
@@ -154,8 +155,9 @@ class Auth {
       const response = await api.apiFetch(this.urlauthdjangologout, true);
       pong42.player.tournament.stopStatusCheckInterval();
       pong42.player.tournament.destroy();
-	if (this.authenticated == true){
-		this.logoutAndNotify()}
+      if (this.authenticated == true) {
+        this.logoutAndNotify();
+      }
       this.cleanupWebSockets();
     } catch (error) {
       console.error("Logout error:", error);
@@ -164,21 +166,21 @@ class Auth {
   }
 
   logoutAndNotify() {
-	try {
-		console.log("JE SUIS DANS LOGOUTANDNOTIFY------------------------------------------------------")
-    this.authenticated = false;
-		this.user = null;
-		const toast = new Toast("Success", "Déconnexion réussie", "success");
-		toast.show();
-		this.notifyListeners("logout");
-		if (pong42.getCurrentPage() === "home")
-			changePage("#");
-		else
-			changePage("#home");
-	} catch (error) {
-		console.error("Logout error:", error);
-		throw error;
-	  }
+    try {
+      console.log(
+        "JE SUIS DANS LOGOUTANDNOTIFY------------------------------------------------------"
+      );
+      this.authenticated = false;
+      this.user = null;
+      const toast = new Toast("Success", "Déconnexion réussie", "success");
+      toast.show();
+      this.notifyListeners("logout");
+      if (pong42.getCurrentPage() === "home") changePage("#");
+      else changePage("#home");
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw error;
+    }
   }
 
   isAuthenticated() {

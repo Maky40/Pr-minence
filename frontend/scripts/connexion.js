@@ -39,37 +39,31 @@ const loginFormHandler = async () => {
     const errors = [];
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
-    console.log(username)
-    const check_mail = validateField("email",username, 4, 100)
-    console.log(check_mail)
-      if (!check_mail.isValid)
-      {
-        formIsValid = false;
-        errors.push(check_mail.message);
-      }
-      const check_pass = validateField("text",password, 4, 100)
-      if (!check_pass.isValid)
-      {
-        formIsValid = false;
-        errors.push(check_pass.message);
-      }
-      if(!formIsValid)
-      {
-        showErrorMessage(errors.join('<br>'))
+    console.log(username);
+    const check_mail = validateField("email", username, 4, 100);
+    console.log(check_mail);
+    if (!check_mail.isValid) {
+      formIsValid = false;
+      errors.push(check_mail.message);
+    }
+    const check_pass = validateField("text", password, 4, 100);
+    if (!check_pass.isValid) {
+      formIsValid = false;
+      errors.push(check_pass.message);
+    }
+    if (!formIsValid) {
+      showErrorMessage(errors.join("<br>"));
+      loading(false);
+      return;
+    } else {
+      try {
+        await auth.login(username, password);
+      } catch (error) {
+        showErrorMessage("Erreur de connexion. Vérifiesz vos identifiants.");
+      } finally {
         loading(false);
-        return
       }
-      else
-      {
-        console.log(formIsValid);
-        try {
-          await auth.login(username, password);
-        } catch (error) {
-          showErrorMessage("Erreur de connexion. Vérifiez vos identifiants.");
-        } finally {
-          loading(false);
-        }
-      }
+    }
   });
 };
 
