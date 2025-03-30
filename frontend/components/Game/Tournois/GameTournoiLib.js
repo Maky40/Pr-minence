@@ -32,12 +32,13 @@ const roundAffichage = (round) => {
 };
 
 const isPlayerIdPresent = (playerId, playersList) => {
-  if (
-    parseInt(playersList[0].player.id) === parseInt(playerId) ||
-    parseInt(playersList[1].player.id) === parseInt(playerId)
-  )
-    return true;
-  return false;
+  if (!playersList || !Array.isArray(playersList) || !playerId) {
+    return false;
+  }
+  return playersList.some(
+    (item) =>
+      item && item.player && parseInt(item.player.id) === parseInt(playerId)
+  );
 };
 const getPlayerFromList = (playerId, playersList) => {
   if (parseInt(playersList[0].player.id) === parseInt(playerId)) {

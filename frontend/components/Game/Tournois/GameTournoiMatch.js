@@ -10,17 +10,28 @@ const playerDisplayBadge = (
   match,
   align = "start"
 ) => {
+  if (!currentPlayer || !currentPlayer.player || !otherPlayer) {
+    console.error("Données de joueur incomplètes:", {
+      currentPlayer,
+      otherPlayer,
+    });
+    return `<div class="alert alert-danger">Données du joueur manquantes</div>`;
+  }
+
+  // Utiliser des valeurs par défaut pour score
+  const currentScore = currentPlayer.score || 0;
+  const otherScore = otherPlayer.score || 0;
   // Déterminer le statut visuel du joueur
   let statusColor =
     match.state !== "PLY"
       ? "dark"
-      : currentPlayer.score > otherPlayer.score
+      : currentScore > otherScore
       ? "success"
       : "danger";
 
   // Badge de victoire pour les matchs terminés
   const victoryBadge =
-    currentPlayer.score > otherPlayer.score && match.state === "PLY"
+    currentScore > otherScore && match.state === "PLY"
       ? '<i class="fas fa-trophy text-warning fa-lg" aria-label="Vainqueur"></i>'
       : "";
 
