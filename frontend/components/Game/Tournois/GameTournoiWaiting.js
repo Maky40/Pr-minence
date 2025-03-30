@@ -1,133 +1,85 @@
 import Component from "../../../utils/Component.js";
 import pong42 from "../../../services/pong42.js";
-import WebSocketAPI from "../../../services/websocket.js";
-import GameComponent from "../GameComponent.js";
-import { ENV } from "../../../env.js";
+import {
+  initializeGameWebSocket,
+  cleanupGameWebSocket,
+} from "../../../utils/gameWebSocketHandlers.js";
 
 class GameTournoiWaiting extends Component {
-  constructor(matchId, paddle) {
-    console.log("[DEBUG] GameTournoiWaiting constructor called");
+  constructor(matchId) {
+    console.log("[TOURNAMENT] GameTournoiWaiting constructor called");
     super();
     this.state = {
       matchId: matchId,
-      paddle: paddle,
       loading: false,
       error: null,
       waitingGuest: false,
       startingGame: false,
+      isConnected: false,
     };
+
+    // Store component ID for debugging
     this.gameTournoiWaitingId = this.generateUniqueId();
 
+    // Connection state flags
     this.isConnecting = false;
-    this.hasJoinedMatch = false; 
-    this.connectWs = this.connectWs.bind(this);
-    this.joinMatch = this.joinMatch.bind(this);
+    this.hasJoinedMatch = false;
 
-    pong42.player.socketMatch = null;
-    this.wsurlgame = `${ENV.WS_URL_GAME}`;
+    // WebSocket reference
+    this.webSocketMatch = null;
   }
+
   generateUniqueId() {
     return "gtw_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
   }
-  connectWs() {
-    if (this.isConnecting) return;
-    console.log("[DEBUG] Connecting to WebSocket match", this.state.matchId);
-    this.isConnecting = true;
 
-    this.webSocketMatch = new WebSocketAPI(
-      this.wsurlgame + this.state.matchId + "/"
-    );
-    pong42.player.socketMatch = this.webSocketMatch;
-  }
-
-  async joinMatch() {
+  joinMatch() {
     // Prevent multiple join attempts
     if (this.isConnecting || this.hasJoinedMatch) return;
-    this.hasJoinedMatch = true; // Marquer que la connexion a été tentée
-    console.log("[DEBUG] Welcome to the match", this.state.matchId);
 
-    this.connectWs();
-    this.webSocketMatch.addMessageListener("open", () => {
-      this.setState({
-        loading: true,
-        waitingGuest: true,
-      });
+    console.log("[TOURNAMENT] Joining match:", this.state.matchId);
+    this.hasJoinedMatch = true;
+    this.isConnecting = true;
+
+    // Use the utility to create and set up the WebSocket
+    this.webSocketMatch = initializeGameWebSocket(this, this.state.matchId, {
+      waitingGuest: true,
     });
 
-    this.webSocketMatch.addMessageListener("message", (data) => {
-      try {
-        const message = JSON.parse(data);
-
-        if (message.error) {
-          console.error("[DEBUG] Error message:", message.error);
-          this.setState({
-            error: message.error,
-            loading: false,
-          });
-          this.cleanupWebSocket();
-          return;
-        }
-
-        if (message.message === "Connexion WebSocket établie") {
-          this.paddle = message.paddle;
-          this.matchId = message.match_id;
-          pong42.player.paddle = this.paddle;
-          pong42.player.match_id = this.matchId;
-          return;
-        }
-
-        if (message.type === "game_start") {
-          this.cleanupWebSocket();
-          this.setState({
-            loading: false,
-            startingGame: true,
-          });
-          pong42.player.waitingMatch = false;
-          pong42.player.waitingMatchID = 0;
-          const game = new GameComponent();
-          game.render(this.container);
-          this.cleanupWebSocket();
-        }
-      } catch (error) {
-        console.error(
-          "[DEBUG] Error parsing message:",
-          error,
-          "Raw data:",
-          data
-        );
-        this.cleanupWebSocket();
-        this.setState({
-          error: "Erreur lors du traitement des données du serveur",
-          loading: false,
-        });
-      }
-    });
+    // Set global state for this player in the match
+    pong42.player.match_id = this.state.matchId;
   }
-  
-  destroy()
-  {
-    this.cleanupWebSocket();
+
+  destroy() {
+    // Use the utility to clean up WebSocket and state
+    cleanupGameWebSocket(this, this.webSocketMatch);
     super.destroy();
-  }
-
-  cleanupWebSocket() {
-    if (this.webSocketMatch) {
-      this.webSocketMatch.removeAllListeners();
-      this.webSocketMatch = null;
-    }
-    this.isConnecting = false;
-    this.hasJoinedMatch = false; // Réinitialiser l'état de la connexion
-    pong42.player.socketMatch = null;
   }
 
   afterRender() {
     super.afterRender();
+
+    // Initialize connection if not already done
     if (!this.isConnecting && !this.hasJoinedMatch) {
       this.joinMatch();
     }
   }
 
   template() {
+    // Show error message if there's an error
+    if (this.state.error) {
+      return `
+        <div class="container mt-5">
+          <div class="alert alert-danger">
+            <h4>Erreur</h4>
+            <p>${this.state.error}</p>
+            <button class="btn btn-primary" id="retryBtn">Réessayer</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Show loading screen if match ID is not yet available
     if (!this.state.matchId) {
       return `
         <div class="container mt-5">
@@ -149,6 +101,23 @@ class GameTournoiWaiting extends Component {
         </div>
       `;
     }
+    if (this.state.startingGame) {
+      return `
+        <div class="container mt-5">
+          <div class="d-flex flex-column align-items-center justify-content-center">
+            <h3 class="text-success mb-4">Le match va commencer !</h3>
+            <div class="text-center mt-4">
+              <h1 class="display-1 text-primary fw-bold">
+                Préparez-vous !
+              </h1>
+              <p class="text-muted mt-3">Synchronisation avec l'adversaire...</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Main waiting screen
     return `
       <div class="container mt-5">
         <div class="d-flex flex-column align-items-center justify-content-center">
@@ -163,6 +132,24 @@ class GameTournoiWaiting extends Component {
         </div>
       </div>
     `;
+  }
+
+  attachEventListeners() {
+    const retryBtn = document.getElementById("retryBtn");
+    if (retryBtn) {
+      this.attachEvent(retryBtn, "click", () => {
+        // Reset error state
+        this.setState({
+          error: null,
+          loading: false,
+        });
+
+        // Try to join again
+        this.isConnecting = false;
+        this.hasJoinedMatch = false;
+        this.joinMatch();
+      });
+    }
   }
 }
 

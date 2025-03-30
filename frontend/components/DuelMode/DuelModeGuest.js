@@ -3,6 +3,10 @@ import WebSocketAPI from "../../services/websocket.js";
 import pong42 from "../../services/pong42.js";
 import GameComponent from "../Game/GameComponent.js";
 import { ENV } from "../../env.js";
+import {
+  initializeGameWebSocket,
+  cleanupGameWebSocket,
+} from "../../utils/gameWebSocketHandlers.js";
 
 class DuelModeGuest extends Component {
   constructor(matchId) {
@@ -16,91 +20,21 @@ class DuelModeGuest extends Component {
       startingGame: false,
     };
     this.webSocketMatch = null;
-    this.wsurlgame = `${ENV.WS_URL_GAME}`;
   }
-
   async joinMatch() {
     console.log("[DEBUG] Welcome to the match", this.state.matchId);
     if (this.state.isConnected) return;
+
     this.setState({ loading: true, isConnected: true });
-    this.webSocketMatch = new WebSocketAPI(
-      this.wsurlgame + this.state.matchId + "/"
-    );
-    console.log("[DEBUG] after websocket creation");
-    // Gestion des erreurs de connexion
-    this.webSocketMatch.addMessageListener("open", () => {
-      console.log("[DEBUG] Connexion établie avec succès");
-      pong42.player.match_id = this.state.matchId;
-      pong42.player.paddle = "right";
-      pong42.player.socketMatch = this.webSocketMatch;
-      this.setState({ loading: true, isConnected: true });
+
+    // Use the utility to create and set up the WebSocket
+    this.webSocketMatch = initializeGameWebSocket(this, this.state.matchId, {
+      waitingGuest: true,
     });
-
-    this.webSocketMatch.addMessageListener("close", () => {
-      this.setState({
-        error: "La connexion au match a été perdue",
-        loading: false,
-        waitingGuest: false,
-        isConnected: false,
-      });
-    });
-
-    this.webSocketMatch.addMessageListener("message", (data) => {
-      try {
-        const message = JSON.parse(data);
-        console.log("[DEBUG] Message reçu:", message); // Ajout de log
-
-        if (message.error) {
-          console.error("[DEBUG] Error message:", message.error);
-          this.setState({
-            error: message.error,
-            loading: false,
-            isConnected: false,
-          });
-          return;
-        }
-
-        // Si on reçoit un message de type error dans le payload
-        if (
-          message.message &&
-          typeof message.message === "string" &&
-          message.message.includes("error")
-        ) {
-          console.error("[DEBUG] Message error:", message.message);
-          this.setState({
-            error: message.message,
-            loading: false,
-            isConnected: false,
-          });
-          return;
-        }
-
-        if (message.type === "game_start") {
-          console.error("[DEBUG] game_start:", message.message);
-          this.setState({
-            loading: false,
-            startingGame: true,
-            isConnected: true,
-            waitingGuest: false,
-          });
-          this.webSocketMatch.removeAllListeners();
-          const game = new GameComponent();
-          game.render(this.container);
-        }
-      } catch (error) {
-        console.error(
-          "[DEBUG] Error parsing message:",
-          error,
-          "Raw data:",
-          data
-        );
-        this.setState({
-          error: "Erreur lors du traitement des données du serveur",
-          loading: false,
-          isConnected: false,
-        });
-      }
-    });
+  }
+  destroy() {
+    cleanupGameWebSocket(this, this.webSocketMatch);
+    super.destroy();
   }
   afterRender() {
     if (
