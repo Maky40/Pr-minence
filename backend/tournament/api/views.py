@@ -5,6 +5,7 @@ from .models import Tournament, Player, Match, PlayerMatch, PlayerTournament
 from .serializers import TournamentSerializer
 from .decorators import jwt_cookie_required
 
+
 def update_tournament(tournament_id):
     tournament = Tournament.objects.get(id=tournament_id)
     if tournament.status == 'FN':  # Tournament is finished
@@ -35,13 +36,26 @@ def update_tournament(tournament_id):
             player1 = winning_players.pop(0).player
             player2 = winning_players.pop(0).player
 
+            # Vérifier si un match pour ces deux joueurs existe déjà dans ce tournoi et ce round
+            match_exists = Match.objects.filter(
+                tournament=tournament,
+                round=tournament.current_round,
+                playermatch__player=player1
+            ).filter(
+                playermatch__player=player2
+            ).exists()
+            
+            if match_exists:
+                # Si le match existe déjà, on passe à la prochaine paire
+                continue
+
             tournament_match = Match.objects.create(
                 tournament=tournament,
                 round=tournament.current_round
             )
-
             PlayerMatch.objects.create(match=tournament_match, player=player1, player_side='L')
             PlayerMatch.objects.create(match=tournament_match, player=player2, player_side='R')
+
 
 class TournamentView(APIView):
 
