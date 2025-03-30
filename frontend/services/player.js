@@ -287,6 +287,31 @@ class Player extends EventEmitter {
     }
   };
 
+  destroy() {
+    if (this.socketMatch) {
+      this.socketMatch.destroy();
+    }
+    this.tournament.destroy();
+    this.id = null;
+    this.email = null;
+    this.first_name = null;
+    this.last_name = null;
+    this.username = null;
+    this.avatar = null;
+    this.champions = 0;
+    this.wins = 0;
+    this.losses = 0;
+    this.two_factor = false;
+    this.status = "OF";
+    this.match_id = null;
+    this.paddle = null;
+    this.socketMatch = null;
+    this.waitingMatch = false;
+    this.waitingMatchID = 0;
+    this.from_42 = false;
+    this.friends = [];
+  }
+
   updatePlayerInformations = async (data) => {
     try {
       // Check if data is FormData

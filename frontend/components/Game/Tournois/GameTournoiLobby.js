@@ -1,7 +1,6 @@
 import Component from "../../../utils/Component.js";
 import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
-import Toast from "../../toast.js";
 import GameTournoiLobbyTab from "./GameTournoiLobbyTab.js";
 import { getPlayerFromList, getMatchInfo } from "./GameTournoiLib.js";
 import GameTournoiWaiting from "./GameTournoiWaiting.js";

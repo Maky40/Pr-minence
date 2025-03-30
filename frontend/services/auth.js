@@ -34,6 +34,7 @@ class Auth {
   async initFromAPI() {
     try {
       const data = await api.apiFetch("/player/", true);
+      console.log("Initializing auth state from API:", data);
       if (data.status === 200) {
         this.setSession(data);
       } else {
@@ -152,33 +153,47 @@ class Auth {
   }
 
   async setSession(data) {
-    const player = data.player;
-    this.authenticated = true;
-    this.user = player;
-    pong42.player.setPlayerInformations(player);
-    this.notifyListeners("login");
-    if (!this.webSocketStatus) {
-      this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
-      this.webSocketStatus.addMessageListener("message", (data) => {
-        pong42.player.updateStatus("ON");
-      });
+    try {
+      const player = data.player;
+      this.authenticated = true;
+      this.user = player;
+
+      // Check if pong42 is properly initialized first
+      if (!pong42.player) {
+        pong42.player = new Player();
+      }
+      console.log("Setting session data:", player);
+
+      // Only proceed with player operations if player exists
+      if (pong42.player) {
+        await pong42.player.init();
+        await pong42.player.tournament.init();
+        pong42.player.setPlayerInformations(player);
+      } else {
+        console.error("pong42.player is null, cannot initialize player data");
+      }
+      this.notifyListeners("login");
+
+      // Initialize WebSocket status last after everything else is ready
+      if (!this.webSocketStatus) {
+        this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
+
+        // Use a callback that checks if player exists before using it
+        this.webSocketStatus.addMessageListener("message", (data) => {
+          if (pong42.player) {
+            pong42.player.updateStatus("ON");
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error during session setup:", error);
     }
   }
 
   async logout() {
     try {
-      const response = await api.apiFetch(this.urlauthdjangologout, true);
-      pong42.player.tournament.stopStatusCheckInterval();
-      pong42.player.tournament.destroy();
-      pong42.player.destroy();
-      pong42.player.setPlayerInformations(null);
-      pong42.player.updateStatus("OFF");
-      pong42.webSocketStatus.close();
-      pong42.webSocketStatus = null;
-      if (this.authenticated == true) {
-        this.logoutAndNotify();
-      }
-      this.cleanupWebSockets();
+      await api.apiFetch(this.urlauthdjangologout, true);
+      this.logoutAndNotify();
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
@@ -187,14 +202,28 @@ class Auth {
 
   logoutAndNotify() {
     try {
+      // First notify listeners so components can clean up
+      this.notifyListeners("logout");
+      // Then clear authentication state
       this.authenticated = false;
       this.user = null;
-      this.notifyListeners("logout");
-      if (pong42.getCurrentPage() === "home") changePage("#");
-      else changePage("#home");
+      this.cleanupWebSockets();
+      // Clean up pong42 if it exists
+      if (typeof pong42 !== "undefined" && pong42) {
+        try {
+          pong42.reset();
+        } catch (e) {
+          console.warn("Error during pong42 cleanup:", e);
+        }
+      }
+
+      // Finally change the page
+      setTimeout(() => {
+        changePage("#home");
+      }, 100);
     } catch (error) {
       console.error("Logout error:", error);
-      throw error;
+      // Don't rethrow - we want to complete logout even if there are errors
     }
   }
 

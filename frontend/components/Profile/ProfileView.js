@@ -24,18 +24,21 @@ class ProfileView extends Component {
     const status = this.STATUS[this.state.status] || this.STATUS.OF;
     return `<span class="badge ${status.class}">${status.text}</span>`;
   }
-
   template() {
-	const isCurrentUser = this.state.username === pong42.player.username;
+    const isCurrentUser = this.state.username === pong42.player.username;
     return `
             <div class="card shadow-lg mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-end">
-					${isCurrentUser ? `
+					${
+            isCurrentUser
+              ? `
                         <button id="editButton" class="btn btn-outline-primary">
                             <i class="fas fa-edit"></i> Modifier
                         </button>
-                    ` : ""}
+                    `
+              : ""
+          }
 
                     </div>
                     <div class="row align-items-center">
@@ -57,7 +60,11 @@ class ProfileView extends Component {
                                     <p class="mb-1"><strong>Nom:</strong> ${
                                       this.state.last_name
                                     }</p>
-                                    ${this.state.email ? `<p class="mb-1"><strong>Email:</strong> ${this.state.email}</p>` : ''}
+                                    ${
+                                      this.state.email
+                                        ? `<p class="mb-1"><strong>Email:</strong> ${this.state.email}</p>`
+                                        : ""
+                                    }
                                 </div>
                                 <div class="col-md-6">
                                     <p class="mb-1"><strong>Status:</strong> ${this.getStatusBadge()}</p>

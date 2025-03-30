@@ -38,6 +38,7 @@ export default class Navbar extends Component {
       isAuthenticated: auth.authenticated,
     };
     this.initListeners();
+    console.log("Navbar initialized", pong42);
   }
 
   template() {

@@ -16,7 +16,8 @@ class WebSocketAPI {
   }
 
   init() {
-	console.log("WebSocket initialized:", new Date().toISOString());
+    console.log("WebSocket initialized:", new Date().toISOString());
+    console.log("WebSocket url:", this.wsURL);
 
     if (this.retryCount >= this.maxRetries) {
       console.error("Max retries reached. Stopping attempts.");
@@ -33,6 +34,9 @@ class WebSocketAPI {
       this.retryCount++;
       setTimeout(() => this.init(), 2000); // Réessayer après 2 secondes
     }
+  }
+  isConnected() {
+    return this.status === "CONNECTED";
   }
 
   close() {
@@ -116,36 +120,33 @@ class WebSocketAPI {
       this.notifyListeners("open", null);
     });
 
-	this.socket.addEventListener("message", (event) => {
-		//console.log("[WebSocket] Message reçu :", event.data);
+    this.socket.addEventListener("message", (event) => {
+      //console.log("[WebSocket] Message reçu :", event.data);
 
-		this.messageListeners.forEach((callback, type) => {
-			callback(event.data);
-		});
+      this.messageListeners.forEach((callback, type) => {
+        callback(event.data);
+      });
 
-		try {
-			const data = JSON.parse(event.data);
-
-			//console.log("[WebSocket] Type de message :", data.type);
-			//console.log("[WebSocket] Données complètes :", data);
-
-			if (data.type === "force_logout") {
-				console.log("[WebSocket] Déconnexion forcée détectée, fermeture de tous les onglets.");
-				console.log("[WebSocket] URL de redirection :", data.redirect_url);
-				if (this.socket) {
-					this.socket.close();
-				}
-				console.log(`Avant: auth.authenticated = ${auth.authenticated}`);
-				if (auth.authenticated == true)
-				{
-					auth.logoutAndNotify();
-				}
-				console.log(`Après: auth.authenticated = ${auth.authenticated}`);
-			}
-		} catch (error) {
-			console.error("[WebSocket] Erreur lors du parsing du message :", error);
-		}
-	});
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "force_logout") {
+          console.log(
+            "[WebSocket] Déconnexion forcée détectée, fermeture de tous les onglets."
+          );
+          console.log("[WebSocket] URL de redirection :", data.redirect_url);
+          if (this.socket) {
+            this.socket.close();
+          }
+          console.log(`Avant: auth.authenticated = ${auth.authenticated}`);
+          if (auth.authenticated == true) {
+            auth.logoutAndNotify();
+          }
+          console.log(`Après: auth.authenticated = ${auth.authenticated}`);
+        }
+      } catch (error) {
+        console.error("[WebSocket] Erreur lors du parsing du message :", error);
+      }
+    });
 
     this.socket.addEventListener("close", (event) => {
       const closeMessage = "La connexion a été perdue";
@@ -164,7 +165,10 @@ class WebSocketAPI {
       this.status = "ERROR";
       this.notifyListeners("error", errorMessage);
     });
-
+  }
+  destroy() {
+    this.close();
+    this.removeAllListeners();
   }
 }
 

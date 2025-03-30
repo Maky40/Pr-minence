@@ -29,14 +29,14 @@ class GameTournoisMode extends Component {
         initialized: true,
       });
 
-      if (data.current_tournament) {
+      if (data.current_tournament && data.current_tournament.id) {
         this.setState({ tournament: data.current_tournament });
         this.goToLobby(data.current_tournament.id);
       }
     };
 
     this.playerInTournamentListener = (tournament) => {
-      if (this.container) {
+      if (this.container && tournament && tournament.id) {
         this.goToLobby(tournament.id);
       }
     };

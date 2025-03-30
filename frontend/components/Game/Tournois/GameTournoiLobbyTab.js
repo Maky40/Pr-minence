@@ -1,6 +1,6 @@
 import Component from "../../../utils/Component.js";
+import { renderMatchesByState } from "./GameTournoiMatch.js";
 
-import pong42 from "/services/pong42.js";
 import {
   statusAffichage,
   roundAffichage,
@@ -22,41 +22,9 @@ class GameTournoiLobbyTab extends Component {
     this.waitingForPlayers = false;
   }
 
-  playerDisplayBadge(currentPlayer, otherPlayer, match) {
-    let mycolor =
-      currentPlayer.score > otherPlayer.score && match.state === "PLY"
-        ? "success"
-        : "danger";
-    if (match.state !== "PLY") mycolor = "dark";
-    const winningEmoji =
-      currentPlayer.score > otherPlayer.score && match.state === "PLY"
-        ? '<span class="position-absolute top-0 start-100 translate-middle badge text-dark fs-5">👑</span>'
-        : "";
-    return `<div class="d-flex flex-column align-items-center position-relative">
-        ${winningEmoji}
-        <div class="avatar-wrapper mb-2">
-        <img src="${currentPlayer.player.avatar}" 
-        alt="${currentPlayer.player.username}" 
-        class="rounded-circle border border-5 border-primary shadow-sm border-${mycolor}" 
-        width="64" height="64" />
-        ${
-          match.state === "PLY"
-            ? `
-    <span class="badge rounded-pill bg-${mycolor} mt-2">
-        ${currentPlayer.score} points
-        </span>
-    </span>
-    `
-            : ""
-        }
-    </div>
-    <h6 class="fw-bold mb-0">${currentPlayer.player.username}</h6>
-</div>`;
-  }
   afterRender() {
-    const startTournamentButton = this.container.querySelector(
-      "#startTournamentButton"
-    );
+    const startTournamentButton =
+      this.container.querySelector("#joinMatchButton");
     const joinMatchButtons = this.container.querySelector("#joinMatchButton");
     const leaveButton = this.container.querySelector("#leaveTournamentButton");
     this.attachEvent(startTournamentButton, "click", async (e) => {
@@ -71,6 +39,7 @@ class GameTournoiLobbyTab extends Component {
         });
       }
     });
+    console.log(this.tournament.current_round);
     this.attachEvent(leaveButton, "click", (e) => {
       e.preventDefault();
       this.leaveTournament();
@@ -103,9 +72,17 @@ class GameTournoiLobbyTab extends Component {
     }
     return `
       <div class="container mt-5">
-        <div class="card shadow">
-          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">${this.tournament.name}</h3>
+        <div class="card">
+          <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center w-100 pb-2">
+              <h3 class="mb-0">${this.tournament.name}</h3>
+              <div class="d-flex align-items-center">
+                <i class="fas fa-layer-group me-2"></i>
+                <h4 class="mb-0">${roundAffichage(
+                  this.tournament.current_round
+                )}</h4>
+              </div>
+            </div>
             ${
               this.tournament.status === "PN"
                 ? `<button class="btn btn-outline-danger" id="leaveTournamentButton">
@@ -127,6 +104,9 @@ class GameTournoiLobbyTab extends Component {
                 : ""
             }
           </div>
+          ${
+            this.tournament.status === "PN"
+              ? `
           <div class="card-body">
             <div class="row">
                   <div class="card-header">
@@ -134,8 +114,9 @@ class GameTournoiLobbyTab extends Component {
                       this.tournament.players_count || 0
                     }</h4>
               </div>
-            </div>
-
+            </div>`
+              : ``
+          }
             ${
               this.tournament.status === "PN"
                 ? `
@@ -152,94 +133,29 @@ class GameTournoiLobbyTab extends Component {
                 </p>
               </div>
             `
-                : `<!-- Matchs en cours -->
-                  <div class="card mt-4">
-                    <div class="card-header">
-                      <h4 class="mb-0">Matchs en cours</h4>
-                    </div>
-                    <div class="card-body">
-                      ${
-                        this.tournament.matches?.length
-                          ? `
-                        <ul class="list-group">
-                          ${this.tournament.matches
-                            .map((match) => {
-                              if (
-                                match.round === this.tournament.current_round
-                              ) {
-                                return `                   
-                              <li class="list-group-item p-4 border-start border-5 border-primary position-relative">
-                                <!-- Carte de match élégante -->
-                                <div class="card shadow-sm border-0">
-                                  <div class="card-body p-3">
-                                    <!-- Titre du match -->
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                      <h5 class="card-title mb-0">
-                                        <span class="badge rounded-pill bg-primary">
-                                          ${roundAffichage(match.round)}
-                                        </span>
-                                      </h5>
-                                      <span class="badge rounded-pill bg-${
-                                        match.state === "UPL"
-                                          ? "warning"
-                                          : "primary"
-                                      }">
-                                        ${statusAffichage(match.state)}
-                                      </span>
-                                    </div>
-                                    
-                                    <!-- Joueurs en duel -->
-                                    <div class="row align-items-center text-center g-0">
-                                      <!-- Premier joueur -->
-                                      <div class="col-5">
-                                        ${this.playerDisplayBadge(
-                                          match.players[0],
-                                          match.players[1],
-                                          match
-                                        )}
-                                      </div>
-                                      <!-- VS Badge au centre -->
-                                      <div class="col-2">
-                                        <div class="vs-badge">
-                                          <span class="badge rounded-pill bg-dark p-2 fs-6 fw-bold">VS</span>
-                                        </div>
-                                      </div>
-                                      <div class="col-5">
-                                        ${this.playerDisplayBadge(
-                                          match.players[1],
-                                          match.players[0],
-                                          match
-                                        )}
-                                      </div>
-                                    </div>
-                                    <!-- Bouton Rejoindre si nécessaire -->
-                                    ${
-                                      isPlayerIdPresent(
-                                        pong42.player.id,
-                                        match.players
-                                      ) && match.state === "UPL"
-                                        ? `
-                                        <div class="text-center mt-4">
-                                          <button class="btn btn-primary btn-lg btn-join-match w-75" data-match-id="${match.id}" id="joinMatchButton">
-                                            <i class="bi bi-controller me-2"></i>Rejoindre le match
-                                          </button>
-                                        </div>
-                                        `
-                                        : ""
-                                    }
-                                  </div>
-                                </div>
-                              </li>
-                          `;
-                              }
-                            })
-                            .join("")}
-                        </ul>
-                      `
-                          : '<p class="text-muted">Aucun match en cours</p>'
-                      }
-                    </div>
-                  </div>`
+                : `
+            <!-- Affichage des matchs par catégorie -->
+            ${renderMatchesByState(
+              this.tournament.matches,
+              "UPL",
+              this.tournament.current_round,
+              this.joinTournamentMatch
+            )}
+            ${renderMatchesByState(
+              this.tournament.matches,
+              "PLY",
+              this.tournament.current_round,
+              this.joinTournamentMatch
+            )}
+            
+            ${
+              !this.tournament.matches?.some(
+                (match) => match.round === this.tournament.current_round
+              )
+                ? '<div class="alert alert-info mt-4 text-center">Aucun match pour ce round</div>'
+                : ""
+            }
+          `
             }
           </div>
         </div>

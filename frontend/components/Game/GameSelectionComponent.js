@@ -17,7 +17,6 @@ class GameSelectionComponent extends Component {
   }
 
   handleModeSelection(mode) {
-    console.log(this.container);
     this.selectedMode = mode;
     if (mode === "duelMode") {
       const duelMode = new GameDuelMode();

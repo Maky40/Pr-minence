@@ -83,6 +83,32 @@ class Pong42 {
       return true; // Will respond asynchronously
     });
   }
+  reset() {
+    // Nettoyer le player si nécessaire
+    if (this.player) {
+      this.player.destroy();
+      this.player = null;
+    }
+
+    // Nettoyer le tabManager si nécessaire
+    if (this.tabManager) {
+      this.tabManager.destroy();
+      this.tabManager = null;
+    }
+
+    // Réinitialiser les propriétés de base
+    this.currentPage = "";
+    this.beforePage = "";
+
+    // Recréer un nouveau Player (facultatif)
+    this.player = new Player();
+
+    // Recréer le tabManager (facultatif)
+    this.tabManager = new TabManager();
+    this.setupTabMessageHandlers();
+
+    console.log("[PONG42] Instance réinitialisée");
+  }
 }
 
 const pong42 = new Pong42();

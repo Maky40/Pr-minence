@@ -38,7 +38,9 @@ export default class TemplateManager {
     try {
       this.cleanup();
       const templateName = templateFile.replace(".html", "");
+      console.log(auth.authenticated);
       if (!auth.authenticated) {
+        console.log("#################auth not authenticated");
         await auth.initFromAPI();
       }
       if (this.routes[templateName]?.authRequired ?? false) {

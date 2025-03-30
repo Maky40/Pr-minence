@@ -8,8 +8,9 @@ class ProfileManager extends Component {
     super();
     this.state = {
       isEditing: false,
-      profile: null,
+      profile: pong42.player || null,
     };
+
     this.view = new ProfileView();
     this.edit = new ProfileEdit();
 
@@ -31,7 +32,6 @@ class ProfileManager extends Component {
 
     pong42.player.addListener("updateStatus", () => {
       this.setState({ profile: pong42.player });
-
       this.render(this.container);
     });
   }
@@ -39,7 +39,7 @@ class ProfileManager extends Component {
     const updateAPI = pong42.player.updatePlayerInformations(newProfile);
     if (updateAPI) this.setState({ isEditing: false, profile: newProfile });
   };
-  render(container) {
+  async render(container) {
     this.container = container;
     const activeComponent = this.state.isEditing ? this.edit : this.view;
     activeComponent.setState(this.state.profile);

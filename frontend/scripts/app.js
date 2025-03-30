@@ -2,7 +2,6 @@ import Navbar from "../components/navbar.js";
 import { changePage } from "../utils/Page.js";
 import { Router } from "./router.js";
 import TemplateManager from "./templateManager.js";
-import pong42 from "../services/pong42.js";
 
 const navbar = new Navbar();
 const content = document.getElementById("content");
@@ -39,6 +38,4 @@ document.addEventListener("click", (e) => {
   }
 });
 
-pong42.player.init();
-pong42.player.tournament.init();
 router.init();

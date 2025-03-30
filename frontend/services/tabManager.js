@@ -294,6 +294,17 @@ class TabManager {
     if (this.masterTabInterval) {
       clearInterval(this.masterTabInterval);
     }
+    if (this.isMasterTab) {
+      localStorage.removeItem("pong42_master_tab");
+      this.isMasterTab = false;
+    }
+    if (this.tabId) {
+      localStorage.removeItem(this.tabId);
+      this.tabId = null;
+    }
+    window.removeEventListener("storage", this.handleStorageEvent);
+    window.removeEventListener("beforeunload", this.handleUnload);
+    this.messageHandlers = {};
   }
 }
 
