@@ -45,7 +45,7 @@ class GameComponent extends Component {
     this.isCountdownStarted = false;
 
     this.handleSilence = this.handleSilence.bind(this);
-	this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleSilence = this.handleSilence.bind(this);
   }
@@ -64,30 +64,27 @@ class GameComponent extends Component {
     }
   }
 
-
   initializeGameObjects() {
     const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
       this.gameConfig;
     let paddle1Color = "white";
     let paddle2Color = "white";
-    if (pong42.player.paddle === "right")
-      paddle1Color = "red";
-    if (pong42.player.paddle === "left")
-      paddle2Color = "red";
+    if (pong42.player.paddle === "right") paddle1Color = "red";
+    if (pong42.player.paddle === "left") paddle2Color = "red";
     return {
       paddle1: {
         x: 50,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,
-        color: paddle1Color
+        color: paddle1Color,
       },
       paddle2: {
         x: WIDTH - 50 - PADDLE_WIDTH,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,
-        color: paddle2Color
+        color: paddle2Color,
       },
       ball: {
         x: WIDTH / 2,
@@ -105,85 +102,89 @@ class GameComponent extends Component {
       changePage("home");
       return;
     }
-      
+
     console.log("[DEBUG] WebSocket instance:", this.webSocket);
-      
+
     // 🎯 Ajout de la gestion de fermeture de WebSocket
     this.webSocket.onclose = (event) => {
       console.warn("[WS CLOSED]", event.code, event.reason);
-      
+
       if (event.code === 4000) {
-    // Fermeture volontaire du backend pour remplacer une ancienne connexion
-    console.log("Ancienne WebSocket fermée volontairement (code 4000)");
-    return;
+        // Fermeture volontaire du backend pour remplacer une ancienne connexion
+        console.log("Ancienne WebSocket fermée volontairement (code 4000)");
+        return;
       }
-      
+
       // 🚨 Autres fermetures inattendues
       alert("Connexion WebSocket perdue. Retour au menu.");
       this.destroy();
       pong42.player.socketMatch = null;
       changePage("home");
     };
-      
+
     this.webSocket.addMessageListener("message", async (data) => {
       try {
-    const message = JSON.parse(data);
-      
-    if (message.error) {
-      this.destroy();
-      this.webSocket.close();
-      pong42.player.socketMatch = null;
-      changePage("home");
-      return;
-    }
-      
-    switch (message.type) {
-      case "players_info":
-    this.gameState.player1 = message.left_username;
-    this.gameState.player2 = message.right_username;
-    break;
-      
-      case "game_state":
-    this.gameObjects.paddle1.y = message.paddle_left_y;
-    this.gameObjects.paddle2.y = message.paddle_right_y;
-    this.gameObjects.ball.x = message.ball_x;
-    this.gameObjects.ball.y = message.ball_y;
-      
-    if (
-      message.score_left !== this.gameState.score1 ||
-      message.score_right !== this.gameState.score2
-    ) {
-      this.gameState.score1 = message.score_left;
-      this.gameState.score2 = message.score_right;
-      this.handleScore();
-    }
-    break;
-      
-      case "game_over":
-    this.webSocket.removeAllListeners();
-    this.webSocket.close();
-    pong42.player.socketMatch = null;
-    this.gameState.score1 = message.score_left;
-    this.gameState.score2 = message.score_right;
-      
-    let winner = "right";
-    if (message.score_left > message.score_right) winner = "left";
-    this.state.winner =
-      pong42.player.paddle === winner ? "You win!" : "You lose!";
-      
-    this.state.isGameOver = true;
-    await this.music.stop();
-    await this.music.play("final");
-    await this.destroy();
-    this.update();
-    break;
-    }
+        const message = JSON.parse(data);
+
+        if (message.error) {
+          this.destroy();
+          this.webSocket.close();
+          pong42.player.socketMatch = null;
+          changePage("home");
+          return;
+        }
+
+        switch (message.type) {
+          case "players_info":
+            this.gameState.player1 = message.left_username;
+            this.gameState.player2 = message.right_username;
+            break;
+
+          case "game_state":
+            this.gameObjects.paddle1.y = message.paddle_left_y;
+            this.gameObjects.paddle2.y = message.paddle_right_y;
+            this.gameObjects.ball.x = message.ball_x;
+            this.gameObjects.ball.y = message.ball_y;
+
+            if (
+              message.score_left !== this.gameState.score1 ||
+              message.score_right !== this.gameState.score2
+            ) {
+              this.gameState.score1 = message.score_left;
+              this.gameState.score2 = message.score_right;
+              this.handleScore();
+            }
+            break;
+
+          case "game_over":
+            this.webSocket.removeAllListeners();
+            this.webSocket.close();
+            pong42.player.socketMatch = null;
+            this.gameState.score1 = message.score_left;
+            this.gameState.score2 = message.score_right;
+
+            let winner = "right";
+            if (message.score_left > message.score_right) winner = "left";
+            this.state.winner =
+              pong42.player.paddle === winner ? "You win!" : "You lose!";
+
+            this.state.isGameOver = true;
+            await this.music.stop();
+            await this.music.play("final");
+            await this.destroy();
+            if (
+              pong42.player.tournament &&
+              pong42.player.tournament.tournamentId
+            )
+              pong42.player.tournament.startStatusCheckInterval();
+            this.update();
+            break;
+        }
       } catch (error) {
-    console.error("Error parsing WebSocket message:", error);
+        console.error("Error parsing WebSocket message:", error);
       }
     });
   }
-  
 
   getControlsToDisplay() {
     const usesArrows = pong42.player.paddle === "right";
