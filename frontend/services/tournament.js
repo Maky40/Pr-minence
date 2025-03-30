@@ -55,15 +55,6 @@ class TournamentService extends EventEmitter {
     const creatorChanged = this.tournamentCreator !== newValues.creator;
     const playersCountChanged =
       this.tournamentPlayers_count !== newValues.players_count;
-
-    // Log des changements
-    if (statusChanged)
-      console.log(
-        "Status changed:",
-        this.tournamentStatus,
-        "->",
-        newValues.status
-      );
     if (roundChanged)
       console.log(
         "Round changed:",
@@ -387,7 +378,6 @@ class TournamentService extends EventEmitter {
     // Création du nouvel intervalle
     this.interval = setInterval(async () => {
       try {
-        console.log("Checking tournament status");
         await this.updateTournamentStatus();
       } catch (error) {
         console.error("Error updating tournament status:", error);

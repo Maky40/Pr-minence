@@ -39,9 +39,7 @@ const loginFormHandler = async () => {
     const errors = [];
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
-    console.log(username);
     const check_mail = validateField("email", username, 4, 100);
-    console.log(check_mail);
     if (!check_mail.isValid) {
       formIsValid = false;
       errors.push(check_mail.message);

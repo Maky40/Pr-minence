@@ -6,12 +6,12 @@ import pong42 from "../services/pong42.js";
 export default class Navbar extends Component {
   initListeners() {
     auth.addListener((event) => {
-		if (event === "logout") {
-			this.setState({ isAuthenticated: false });
-		  }
-        if (event === "login") {
-          this.setState({ isAuthenticated: true });
-        }
+      if (event === "logout") {
+        this.setState({ isAuthenticated: false });
+      }
+      if (event === "login") {
+        this.setState({ isAuthenticated: true });
+      }
     });
     pong42.player.tournament.on("tournamentLeft", (tournament) => {
       this.setState({ tournament: null });
@@ -162,11 +162,14 @@ export default class Navbar extends Component {
   attachEventListeners() {
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
+      const newLogoutBtn = logoutBtn.cloneNode(true);
+      logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+
+      // Now attach the event with the tracked method
+      this.attachEvent(newLogoutBtn, "click", () => {
         const modal = new ModalAlert(
           "Êtes-vous sûr de vouloir vous déconnecter ?",
           "La raquette orpheline va pleurer... et la balle va disparaître dans le vide numérique.",
-
           "Quitter",
           "Annuler",
           "danger"

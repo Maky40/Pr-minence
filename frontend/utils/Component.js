@@ -34,7 +34,11 @@ export default class Component {
   detachAllEvents() {
     this.domEventListeners.forEach(({ element, type, handler }) => {
       if (element) {
-        element.removeEventListener(type, handler);
+        try {
+          element.removeEventListener(type, handler);
+        } catch (e) {
+          console.warn("Error removing event listener:", e);
+        }
       }
     });
     this.domEventListeners = [];

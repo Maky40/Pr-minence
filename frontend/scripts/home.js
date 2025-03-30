@@ -4,9 +4,11 @@ const updateUI = () => {
   try {
     const loggedSection = document.querySelector("#logged");
     const notLoggedSection = document.querySelector("#not-logged");
+
     if (!loggedSection || !notLoggedSection) {
       return;
     }
+
     if (auth.authenticated) {
       notLoggedSection.classList.remove("d-none");
       loggedSection.classList.add("d-none");
@@ -20,11 +22,11 @@ const updateUI = () => {
 };
 
 const init = () => {
-  // Wait for content to be loaded
-  setTimeout(() => {
-    updateUI();
-    auth.addListener(() => updateUI());
-  }, 0.1);
+  // Mettre à jour l'UI immédiatement
+  updateUI();
+
+  // Écouter les événements d'authentification
+  auth.addListener(updateUI); // CORRIGÉ: Passe la référence à la fonction
 };
 
 export { init };

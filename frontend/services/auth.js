@@ -38,13 +38,12 @@ class Auth {
         this.setSession(data);
       } else {
         if (this.authenticated) this.notifyListeners("logout");
-        console.error("No user found in API");
+        console.warn("No user found in API");
       }
     } catch (error) {
       this.authenticated = false;
       this.user = null;
-
-      console.error("Failed to initialize auth state:", error);
+      console.warn("Failed to initialize auth state:", error);
     }
   }
 
@@ -72,12 +71,29 @@ class Auth {
         toast.show();
         throw new Error("Login failed");
       }
+
+      // Check if the jwt_token cookie exists before proceeding
       if (!this.checkCookie("jwt_token")) {
+        // If no token cookie, just navigate to the current page or home
         changePage(pong42.getCurrentPage() || "home");
       } else {
+        // Only try to parse the token if it exists
         const jwt_token = this.getCookie("jwt_token");
-        const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
-        if (decodedToken.twofa) changePage("#twofactor");
+        if (jwt_token) {
+          try {
+            const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
+            if (decodedToken && decodedToken.twofa) {
+              changePage("#twofactor");
+            } else {
+              changePage(pong42.getCurrentPage() || "home");
+            }
+          } catch (tokenError) {
+            console.error("Error parsing JWT token:", tokenError);
+            changePage(pong42.getCurrentPage() || "home");
+          }
+        } else {
+          changePage(pong42.getCurrentPage() || "home");
+        }
       }
       return data;
     } catch (error) {
@@ -136,7 +152,6 @@ class Auth {
   }
 
   async setSession(data) {
-    console.log("JE PASSE");
     const player = data.player;
     this.authenticated = true;
     this.user = player;
@@ -167,13 +182,8 @@ class Auth {
 
   logoutAndNotify() {
     try {
-      console.log(
-        "JE SUIS DANS LOGOUTANDNOTIFY------------------------------------------------------"
-      );
       this.authenticated = false;
       this.user = null;
-      const toast = new Toast("Success", "Déconnexion réussie", "success");
-      toast.show();
       this.notifyListeners("logout");
       if (pong42.getCurrentPage() === "home") changePage("#");
       else changePage("#home");
