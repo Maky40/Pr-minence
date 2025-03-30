@@ -1,4 +1,6 @@
 import Player from "./player.js";
+import TabManager from "./tabManager.js";
+import Toast from "../components/toast.js";
 
 class Pong42 {
   constructor() {
@@ -7,6 +9,8 @@ class Pong42 {
     this.timeout = 30000;
     const newPlayer = new Player();
     this.player = newPlayer;
+    this.tabManager = new TabManager();
+    this.setupTabMessageHandlers();
   }
 
   async handleMessage(message) {
@@ -25,6 +29,41 @@ class Pong42 {
     });
   }
 
+  setupTabMessageHandlers() {
+    this.tabManager.onMessage("game_started", (data) => {
+      if (!this.tabManager.isMaster()) {
+        new Toast({
+          message: "Une partie est déjà en cours dans un autre onglet!",
+          type: "error",
+          duration: 5000,
+        }).show();
+      }
+    });
+
+    this.tabManager.onMessage("match_joined", (data) => {
+      if (!this.tabManager.isMaster()) {
+        new Toast({
+          message: "Vous avez rejoint un match dans un autre onglet!",
+          type: "info",
+          duration: 5000,
+        }).show();
+      }
+    });
+  }
+
+  isMasterTab() {
+    return this.tabManager.isMaster();
+  }
+
+  notifyGameStarted(gameData = {}) {
+    this.tabManager.notifyGameStarted(gameData);
+  }
+  notifyMatchJoined(matchId) {
+    this.tabManager.notifyMatchJoined(matchId);
+  }
+  sendCrossTabMessage(message) {
+    this.tabManager.sendCrossTabMessage(message);
+  }
   setCurrentPage(page) {
     if (page === "connexion" && page === "signup") return;
     this.beforePage = this.currentPage;

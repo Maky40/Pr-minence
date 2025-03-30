@@ -170,6 +170,11 @@ class Auth {
       const response = await api.apiFetch(this.urlauthdjangologout, true);
       pong42.player.tournament.stopStatusCheckInterval();
       pong42.player.tournament.destroy();
+      pong42.player.destroy();
+      pong42.player.setPlayerInformations(null);
+      pong42.player.updateStatus("OFF");
+      pong42.webSocketStatus.close();
+      pong42.webSocketStatus = null;
       if (this.authenticated == true) {
         this.logoutAndNotify();
       }

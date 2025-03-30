@@ -36,6 +36,13 @@ class GameTournoiWaiting extends Component {
   joinMatch() {
     // Prevent multiple join attempts
     if (this.isConnecting || this.hasJoinedMatch) return;
+    if (!pong42.isMasterTab()) {
+      this.setState({
+        error: "Une partie est déjà en cours dans un autre onglet",
+        loading: false,
+      });
+      return;
+    }
 
     console.log("[TOURNAMENT] Joining match:", this.state.matchId);
     this.hasJoinedMatch = true;
@@ -48,6 +55,7 @@ class GameTournoiWaiting extends Component {
 
     // Set global state for this player in the match
     pong42.player.match_id = this.state.matchId;
+    pong42.notifyMatchJoined(this.state.matchId);
   }
 
   destroy() {
@@ -73,7 +81,7 @@ class GameTournoiWaiting extends Component {
           <div class="alert alert-danger">
             <h4>Erreur</h4>
             <p>${this.state.error}</p>
-            <button class="btn btn-primary" id="retryBtn">Réessayer</button>
+            <button class="btn btn-primary mt-3" onclick="changePage('#home')">Retour à l'accueil</button>
           </div>
         </div>
       `;

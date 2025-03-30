@@ -25,6 +25,13 @@ class DuelModeHost extends Component {
   }
 
   async getMatchId() {
+    if (!pong42.isMasterTab()) {
+      this.setState({
+        error: "Une partie est déjà en cours dans un autre onglet",
+        loading: false,
+      });
+      return;
+    }
     if (this.canceledMatch) return;
     console.log("[DUEL] Host initializing connection");
 
@@ -37,6 +44,7 @@ class DuelModeHost extends Component {
     // Set player as host (left paddle)
     pong42.player.paddle = "left";
     pong42.player.waitingMatch = true;
+    pong42.notifyMatchJoined(this.state.matchId);
   }
 
   async cancelMatch() {

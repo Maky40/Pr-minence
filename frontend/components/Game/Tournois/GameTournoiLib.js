@@ -4,11 +4,11 @@ const statusAffichage = (status) => {
   //    ('PLY', 'Terminé'),
   switch (status) {
     case "UPL":
-      return "En attente des joueurs";
+      return "⌛️ En attente des joueurs";
     case "PLY":
-      return "Terminé";
+      return "🏁 Terminé";
     default:
-      return "Erreur";
+      return "🐞 Erreur";
   }
 };
 

@@ -24,13 +24,20 @@ class DuelModeGuest extends Component {
   async joinMatch() {
     console.log("[DEBUG] Welcome to the match", this.state.matchId);
     if (this.state.isConnected) return;
-
+    if (!pong42.isMasterTab()) {
+      this.setState({
+        error: "Une partie est déjà en cours dans un autre onglet",
+        loading: false,
+      });
+      return;
+    }
     this.setState({ loading: true, isConnected: true });
 
     // Use the utility to create and set up the WebSocket
     this.webSocketMatch = initializeGameWebSocket(this, this.state.matchId, {
       waitingGuest: true,
     });
+    pong42.notifyMatchJoined(this.state.matchId);
   }
   destroy() {
     cleanupGameWebSocket(this, this.webSocketMatch);

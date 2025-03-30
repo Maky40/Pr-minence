@@ -10,8 +10,78 @@ import { ENV } from "../env.js";
  * @param {Object} options - Additional options
  * @returns {WebSocketAPI} The WebSocket instance
  */
+
+function reuseExistingWebSocket(component, options = {}) {
+  // Si aucune connexion existante ou si on force une nouvelle connexion
+  if (!pong42.player.socketMatch || options.forceNewConnection) {
+    return null;
+  }
+
+  console.log("[GAME] Réutilisation d'une connexion WebSocket existante");
+
+  // Utiliser la connexion existante
+  const existingSocket = pong42.player.socketMatch;
+
+  // Mettre à jour la référence dans le composant
+  component.webSocketMatch = existingSocket;
+
+  // Vérifier si la connexion est toujours active
+  if (existingSocket.isConnected()) {
+    console.log("[GAME] La connexion existante est active");
+
+    // On ne réinitialise pas les écouteurs existants, mais on peut ajouter
+    // des écouteurs spécifiques au composant si nécessaire
+    if (options.addComponentListeners) {
+      setupComponentSpecificListeners(component, existingSocket, options);
+    }
+
+    return existingSocket;
+  } else {
+    console.log(
+      "[GAME] La connexion existante est inactive, création d'une nouvelle"
+    );
+    // On continue avec la création d'une nouvelle connexion
+    // Nettoyer d'abord l'ancienne
+    existingSocket.removeAllListeners();
+    return null;
+  }
+}
+
 export function initializeGameWebSocket(component, matchId, options = {}) {
   // If matchId is empty, use base URL for host connections
+  const existingSocket = reuseExistingWebSocket(component, options);
+  if (existingSocket) {
+    return existingSocket;
+  }
+  if (pong42.player.socketMatch && !options.forceNewConnection) {
+    console.log("[GAME] Réutilisation d'une connexion WebSocket existante");
+
+    // Utiliser la connexion existante
+    const existingSocket = pong42.player.socketMatch;
+
+    // Mettre à jour la référence dans le composant
+    component.webSocketMatch = existingSocket;
+
+    // Vérifier si la connexion est toujours active
+    if (existingSocket.isConnected()) {
+      console.log("[GAME] La connexion existante est active");
+
+      // On ne réinitialise pas les écouteurs existants, mais on peut ajouter
+      // des écouteurs spécifiques au composant si nécessaire
+      if (options.addComponentListeners) {
+        setupComponentSpecificListeners(component, existingSocket, options);
+      }
+
+      return existingSocket;
+    } else {
+      console.log(
+        "[GAME] La connexion existante est inactive, création d'une nouvelle"
+      );
+      // On continue avec la création d'une nouvelle connexion
+      // Nettoyer d'abord l'ancienne
+      existingSocket.removeAllListeners();
+    }
+  }
   const wsUrlGame = matchId ? `${ENV.WS_URL_GAME}${matchId}/` : ENV.WS_URL_GAME;
   console.log(
     "[GAME] Connecting to:",

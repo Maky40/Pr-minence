@@ -23,27 +23,35 @@ class GameTournoiLobbyTab extends Component {
   }
 
   playerDisplayBadge(currentPlayer, otherPlayer, match) {
-    return `<div class="d-flex flex-column align-items-center">
-            <div class="avatar-wrapper mb-2">
-            <img src="${currentPlayer.player.avatar}" 
-            alt="${currentPlayer.player.username}" 
-            class="rounded-circle border border-3 border-primary shadow-sm" 
-            width="64" height="64" />
-            ${
-              match.state === "PLY"
-                ? `
-        <span class="badge rounded-pill bg-${
-          currentPlayer.score > otherPlayer.score ? "success" : "danger"
-        } mt-2">
-            ${currentPlayer.score} points
-            </span>
+    let mycolor =
+      currentPlayer.score > otherPlayer.score && match.state === "PLY"
+        ? "success"
+        : "danger";
+    if (match.state !== "PLY") mycolor = "dark";
+    const winningEmoji =
+      currentPlayer.score > otherPlayer.score && match.state === "PLY"
+        ? '<span class="position-absolute top-0 start-100 translate-middle badge text-dark fs-5">👑</span>'
+        : "";
+    return `<div class="d-flex flex-column align-items-center position-relative">
+        ${winningEmoji}
+        <div class="avatar-wrapper mb-2">
+        <img src="${currentPlayer.player.avatar}" 
+        alt="${currentPlayer.player.username}" 
+        class="rounded-circle border border-5 border-primary shadow-sm border-${mycolor}" 
+        width="64" height="64" />
+        ${
+          match.state === "PLY"
+            ? `
+    <span class="badge rounded-pill bg-${mycolor} mt-2">
+        ${currentPlayer.score} points
         </span>
-        `
-                : ""
-            }
-        </div>
-        <h6 class="fw-bold mb-0">${currentPlayer.player.username}</h6>
-    </div>`;
+    </span>
+    `
+            : ""
+        }
+    </div>
+    <h6 class="fw-bold mb-0">${currentPlayer.player.username}</h6>
+</div>`;
   }
   afterRender() {
     const startTournamentButton = this.container.querySelector(
@@ -156,9 +164,10 @@ class GameTournoiLobbyTab extends Component {
                         <ul class="list-group">
                           ${this.tournament.matches
                             .map((match) => {
-                              if (match.round === this.tournament.current_round)
-                              {
-                              return `                   
+                              if (
+                                match.round === this.tournament.current_round
+                              ) {
+                                return `                   
                               <li class="list-group-item p-4 border-start border-5 border-primary position-relative">
                                 <!-- Carte de match élégante -->
                                 <div class="card shadow-sm border-0">
@@ -173,7 +182,7 @@ class GameTournoiLobbyTab extends Component {
                                       <span class="badge rounded-pill bg-${
                                         match.state === "UPL"
                                           ? "warning"
-                                          : "success"
+                                          : "primary"
                                       }">
                                         ${statusAffichage(match.state)}
                                       </span>
@@ -221,11 +230,9 @@ class GameTournoiLobbyTab extends Component {
                                   </div>
                                 </div>
                               </li>
-                          `
-                            }
-                          }
-                          
-                            )
+                          `;
+                              }
+                            })
                             .join("")}
                         </ul>
                       `

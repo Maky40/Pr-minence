@@ -25,8 +25,7 @@ class GameTournoiLobby extends Component {
       () => {
         this.setState({ loading: true });
         this.leaveTimeout = setTimeout(() => {
-          if(!auth.authenticated)
-          {   
+          if (!auth.authenticated) {
             this.setState({ loading: false });
             this.destroy();
             return;
@@ -76,7 +75,7 @@ class GameTournoiLobby extends Component {
           this.joinTournamentMatch.bind(this)
         );
         GameTournoiLobbyTabInstance.render(this.container);
-        if(pong42.player.waitingMatch)
+        if (pong42.player.waitingMatch && pong42.isMasterTab())
           this.goToWaiting(pong42.player.waitingMatchID);
       }
     } catch (error) {
@@ -87,10 +86,8 @@ class GameTournoiLobby extends Component {
       });
     }
   }
-  goToWaiting (matchId)
-  {
-    if(matchId === 0)
-      return;
+  goToWaiting(matchId) {
+    if (matchId === 0) return;
     const matchInfo = getMatchInfo(matchId, this.state.tournament.matches);
     const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);
     const gameTournoiWaiting = new GameTournoiWaiting(
@@ -103,7 +100,6 @@ class GameTournoiLobby extends Component {
     gameTournoiWaiting.render(this.container);
     pong42.player.tournament.stopStatusCheckInterval();
     this.destroy();
-
   }
 
   joinTournamentMatch(matchId) {

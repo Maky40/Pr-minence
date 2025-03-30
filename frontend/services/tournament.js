@@ -2,7 +2,6 @@ import { ENV } from "../env.js";
 import EventEmitter from "../utils/EventEmitter.js";
 import pong42 from "./pong42.js";
 import Toast from "../components/toast.js";
-import auth from "../services/auth.js";
 
 class TournamentService extends EventEmitter {
   constructor() {
