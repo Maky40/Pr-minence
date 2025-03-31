@@ -2,7 +2,7 @@ import pong42 from "./pong42.js";
 import api from "./api.js";
 import Toast from "../components/toast.js";
 import WebSocketAPI from "./websocket.js";
-
+import Navbar from "../components/navbar.js";
 class Auth {
   constructor() {
     this.authenticated = false;
@@ -162,8 +162,6 @@ class Auth {
       if (!pong42.player) {
         pong42.player = new Player();
       }
-      console.log("Setting session data:", player);
-
       // Only proceed with player operations if player exists
       if (pong42.player) {
         await pong42.player.init();
@@ -173,7 +171,6 @@ class Auth {
         console.error("pong42.player is null, cannot initialize player data");
       }
       this.notifyListeners("login");
-
       // Initialize WebSocket status last after everything else is ready
       if (!this.webSocketStatus) {
         this.webSocketStatus = new WebSocketAPI(this.urlwsauth);

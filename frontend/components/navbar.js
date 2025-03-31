@@ -5,21 +5,17 @@ import pong42 from "../services/pong42.js";
 
 export default class Navbar extends Component {
   initListeners() {
+    if (this.isInitialized) return;
     auth.addListener((event) => {
       if (event === "logout") {
         this.setState({ isAuthenticated: false });
+        this.unsbuscribeToEvents();
+        this.render(this.container);
       }
       if (event === "login") {
         this.setState({ isAuthenticated: true });
+        this.subscribeToEvents();
       }
-    });
-    pong42.player.tournament.on("tournamentLeft", (tournament) => {
-      this.setState({ tournament: null });
-      this.render(this.container);
-    });
-    pong42.player.tournament.on("update", (tournament) => {
-      this.setState({ tournament: tournament });
-      this.render(this.container);
     });
   }
   get_status_display(status) {
@@ -39,6 +35,21 @@ export default class Navbar extends Component {
     };
     this.initListeners();
     console.log("Navbar initialized", pong42);
+  }
+  unsbuscribeToEvents() {
+    pong42.player.tournament.off("tournamentLeft");
+    pong42.player.tournament.off("update");
+  }
+
+  subscribeToEvents() {
+    pong42.player.tournament.on("tournamentLeft", (tournament) => {
+      this.setState({ tournament: null });
+      this.render(this.container);
+    });
+    pong42.player.tournament.on("update", (tournament) => {
+      this.setState({ tournament: tournament });
+      this.render(this.container);
+    });
   }
 
   template() {
