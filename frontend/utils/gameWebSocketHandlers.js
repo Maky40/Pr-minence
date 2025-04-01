@@ -263,6 +263,10 @@ export function handleGameStart(component, webSocketMatch) {
     });
     if (component.container) {
       // Check if component still mounted
+      pong42.tabManager.notifyGameStarted(
+        component.state.matchId,
+        component.state.paddle
+      );
       game.render(component.container);
     }
   }, 100); // 1-second delay helps synchronize both players

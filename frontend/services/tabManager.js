@@ -1,3 +1,5 @@
+import Toast from "../components/toast.js";
+
 /**
  * Gère les onglets multiples et la communication entre eux
  */
@@ -183,14 +185,40 @@ class TabManager {
 
     try {
       const masterInfo = JSON.parse(newValue);
+
+      // Si le message vient d'un autre onglet, nous devons résoudre le conflit
       if (masterInfo.id !== this.tabId) {
-        console.log("[TAB] Another tab claims to be master:", masterInfo.id);
-        // Résoudre le conflit - le plus ancien reste maître
-        const currentInfo = {
-          id: this.tabId,
-          lastPing: Date.now(),
-        };
-        localStorage.setItem("pong42_master_tab", JSON.stringify(currentInfo));
+        console.log("[TAB] Potential master conflict with:", masterInfo.id);
+
+        // Stratégie de résolution: l'onglet avec l'ID le plus ancien (timestamp plus petit) gagne
+        const currentTabCreationTime = parseInt(this.tabId.split("_").pop());
+        const otherTabCreationTime = parseInt(masterInfo.id.split("_").pop());
+
+        if (currentTabCreationTime < otherTabCreationTime) {
+          // Notre onglet est plus ancien, on maintient notre statut de maître
+          console.log("[TAB] This tab is older, keeping master status");
+
+          // Mise à jour des informations de master avec un délai pour éviter un ping-pong
+          setTimeout(() => {
+            const currentInfo = {
+              id: this.tabId,
+              lastPing: Date.now(),
+            };
+            localStorage.setItem(
+              "pong42_master_tab",
+              JSON.stringify(currentInfo)
+            );
+          }, 300);
+        } else {
+          // L'autre onglet est plus ancien, on abandonne notre statut
+          console.log("[TAB] Other tab is older, giving up master status");
+          this.isMasterTab = false;
+
+          if (this.masterTabInterval) {
+            clearInterval(this.masterTabInterval);
+            this.masterTabInterval = null;
+          }
+        }
       }
     } catch (error) {
       console.error("[TAB] Error handling master tab change:", error);
@@ -215,16 +243,28 @@ class TabManager {
    * Traite un message reçu d'un autre onglet
    */
   processCrossTabMessage(message) {
-    console.log("[TAB] Processing cross-tab message:", message);
+    console.log("[TAB] Processing message:", message);
+    console.log("[TAB] Message type:", message.type);
+    console.log("[TAB] Available handlers:", Object.keys(this.messageHandlers));
+    console.log("[TAB] Handler exists?", !!this.messageHandlers[message.type]);
 
     // Si le message provient de cet onglet, l'ignorer
     if (message.sourceTabId === this.tabId) {
+      console.log("[TAB] Ignoring message from self");
       return;
     }
 
     // Si nous avons un gestionnaire pour ce type de message, l'appeler
     if (this.messageHandlers[message.type]) {
-      this.messageHandlers[message.type](message.data);
+      console.log("[TAB] Calling handler for:", message.type);
+      try {
+        this.messageHandlers[message.type](message.data);
+        console.log("[TAB] Handler executed successfully");
+      } catch (error) {
+        console.error("[TAB] Error in message handler:", error);
+      }
+    } else {
+      console.warn("[TAB] No handler found for message type:", message.type);
     }
 
     // Traiter certains messages système
@@ -271,10 +311,20 @@ class TabManager {
    * Notifie qu'un jeu a démarré
    */
   notifyGameStarted(gameData = {}) {
+    console.log("[TAB] Sending game_started message:", gameData);
+
+    // Force la conversion en objet si necessaire
+    const safeData = typeof gameData === "object" ? gameData : {};
+
     this.sendCrossTabMessage({
-      type: "game_started",
-      data: gameData,
+      type: "game_started", // Assurez-vous que c'est exactement la même chaîne
+      data: safeData,
     });
+
+    // Vérification immédiate que le message a été envoyé
+    console.log("[TAB] Message sent, checking localStorage:");
+    const sent = JSON.parse(localStorage.getItem("pong42_cross_tab") || "{}");
+    console.log("[TAB] Current message in localStorage:", sent);
   }
 
   /**
@@ -283,7 +333,14 @@ class TabManager {
   notifyMatchJoined(matchId) {
     this.sendCrossTabMessage({
       type: "match_joined",
-      data: { matchId },
+      data: { matchId, tabID: this.tabId },
+    });
+  }
+
+  notifyMatchGameOverOrAborted(matchId) {
+    this.sendCrossTabMessage({
+      type: "game_over_or_aborted",
+      data: { matchId, tabID: this.tabId },
     });
   }
 

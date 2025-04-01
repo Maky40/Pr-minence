@@ -401,12 +401,12 @@ class TournamentService extends EventEmitter {
   destroy() {
     // Arrêter l'intervalle de vérification
     this.cleanup();
+    this.initData();
     // Émettre un événement pour informer que le tournoi est quitté
     this.emit("tournamentLeft", {});
     // Émettre un événement pour vider la liste des tournois
     this.emit("tournamentsLoaded", { tournaments: [] });
     // Réinitialiser les données
-    this.initData();
     console.log("[Tournament] Service destroyed and events cleared");
   }
 }

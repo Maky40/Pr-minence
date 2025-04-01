@@ -2,6 +2,7 @@ import Component from "../utils/Component.js";
 import auth from "../services/auth.js";
 import ModalAlert from "./modal.js";
 import pong42 from "../services/pong42.js";
+import { changePage } from "../utils/Page.js";
 
 export default class Navbar extends Component {
   initListeners() {
@@ -15,6 +16,13 @@ export default class Navbar extends Component {
       if (event === "login") {
         this.setState({ isAuthenticated: true });
         this.subscribeToEvents();
+      }
+    });
+    pong42.on("match_update", (data) => {
+      this.render(this.container);
+      if (data != "game_over_or_aborted" || pong42.currentPage === "game") {
+        changePage("home");
+        return;
       }
     });
   }
@@ -75,20 +83,37 @@ export default class Navbar extends Component {
                   <i class="fas fa-trophy text-warning me-2"></i>Légendes
                 </a>
               </li>
+               ${
+                 this.state.isAuthenticated && !pong42.matchInOtherTab
+                   ? `
+      <li class="nav-item">
+        <a class="nav-link px-3" href="#game">
+          <i class="fas fa-gamepad text-danger me-2"></i>Jouer
+        </a>
+      </li>
+      `
+                   : ""
+               }
               ${
                 this.state.isAuthenticated
                   ? `
-                  <li class="nav-item">
-                    <a class="nav-link px-3" href="#game">
-                      <i class="fas fa-gamepad text-danger me-2"></i>Jouer
-                    </a>
-                  </li>
                   <li class="nav-item">
                     <a class="nav-link px-3" href="#chat">
                       <i class="fas fa-comments text-info me-2"></i>Chat
                     </a>
                   </li>
-                `
+                  `
+                  : ""
+              }
+              ${
+                this.state.isAuthenticated && pong42.matchInOtherTab
+                  ? `
+                  <li class="nav-item">
+                    <span class="nav-link px-3 text-warning">
+                      <i class="fas fa-exclamation-triangle me-2"></i>Match en cours dans un autre onglet
+                    </span>
+                  </li>
+                  `
                   : ""
               }
             </ul>

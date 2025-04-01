@@ -25,7 +25,7 @@ class DuelModeHost extends Component {
   }
 
   async getMatchId() {
-    if (!pong42.isMasterTab()) {
+    if (pong42.matchInOtherTab) {
       this.setState({
         error: "Une partie est déjà en cours dans un autre onglet",
         loading: false,
@@ -62,6 +62,9 @@ class DuelModeHost extends Component {
         error: null,
         waitingGuest: false,
         isConnected: false,
+      });
+      pong42.tabManager.notifyMatchGameOverOrAborted({
+        match_id: this.state.matchId,
       });
 
       changePage("game");

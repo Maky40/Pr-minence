@@ -36,7 +36,7 @@ class GameTournoiWaiting extends Component {
   joinMatch() {
     // Prevent multiple join attempts
     if (this.isConnecting || this.hasJoinedMatch) return;
-    if (!pong42.isMasterTab()) {
+    if (pong42.matchInOtherTab) {
       this.setState({
         error: "Une partie est déjà en cours dans un autre onglet",
         loading: false,

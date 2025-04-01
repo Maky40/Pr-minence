@@ -1,15 +1,18 @@
 import Player from "./player.js";
 import TabManager from "./tabManager.js";
 import Toast from "../components/toast.js";
+import EventEmitter from "../utils/EventEmitter.js";
 
-class Pong42 {
+class Pong42 extends EventEmitter {
   constructor() {
+    super();
     this.currentPage = "";
     this.beforePage = "";
     this.timeout = 30000;
     const newPlayer = new Player();
     this.player = newPlayer;
     this.tabManager = new TabManager();
+    this.matchInOtherTab = false;
     this.setupTabMessageHandlers();
   }
 
@@ -30,23 +33,35 @@ class Pong42 {
   }
 
   setupTabMessageHandlers() {
+    this.tabManager.onMessage("game_over_or_aborted", (data) => {
+      if (!this.tabManager.tabId !== data.tabID) {
+        this.matchInOtherTab = false;
+        this.emit("match_update", "game_over_or_aborted");
+      }
+    });
+
     this.tabManager.onMessage("game_started", (data) => {
-      if (!this.tabManager.isMaster()) {
-        new Toast({
-          message: "Une partie est déjà en cours dans un autre onglet!",
-          type: "error",
-          duration: 5000,
-        }).show();
+      if (!this.tabManager.tabId !== data.tabID) {
+        this.matchInOtherTab = true;
+        this.emit("match_update", "game_started");
+        new Toast(
+          "Une partie est déjà en cours dans un autre onglet!",
+          "error",
+          5000
+        ).show();
       }
     });
 
     this.tabManager.onMessage("match_joined", (data) => {
-      if (!this.tabManager.isMaster()) {
-        new Toast({
-          message: "Vous avez rejoint un match dans un autre onglet!",
-          type: "info",
-          duration: 5000,
-        }).show();
+      console.log(data, "match_joined");
+      if (!this.tabManager.tabId !== data.tabID) {
+        this.matchInOtherTab = true;
+        this.emit("match_update", "match_joined");
+        new Toast(
+          "Vous avez rejoint un match dans un autre onglet!",
+          "info",
+          5000
+        ).show();
       }
     });
   }

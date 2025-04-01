@@ -193,6 +193,9 @@ class GameComponent extends Component {
               pong42.player.tournament.tournamentId
             )
               pong42.player.tournament.startStatusCheckInterval();
+            pong42.tabManager.notifyMatchGameOverOrAborted({
+              match_id: this.webSocket.matchId,
+            });
             this.update();
             break;
         }
