@@ -4,57 +4,62 @@ from rest_framework.response import Response
 from .models import Tournament, Player, Match, PlayerMatch, PlayerTournament
 from .serializers import TournamentSerializer
 from .decorators import jwt_cookie_required
-
+from django.db import transaction
 
 def update_tournament(tournament_id):
-    tournament = Tournament.objects.get(id=tournament_id)
-    if tournament.status == 'FN':  # Tournament is finished
-        return
-    
-    current_round = tournament.current_round
-    current_round_matches = Match.objects.filter(tournament=tournament, round=current_round)
-
-    if all(match.state == 'PLY' for match in current_round_matches):
-        if tournament.current_round == 'FN':
-            tournament.status = 'FN'
-            winner = PlayerMatch.objects.get(match__in=current_round_matches, is_winner=True)
-            winner.player.champions += 1
-            tournament.save()
-            winner.player.save()
+    # Utilisation d'une transaction qui verrouille l'objet tournoi
+    with transaction.atomic():
+        # Verrouiller le tournoi pour éviter des mises à jour concurrentes
+        tournament = Tournament.objects.select_for_update().get(id=tournament_id)
+        
+        if tournament.status == 'FN':  # Le tournoi est terminé
             return
-        
-        winning_players = list(PlayerMatch.objects.filter(match__in=current_round_matches, is_winner=True))
-        
-        if winning_players:
-            if tournament.current_round == 'QU':
-                tournament.current_round = 'HF'
-            elif tournament.current_round == 'HF':
-                tournament.current_round = 'FN'
-            tournament.save()
 
-        while len(winning_players) >= 2:
-            player1 = winning_players.pop(0).player
-            player2 = winning_players.pop(0).player
+        current_round = tournament.current_round
+        current_round_matches = Match.objects.filter(tournament=tournament, round=current_round)
 
-            # Vérifier si un match pour ces deux joueurs existe déjà dans ce tournoi et ce round
-            match_exists = Match.objects.filter(
-                tournament=tournament,
-                round=tournament.current_round,
-                playermatch__player=player1
-            ).filter(
-                playermatch__player=player2
-            ).exists()
-            
-            if match_exists:
-                # Si le match existe déjà, on passe à la prochaine paire
-                continue
+        if all(match.state == 'PLY' for match in current_round_matches):
+            if tournament.current_round == 'FN':
+                tournament.status = 'FN'
+                winner = PlayerMatch.objects.get(match__in=current_round_matches, is_winner=True)
+                winner.player.champions += 1
+                tournament.save()
+                winner.player.save()
+                return
 
-            tournament_match = Match.objects.create(
-                tournament=tournament,
-                round=tournament.current_round
-            )
-            PlayerMatch.objects.create(match=tournament_match, player=player1, player_side='L')
-            PlayerMatch.objects.create(match=tournament_match, player=player2, player_side='R')
+            winning_players = list(PlayerMatch.objects.filter(match__in=current_round_matches, is_winner=True))
+
+            if winning_players:
+                if tournament.current_round == 'QU':
+                    tournament.current_round = 'HF'
+                elif tournament.current_round == 'HF':
+                    tournament.current_round = 'FN'
+                tournament.save()
+
+            while len(winning_players) >= 2:
+                player1 = winning_players.pop(0).player
+                player2 = winning_players.pop(0).player
+
+                # Vérifier dans la transaction si un match pour ces deux joueurs existe déjà dans ce tournoi et ce round
+                match_exists = Match.objects.filter(
+                    tournament=tournament,
+                    round=tournament.current_round,
+                    playermatch__player=player1
+                ).filter(
+                    playermatch__player=player2
+                ).exists()
+
+                if match_exists:
+                    continue
+
+                tournament_match = Match.objects.create(
+                    tournament=tournament,
+                    round=tournament.current_round
+                )
+                PlayerMatch.objects.create(match=tournament_match, player=player1, player_side='L')
+                PlayerMatch.objects.create(match=tournament_match, player=player2, player_side='R')
+
+
 
 
 class TournamentView(APIView):

@@ -82,14 +82,14 @@ class GameComponent extends Component {
       paddle2Color = "rgba(232, 99, 99, 0.8)";
     return {
       paddle1: {
-        x: 50,
+        x: 30,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,
         color: paddle1Color,
       },
       paddle2: {
-        x: WIDTH - 50 - PADDLE_WIDTH,
+        x: WIDTH - 30 - PADDLE_WIDTH,
         y: HEIGHT / 2 - PADDLE_HEIGHT / 2,
         width: PADDLE_WIDTH,
         height: PADDLE_HEIGHT,

@@ -47,7 +47,7 @@ class GameRenderer {
   drawBall(ball) {
     this.ctx.fillStyle = "rgba(255, 255, 108, 0.8)";
     this.ctx.beginPath();  // Commencer le chemin pour dessiner le cercle
-    this.ctx.arc(ball.x, ball.y, ball.size / 2, 0, Math.PI * 2);  // Dessiner un cercle
+    this.ctx.arc(ball.x + ball.size / 2, ball.y + ball.size / 2, ball.size / 2, 0, Math.PI * 2);
     this.ctx.fill();
   }
 }

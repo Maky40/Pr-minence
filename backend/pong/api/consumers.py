@@ -1,41 +1,35 @@
+
 import json
 import asyncio
+import math
+import random
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import Match, PlayerMatch
 
-# États de jeu et connexions en mémoire
 game_states = {}
 game_tasks = {}
 countdown_tasks = {}
-connected_users = {}        # match_id -> int
-connected_players = {}      # player_id -> PongConsumer instance
+connected_users = {}
+connected_players = {}
 
 class PongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("\n[DEBUG] Nouvelle tentative de connexion WebSocket")
-
         if "player" not in self.scope:
-            print("[DEBUG] Connexion refusée : pas de joueur dans scope.")
             await self.close()
             return
 
         self.player = self.scope["player"]
-        print(f"[DEBUG] Joueur connecté: {self.player.username}")
 
-        # 🔁 Ferme ancienne connexion si déjà connecté
         if self.player.id in connected_players:
             old_consumer = connected_players[self.player.id]
             if old_consumer != self:
-                print(f"[DEBUG] Fermeture de l'ancienne connexion pour {self.player.username}")
                 await old_consumer.close(code=4000)
 
         connected_players[self.player.id] = self
-        print(f"[DEBUG] Nouvelle connexion enregistrée pour {self.player.username}")
 
         self.match_id = self.scope["url_route"]["kwargs"].get("match_id")
         self.room_group_name = f"pong_{self.match_id}" if self.match_id else None
-        print(f"[DEBUG] match_id={self.match_id}, group={self.room_group_name}")
 
         if self.match_id:
             match_exists = await self.match_exists_in_db(self.match_id)
@@ -43,7 +37,6 @@ class PongConsumer(AsyncWebsocketConsumer):
                 await self.accept()
                 await self.send(text_data=json.dumps({"error": f"Match {self.match_id} inexistant"}))
                 await self.close()
-                print("[DEBUG] Connexion refusée : match inexistant")
                 return
 
             match_state = await self.get_match_state(self.match_id)
@@ -51,11 +44,9 @@ class PongConsumer(AsyncWebsocketConsumer):
                 await self.accept()
                 await self.send(text_data=json.dumps({"error": "Ce match est déjà terminé."}))
                 await self.close()
-                print(f"[DEBUG] Refus de connexion : match {self.match_id} déjà joué.")
                 return
 
             connected_users[self.match_id] = connected_users.get(self.match_id, 0) + 1
-            print(f"[DEBUG] connected_users[{self.match_id}] = {connected_users[self.match_id]}")
 
             self.paddle = await self.assign_player_side(self.match_id, self.player)
             if not self.paddle:
@@ -68,34 +59,22 @@ class PongConsumer(AsyncWebsocketConsumer):
             self.paddle = "left"
             self.room_group_name = f"pong_{self.match_id}"
             connected_users[self.match_id] = 1
-            print(f"[DEBUG] Match créé : match_id={self.match_id}")
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
-        print("[DEBUG] WebSocket acceptée (joueur intégré au match)")
 
         await self.send(text_data=json.dumps({
             "message": "Connexion WebSocket établie",
             "match_id": self.match_id,
             "paddle": self.paddle
         }))
-        print(f"[DEBUG] Envoi au client : match_id={self.match_id}, paddle={self.paddle}")
 
         if await self.is_match_ready(self.match_id):
             await self.start_game()
 
     async def disconnect(self, close_code):
-        print(f"[DEBUG] Déconnexion WebSocket (code: {close_code})")
-
         if hasattr(self, "room_group_name"):
-            await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
         if hasattr(self, "match_id"):
             current = connected_users.get(self.match_id, 0)
@@ -103,11 +82,9 @@ class PongConsumer(AsyncWebsocketConsumer):
                 connected_users[self.match_id] = current - 1
             elif current == 1:
                 del connected_users[self.match_id]
-            print(f"[DEBUG] connected_users[{self.match_id}] après déconnexion = {connected_users.get(self.match_id)}")
 
         if hasattr(self, "player") and self.player:
             if connected_players.get(self.player.id) == self:
-                print(f"[DEBUG] Suppression de connected_players pour {self.player.username}")
                 del connected_players[self.player.id]
 
     @database_sync_to_async
@@ -138,39 +115,21 @@ class PongConsumer(AsyncWebsocketConsumer):
             return "left" if player_match.player_side == 'L' else "right"
 
         if existing_pm.count() == 0:
-            PlayerMatch.objects.create(
-                player=player,
-                match_id=match_id,
-                score=0,
-                is_winner=False,
-                player_side='L'
-            )
+            PlayerMatch.objects.create(player=player, match_id=match_id, score=0, is_winner=False, player_side='L')
             return "left"
         elif existing_pm.count() == 1:
-            PlayerMatch.objects.create(
-                player=player,
-                match_id=match_id,
-                score=0,
-                is_winner=False,
-                player_side='R'
-            )
+            PlayerMatch.objects.create(player=player, match_id=match_id, score=0, is_winner=False, player_side='R')
             return "right"
         return None
 
     async def is_match_ready(self, match_id):
-        count = connected_users.get(match_id, 0)
-        print(f"[DEBUG] is_match_ready? match_id={match_id}, connected={count}")
-        return count >= 2
+        return connected_users.get(match_id, 0) >= 2
 
     async def start_game(self):
-        print(f"[DEBUG] start_game appelé pour match_id={self.match_id}")
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "game_start",
-                "message": "La partie va commencer dans 5 secondes..."
-            }
-        )
+        await self.channel_layer.group_send(self.room_group_name, {
+            "type": "game_start",
+            "message": "La partie va commencer dans 5 secondes..."
+        })
 
         if self.match_id in game_states:
             del game_states[self.match_id]
@@ -179,14 +138,11 @@ class PongConsumer(AsyncWebsocketConsumer):
         await self.start_game_loop()
 
         left_username, right_username = await self.get_left_right_usernames(self.match_id)
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "players_info",
-                "left_username": left_username,
-                "right_username": right_username
-            }
-        )
+        await self.channel_layer.group_send(self.room_group_name, {
+            "type": "players_info",
+            "left_username": left_username,
+            "right_username": right_username
+        })
 
         countdown_task = asyncio.create_task(self.do_countdown(self.match_id))
         countdown_tasks[self.match_id] = countdown_task
@@ -196,7 +152,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             "type": "game_start",
             "message": event["message"]
         }))
-        print(f"[DEBUG] Envoi game_start: {event['message']}")
 
     @database_sync_to_async
     def get_left_right_usernames(self, match_id):
@@ -210,16 +165,15 @@ class PongConsumer(AsyncWebsocketConsumer):
             "left_username": event["left_username"],
             "right_username": event["right_username"]
         }))
-        print(f"[DEBUG] Envoi players_info: {event}")
 
     async def init_game_state(self):
         game_states[self.match_id] = {
             "width": 1000,
             "height": 600,
-            "ball_x": 400,
+            "ball_x": 500,
             "ball_y": 300,
-            "ball_vx": 5,
-            "ball_vy": 5,
+            "ball_vx": 7,
+            "ball_vy": 7,
             "paddle_left_y": 250,
             "paddle_right_y": 250,
             "paddle_speed_left": 0,
@@ -231,18 +185,15 @@ class PongConsumer(AsyncWebsocketConsumer):
             "running": False,
             "next_engagement_left": True
         }
-        print(f"[DEBUG] État de jeu initialisé pour match {self.match_id}")
 
     async def start_game_loop(self):
         game_tasks[self.match_id] = asyncio.create_task(self.game_loop(self.match_id))
-        print(f"[DEBUG] Boucle de jeu démarrée pour match_id={self.match_id}")
 
     async def do_countdown(self, match_id):
         await asyncio.sleep(5)
         state = game_states.get(match_id)
         if state:
             state["running"] = True
-            print(f"[DEBUG] Décompte terminé, jeu lancé pour match {match_id}")
 
     async def game_loop(self, match_id):
         while True:
@@ -275,54 +226,82 @@ class PongConsumer(AsyncWebsocketConsumer):
         vx, vy = state["ball_vx"], state["ball_vy"]
         w, h = state["width"], state["height"]
         ball_size = 15
-        paddle_left_x = 50
-        paddle_right_x = w - 50 - state["paddle_width"]
+        paddle_left_x = 30
+        paddle_right_x = w - 30 - state["paddle_width"]
+        paddle_height = state["paddle_height"]
+        hitbox_padding = 10
+        max_speed = 18
 
-        if by <= 0 or by >= h - ball_size:
+        if by <= 0:
+            state["ball_y"] = 0
+            state["ball_vy"] = -vy
+        elif by >= h - ball_size:
+            state["ball_y"] = h - ball_size
             state["ball_vy"] = -vy
 
+        def bounce_off_paddle(paddle_y, paddle_speed, is_left):
+            ball_center_y = by + ball_size / 2
+            paddle_center_y = paddle_y + paddle_height / 2
+            relative_intersect = ball_center_y - paddle_center_y
+            normalized = relative_intersect / (paddle_height / 2)
+            bounce_angle = normalized * (math.pi / 4)
+            intensity = 1 + abs(normalized) * 1.2
+            base_speed = min(math.hypot(vx, vy) * 1.05 * intensity, max_speed)
+            direction = 1 if is_left else -1
+            new_vx = direction * base_speed * math.cos(bounce_angle)
+            new_vy = base_speed * math.sin(bounce_angle)
+            new_vy += paddle_speed * 0.15
+            return new_vx, new_vy
+
+        ball_center_y = by + ball_size / 2
+
         if bx <= paddle_left_x + state["paddle_width"]:
-            if state["paddle_left_y"] <= by <= state["paddle_left_y"] + state["paddle_height"]:
-                state["ball_vx"] = -vx * 1.1
-                state["ball_vy"] = vy * 1.1
+            if state["paddle_left_y"] - hitbox_padding <= ball_center_y <= state["paddle_left_y"] + paddle_height + hitbox_padding:
+                new_vx, new_vy = bounce_off_paddle(state["paddle_left_y"], state["paddle_speed_left"], True)
+                state["ball_vx"], state["ball_vy"] = new_vx, new_vy
             else:
                 state["score_right"] += 1
                 await self.reset_ball(state)
+                return
         elif bx + ball_size >= paddle_right_x:
-            if state["paddle_right_y"] <= by <= state["paddle_right_y"] + state["paddle_height"]:
-                state["ball_vx"] = -vx * 1.1
-                state["ball_vy"] = vy * 1.1
+            if state["paddle_right_y"] - hitbox_padding <= ball_center_y <= state["paddle_right_y"] + paddle_height + hitbox_padding:
+                new_vx, new_vy = bounce_off_paddle(state["paddle_right_y"], state["paddle_speed_right"], False)
+                state["ball_vx"], state["ball_vy"] = new_vx, new_vy
             else:
                 state["score_left"] += 1
                 await self.reset_ball(state)
+                return
 
         if state["score_left"] >= 10 or state["score_right"] >= 10:
             state["running"] = False
             await self.end_game(self.match_id, state)
 
     async def reset_ball(self, state):
-        import random
+        min_angle = math.radians(15)
+        max_angle = math.radians(60)
+        angle = random.uniform(min_angle, max_angle)
+        angle *= -1 if random.random() < 0.5 else 1
+        speed = 8.5
+        direction = 1 if state["next_engagement_left"] else -1
+        state["ball_vx"] = direction * speed * math.cos(angle)
+        state["ball_vy"] = speed * math.sin(angle)
         state["ball_x"] = state["width"] // 2
         state["ball_y"] = state["height"] // 2
-        state["ball_vy"] = 5 * (1 if random.random() > 0.5 else -1)
-        state["ball_vx"] = 5 if state["next_engagement_left"] else -5
         state["next_engagement_left"] = not state["next_engagement_left"]
 
+
     async def broadcast_game_state(self, state):
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "update_game_state",
-                "state": {
-                    "ball_x": state["ball_x"],
-                    "ball_y": state["ball_y"],
-                    "paddle_left_y": state["paddle_left_y"],
-                    "paddle_right_y": state["paddle_right_y"],
-                    "score_left": state["score_left"],
-                    "score_right": state["score_right"],
-                }
+        await self.channel_layer.group_send(self.room_group_name, {
+            "type": "update_game_state",
+            "state": {
+                "ball_x": state["ball_x"],
+                "ball_y": state["ball_y"],
+                "paddle_left_y": state["paddle_left_y"],
+                "paddle_right_y": state["paddle_right_y"],
+                "score_left": state["score_left"],
+                "score_right": state["score_right"],
             }
-        )
+        })
 
     async def update_game_state(self, event):
         await self.send(text_data=json.dumps({
@@ -331,16 +310,12 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def end_game(self, match_id, state):
-        print(f"[DEBUG] Fin de match {match_id}")
         await self.update_database_winner(match_id, state)
-        await self.channel_layer.group_send(
-            f"pong_{match_id}",
-            {
-                "type": "game_over",
-                "score_left": state["score_left"],
-                "score_right": state["score_right"]
-            }
-        )
+        await self.channel_layer.group_send(f"pong_{match_id}", {
+            "type": "game_over",
+            "score_left": state["score_left"],
+            "score_right": state["score_right"]
+        })
 
     @database_sync_to_async
     def update_database_winner(self, match_id, state):
@@ -375,7 +350,6 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def receive(self, text_data):
-        print(f"[DEBUG] Donnée reçue du client: {text_data}")
         data = json.loads(text_data)
         action_type = data.get("type")
 
@@ -389,6 +363,7 @@ class PongConsumer(AsyncWebsocketConsumer):
                 state["paddle_speed_left"] = -10 if direction == "up" else 10 if direction == "down" else 0
             else:
                 state["paddle_speed_right"] = -10 if direction == "up" else 10 if direction == "down" else 0
+
 
 
 
