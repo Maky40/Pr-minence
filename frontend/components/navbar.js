@@ -16,6 +16,13 @@ export default class Navbar extends Component {
           this.setState({ isAuthenticated: true });
         }
     });
+
+	// Écouter les changements de statut de jeu
+	pong42.player.addListener("gameStatusChanged", (isPlaying) => {
+		console.log("PLAYER GAME STATUS CHANGED:", isPlaying);
+		this.setState({ isPlaying: isPlaying });
+	  });
+
     pong42.player.tournament.on("tournamentLeft", (tournament) => {
       this.setState({ tournament: null });
       this.render(this.container);
@@ -44,6 +51,11 @@ export default class Navbar extends Component {
   }
 
   template() {
+
+	if (this.state.isPlaying) {
+		return '';
+	  }
+
     return `
       <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(to right, #1a1a1a, #2d2d2d);">
         <div class="container-fluid">

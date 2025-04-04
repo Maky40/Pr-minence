@@ -48,6 +48,9 @@ class GameComponent extends Component {
 	this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleSilence = this.handleSilence.bind(this);
+
+	pong42.player.game = true;
+	pong42.player.notifyListeners("gameStatusChanged", true);
   }
 
   handleKeyDown(event) {
@@ -319,194 +322,194 @@ class GameComponent extends Component {
     if (btnSilence) {
       btnSilence.removeEventListener("click", this.handleSilence);
     }
+
+	pong42.player.game = false;
+	pong42.player.notifyListeners("gameStatusChanged", false);
   }
 
   template() {
-    const controls = this.getControlsToDisplay();
-    // Affichage du compte à rebours tant que la partie n'a pas commencé
-    if (!this.state.isGameStarted) {
-      return `
-        <div class="game-container position-relative">
-          <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" id="gameOverlay"
-               style="background: rgba(0, 0, 0, 0.85); z-index: 1000;">
-            <div class="text-center">
-              <h2 class="text-warning mb-4 display-4 fw-bold">GET READY!</h2>
-              <div class="countdown-box border border-4 border-warning rounded-circle bg-dark
-                          d-flex justify-content-center align-items-center mx-auto"
-                   style="width: 150px; height: 150px;">
-                <span class="display-1 text-warning fw-bold"
-                      style="animation: bounce 0.5s infinite;">
-                  ${this.state.countdown}
-                </span>
-              </div>
-              <div class="mt-4">
-                <p class="text-warning mb-2">Controls:</p>
-                <div class="d-flex justify-content-center gap-4">
-                  <div class="text-white">
-                    <span class="badge bg-warning text-dark"> ${controls.up}</span> Up
-                  </div>
-                  <div class="text-white">
-                    <span class="badge bg-warning text-dark">${controls.down}</span> Down
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <canvas id="gameCanvas"
-                  width="${this.gameConfig.WIDTH}"
-                  height="${this.gameConfig.HEIGHT}"
-                  class="shadow-lg">
-          </canvas>
-        </div>
-      `;
-    }
-    if (this.state.isGameOver) {
-      return `
-        <div class="game-container position-relative vh-100 bg-dark">
-          <canvas id="gameCanvas"
-                  width="${this.gameConfig.WIDTH}"
-                  height="${this.gameConfig.HEIGHT}"
-                  class="position-absolute top-50 start-50 translate-middle shadow-lg opacity-50">
-          </canvas>
+	const controls = this.getControlsToDisplay();
+	// Affichage du compte à rebours tant que la partie n'a pas commencé
+	if (!this.state.isGameStarted) {
+	  return `
+		<div class="game-container position-relative">
+		  <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" id="gameOverlay"
+			   style="background: rgba(0, 0, 0, 0.85); z-index: 1000;">
+			<div class="text-center">
+			  <h2 class="text-warning mb-4 display-4 fw-bold">GET READY!</h2>
+			  <div class="countdown-box border border-4 border-warning rounded-circle bg-dark
+						  d-flex justify-content-center align-items-center mx-auto"
+				   style="width: 150px; height: 150px;">
+				<span class="display-1 text-warning fw-bold"
+					  style="animation: bounce 0.5s infinite;">
+				  ${this.state.countdown}
+				</span>
+			  </div>
+			  <div class="mt-4">
+				<p class="text-warning mb-2">Controls:</p>
+				<div class="d-flex justify-content-center gap-4">
+				  <div class="text-white">
+					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up
+				  </div>
+				  <div class="text-white">
+					<span class="badge bg-warning text-dark">${controls.down}</span> Down
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
+		  <canvas id="gameCanvas"
+				  width="${this.gameConfig.WIDTH}"
+				  height="${this.gameConfig.HEIGHT}"
+				  class="shadow-lg">
+		  </canvas>
+		</div>
+	  `;
+	}
 
-          <!-- Game Over Overlay -->
-          <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
-               style="background: rgba(0, 0, 0, 0.8); z-index: 1000;">
-            <div class="text-center">
-              <h1 class="display-1 text-danger mb-4"
-                  style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);">
-                GAME OVER
-              </h1>
+	if (this.state.isGameOver) {
+	  return `
+		<div class="game-container position-relative vh-100 bg-dark">
+		  <canvas id="gameCanvas"
+				  width="${this.gameConfig.WIDTH}"
+				  height="${this.gameConfig.HEIGHT}"
+				  class="position-absolute top-50 start-50 translate-middle shadow-lg opacity-50">
+		  </canvas>
 
-              <!-- Final Score -->
-              <div class="bg-black bg-opacity-75 p-4 rounded-pill border border-3 border-info mb-4">
-                <div class="d-flex justify-content-center align-items-center gap-5">
-                  <div class="text-center">
-                    <div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
-                      ${this.gameState.score1}
-                    </div>
-                    <small class="text-white-50">${this.gameState.player1}</small>
-                  </div>
-                  <div class="text-danger display-6">VS</div>
-                  <div class="text-center">
-                    <div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
-                      ${this.gameState.score2}
-                    </div>
-                    <small class="text-white-50">${this.gameState.player2}</small>
-                  </div>
-                </div>
-              </div>
+		  <!-- Game Over Overlay -->
+		  <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
+			   style="background: rgba(0, 0, 0, 0.8); z-index: 1000;">
+			<div class="text-center">
+			  <h1 class="display-1 text-danger mb-4"
+				  style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);">
+				GAME OVER
+			  </h1>
 
-              <!-- Winner Display -->
-              <div class="mb-5">
-                <h2 class="text-warning" style="font-family: 'Orbitron', sans-serif;">
+			  <!-- Final Score -->
+			  <div class="bg-black bg-opacity-75 p-4 rounded-pill border border-3 border-info mb-4">
+				<div class="d-flex justify-content-center align-items-center gap-5">
+				  <div class="text-center">
+					<div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
+					  ${this.gameState.score1}
+					</div>
+					<small class="text-white-50">${this.gameState.player1}</small>
+				  </div>
+				  <div class="text-danger display-6">VS</div>
+				  <div class="text-center">
+					<div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
+					  ${this.gameState.score2}
+					</div>
+					<small class="text-white-50">${this.gameState.player2}</small>
+				  </div>
+				</div>
+			  </div>
 
-                  <span class="text-info">${this.state.winner} </span>
-                </h2>
-              </div>
+			  <!-- Winner Display -->
+			  <div class="mb-5">
+				<h2 class="text-warning" style="font-family: 'Orbitron', sans-serif;">
+				  <span class="text-info">${this.state.winner} </span>
+				</h2>
+			  </div>
 
-              <!-- Return Button -->
-              <button class="btn btn-outline-info btn-lg px-5" id="btnLeaveGame">
-                <i class="fas fa-home me-2"></i>
-                Return to Menu
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    return `
-    <div class="game-container position-relative vh-100 bg-dark">
-      <!-- Canvas Background -->
-      <canvas id="gameCanvas"
-              width="${this.gameConfig.WIDTH}"
-              height="${this.gameConfig.HEIGHT}"
-              class="position-absolute top-50 start-50 translate-middle shadow-lg">
-      </canvas>
+			  <!-- Return Button -->
+			  <button class="btn btn-outline-info btn-lg px-5" id="btnLeaveGame">
+				<i class="fas fa-home me-2"></i>
+				Return to Menu
+			  </button>
+			</div>
+		  </div>
+		</div>
+	  `;
+	}
 
-      <!-- Top Bar with Scores -->
-      <div class="position-absolute w-100 top-0 py-3" style="z-index: 1000;">
-        <div class="container">
-          <div class="row align-items-center">
-            <!-- Leave Button -->
-            <div class="col-3">
-              <button class="btn btn-outline-danger" id="btnLeaveGame">
-                <i class="fas fa-door-open me-2"></i>Quitter
-              </button>
-            </div>
+	return `
+	  <div class="game-container position-relative vh-100 bg-dark">
+		<!-- Canvas Background -->
+		<canvas id="gameCanvas"
+				width="${this.gameConfig.WIDTH}"
+				height="${this.gameConfig.HEIGHT}"
+				class="position-absolute top-50 start-50 translate-middle shadow-lg">
+		</canvas>
 
-            <!-- Score Display -->
-            <div class="col-6">
-              <div class="d-flex justify-content-center">
-                <div class="bg-black bg-opacity-75 px-4 py-3 rounded-pill border border-2 border-info shadow-lg score-container">
-                  <div class="d-flex align-items-center gap-5">
-                    <!-- Player 1 Score -->
-                    <div class="score-box text-center position-relative">
-                      <div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">
-                        ${this.gameState.score1}
-                      </div>
-                      <div class="score-label">
-                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
-                          this.gameState.player1
-                        }</small>
-                      </div>
-                      <div class="score-glow"></div>
-                    </div>
+		<!-- Top Bar with Scores -->
+		<div class="position-absolute w-100 top-0 py-3" style="z-index: 1000;">
+		  <div class="container">
+			<div class="row align-items-center">
 
-                    <!-- Divider -->
-                    <div class="score-divider border-end border-info opacity-75" style="height: 50px;"></div>
+			  <!-- Score Display (Left) -->
+			  <div class="col-6 text-start">
+				<div class="d-flex justify-content-start">
+				  <div class="bg-black bg-opacity-75 px-4 py-3 rounded-pill border border-2 border-info shadow-lg score-container">
+					<div class="d-flex align-items-center gap-5">
+					  <!-- Player 1 Score -->
+					  <div class="score-box text-center position-relative">
+						<div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">
+						  ${this.gameState.score1}
+						</div>
+						<div class="score-label">
+						  <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
+							this.gameState.player1
+						  }</small>
+						</div>
+						<div class="score-glow"></div>
+					  </div>
 
-                    <!-- Player 2 Score -->
-                    <div class="score-box text-center position-relative">
-                      <div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">
-                        ${this.gameState.score2}
-                      </div>
-                      <div class="score-label">
-                        <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
-                          this.gameState.player2
-                        }</small>
-                      </div>
-                      <div class="score-glow"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+					  <!-- Divider -->
+					  <div class="score-divider border-end border-info opacity-75" style="height: 50px;"></div>
 
-            <!-- Controls & Sound -->
-            <div class="col-3">
-              <div class="d-flex justify-content-end me-3">
-                <div class="bg-black bg-opacity-75 p-3 rounded">
-                  <div class="d-flex flex-column gap-2">
-                  <div class="text-white text-center mb-2">
-                    <div><span class="badge ${
-                      this.gameState.keys[controls.upKey]
-                        ? "bg-info"
-                        : "bg-warning"
-                    } text-dark" id="upKey">
-                      ${controls.up}
-                    </span> Up</div>
-                    <div class="mt-1"><span class="badge ${
-                      this.gameState.keys[controls.downKey]
-                        ? "bg-info"
-                        : "bg-warning"
-                    } text-dark" id="downKey">
-                      ${controls.down}
-                    </span> Down</div>
-                  </div>
-                    <button class="btn btn-warning btn-sm" id="btnSilence">
-                      <i class="fas fa-volume-up"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
+					  <!-- Player 2 Score -->
+					  <div class="score-box text-center position-relative">
+						<div class="display-4 mb-0 text-info score-value" style="font-family: 'Orbitron', sans-serif;">
+						  ${this.gameState.score2}
+						</div>
+						<div class="score-label">
+						  <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
+							this.gameState.player2
+						  }</small>
+						</div>
+						<div class="score-glow"></div>
+					  </div>
+					</div>
+				  </div>
+				</div>
+			  </div>
+
+			  <!-- Controls & Sound (Right) -->
+			  <div class="col-6 text-end">
+				<div class="d-flex justify-content-end me-3">
+				  <div class="bg-black bg-opacity-75 p-3 rounded">
+					<div class="d-flex flex-column gap-2">
+					  <div class="text-white text-center mb-2">
+						<div><span class="badge ${
+						  this.gameState.keys[controls.upKey]
+							? "bg-info"
+							: "bg-warning"
+						} text-dark" id="upKey">
+						  ${controls.up}
+						</span> Up</div>
+						<div class="mt-1"><span class="badge ${
+						  this.gameState.keys[controls.downKey]
+							? "bg-info"
+							: "bg-warning"
+						} text-dark" id="downKey">
+						  ${controls.down}
+						</span> Down</div>
+					  </div>
+					  <button class="btn btn-warning btn-sm" id="btnSilence">
+						<i class="fas fa-volume-up"></i>
+					  </button>
+					</div>
+				  </div>
+				</div>
+			  </div>
+
+			</div>
+		  </div>
+		</div>
+	  </div>
+	`;
   }
+
 
   afterRender() {
     this.init();
