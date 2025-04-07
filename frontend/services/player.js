@@ -76,6 +76,10 @@ class Player extends EventEmitter {
         true,
         "POST"
       );
+      if (this.socketMatch){
+        this.socketMatch.close();
+        this.socketMatch = null;
+      }
       return true;
     } catch (error) {
       console.error("Failed to cancel match:", error);
