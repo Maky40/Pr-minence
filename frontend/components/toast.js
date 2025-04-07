@@ -49,18 +49,35 @@ class Toast extends Component {
   }
 
   show(message = this.message, type = this.type) {
-    this.message = message;
+    // Conversion robuste du message en string
+    this.message =
+      typeof message === "string"
+        ? message
+        : message instanceof Error
+        ? message.message
+        : JSON.stringify(message, null, 2);
+
     this.type = type;
 
-    if (!this.container) {
-      this.toastContainer.innerHTML = this.template();
-      document.body.appendChild(this.toastContainer);
-      this.container = this.toastContainer;
+    // Détruire le toast existant s'il y en a un
+    if (this.container) {
+      this.destroy();
     }
 
+    // Créer le nouveau toast
+    this.toastContainer.innerHTML = this.template();
+    document.body.appendChild(this.toastContainer);
+    this.container = this.toastContainer;
+
+    // Initialiser et afficher le toast Bootstrap
     const toastElement = this.container.querySelector(".toast");
     const toast = new bootstrap.Toast(toastElement);
     toast.show();
+
+    // Auto-destruction après disparition
+    toastElement.addEventListener("hidden.bs.toast", () => {
+      this.destroy();
+    });
   }
 
   destroy() {

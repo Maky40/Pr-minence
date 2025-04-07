@@ -1,10 +1,10 @@
 import Component from "../../../utils/Component.js";
 import pong42 from "../../../services/pong42.js";
 import { changePage } from "../../../utils/Page.js";
-import Toast from "../../toast.js";
 import GameTournoiLobbyTab from "./GameTournoiLobbyTab.js";
 import { getPlayerFromList, getMatchInfo } from "./GameTournoiLib.js";
 import GameTournoiWaiting from "./GameTournoiWaiting.js";
+import auth from "../../../services/auth.js";
 
 class GameTournoiLobby extends Component {
   constructor(tournamentId) {
@@ -12,7 +12,6 @@ class GameTournoiLobby extends Component {
     this.tournamentId = tournamentId;
     this.container = null;
     this.playerLeave = false;
-    this.waitingForPlayers = false;
     this.state = {
       tournament: null,
       error: null,
@@ -24,10 +23,12 @@ class GameTournoiLobby extends Component {
       "tournamentLeft",
       () => {
         this.setState({ loading: true });
-        if (!this.playerLeave) {
-          new Toast("Tournoi annulé", this.leaveMsg(), "info").show();
-        }
         this.leaveTimeout = setTimeout(() => {
+          if (!auth.authenticated) {
+            this.setState({ loading: false });
+            this.destroy();
+            return;
+          }
           pong42.player.checkUnplayedAndActiveTournament();
           this.setState({ loading: false });
           changePage("game");
@@ -40,19 +41,6 @@ class GameTournoiLobby extends Component {
     });
     this.cleanupFunctions.push(cleanupTournamentLeft);
     this.cleanupFunctions.push(cleanupUpdate);
-  }
-
-  leaveMsg() {
-    // Vérifier si tournament est défini avant d'accéder à ses propriétés
-    if (!this.state.tournament || !this.state.tournament.creator) {
-      return "Vous avez quitté le tournoi";
-    }
-
-    if (this.state.tournament.creator) {
-      return "Le tournoi a été annulé par le créateur";
-    } else {
-      return "Vous avez quitté le tournoi";
-    }
   }
 
   async afterRender() {
@@ -86,6 +74,8 @@ class GameTournoiLobby extends Component {
           this.joinTournamentMatch.bind(this)
         );
         GameTournoiLobbyTabInstance.render(this.container);
+        if (pong42.player.waitingMatch && pong42.isMasterTab())
+          this.goToWaiting(pong42.player.waitingMatchID);
       }
     } catch (error) {
       console.error("Erreur dans fetchTournamentDetails:", error);
@@ -95,7 +85,8 @@ class GameTournoiLobby extends Component {
       });
     }
   }
-  joinTournamentMatch(matchId) {
+  goToWaiting(matchId) {
+    if (matchId === 0) return;
     const matchInfo = getMatchInfo(matchId, this.state.tournament.matches);
     const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);
     const gameTournoiWaiting = new GameTournoiWaiting(
@@ -103,8 +94,15 @@ class GameTournoiLobby extends Component {
       matchInfo,
       playerInfo
     );
+    pong42.player.waitingMatch = true;
+    pong42.player.waitingMatchID = matchId;
     gameTournoiWaiting.render(this.container);
+    pong42.player.tournament.stopStatusCheckInterval();
     this.destroy();
+  }
+
+  joinTournamentMatch(matchId) {
+    this.goToWaiting(matchId);
   }
 
   async leaveTournament() {

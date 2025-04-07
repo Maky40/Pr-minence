@@ -1,13 +1,19 @@
 import Player from "./player.js";
+import TabManager from "./tabManager.js";
+import Toast from "../components/toast.js";
+import EventEmitter from "../utils/EventEmitter.js";
 
-class Pong42 {
+class Pong42 extends EventEmitter {
   constructor() {
-    console.log("Pong42 initialized");
+    super();
     this.currentPage = "";
     this.beforePage = "";
     this.timeout = 30000;
     const newPlayer = new Player();
     this.player = newPlayer;
+    this.tabManager = new TabManager();
+    this.matchInOtherTab = false;
+    this.setupTabMessageHandlers();
   }
 
   async handleMessage(message) {
@@ -26,6 +32,53 @@ class Pong42 {
     });
   }
 
+  setupTabMessageHandlers() {
+    this.tabManager.onMessage("game_over_or_aborted", (data) => {
+      if (!this.tabManager.tabId !== data.tabID) {
+        this.matchInOtherTab = false;
+        this.emit("match_update", "game_over_or_aborted");
+      }
+    });
+
+    this.tabManager.onMessage("game_started", (data) => {
+      if (!this.tabManager.tabId !== data.tabID) {
+        this.matchInOtherTab = true;
+        this.emit("match_update", "game_started");
+        new Toast(
+          "Une partie est déjà en cours dans un autre onglet!",
+          "error",
+          5000
+        ).show();
+      }
+    });
+
+    this.tabManager.onMessage("match_joined", (data) => {
+      console.log(data, "match_joined");
+      if (!this.tabManager.tabId !== data.tabID) {
+        this.matchInOtherTab = true;
+        this.emit("match_update", "match_joined");
+        new Toast(
+          "Vous avez rejoint un match dans un autre onglet!",
+          "info",
+          5000
+        ).show();
+      }
+    });
+  }
+
+  isMasterTab() {
+    return this.tabManager.isMaster();
+  }
+
+  notifyGameStarted(gameData = {}) {
+    this.tabManager.notifyGameStarted(gameData);
+  }
+  notifyMatchJoined(matchId) {
+    this.tabManager.notifyMatchJoined(matchId);
+  }
+  sendCrossTabMessage(message) {
+    this.tabManager.sendCrossTabMessage(message);
+  }
   setCurrentPage(page) {
     if (page === "connexion" && page === "signup") return;
     this.beforePage = this.currentPage;
@@ -44,6 +97,32 @@ class Pong42 {
         .catch((error) => sendResponse({ error: error.message }));
       return true; // Will respond asynchronously
     });
+  }
+  reset() {
+    // Nettoyer le player si nécessaire
+    if (this.player) {
+      this.player.destroy();
+      this.player = null;
+    }
+
+    // Nettoyer le tabManager si nécessaire
+    if (this.tabManager) {
+      this.tabManager.destroy();
+      this.tabManager = null;
+    }
+
+    // Réinitialiser les propriétés de base
+    this.currentPage = "";
+    this.beforePage = "";
+
+    // Recréer un nouveau Player (facultatif)
+    this.player = new Player();
+
+    // Recréer le tabManager (facultatif)
+    this.tabManager = new TabManager();
+    this.setupTabMessageHandlers();
+
+    console.log("[PONG42] Instance réinitialisée");
   }
 }
 

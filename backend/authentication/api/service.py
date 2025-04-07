@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from typing import Dict
 import datetime
 import jwt
+import uuid
 from .models import Player
 
 
@@ -37,13 +38,20 @@ def jwt_cookie_required(view_func):
             return Response({"statusCode": 500, 'error': str(e)})
     return wrapped_view
 
+
+
 def create_player(player_data: Dict[str, str]):
     try:
         email = player_data['email']
         if Player.objects.filter(email=email).exists():
-            player = Player.objects.get(email=email)
-            return player
-        username = player_data['username']
+            return Player.objects.get(email=email)
+        
+        base_username = player_data['username']
+        username = base_username
+        while Player.objects.filter(username=username).exists():
+            unique_suffix = uuid.uuid4().hex[:6]  # suffixe aléatoire de 6 caractères
+            username = f"{base_username}_{unique_suffix}"
+        
         first_name = player_data['first_name']
         last_name = player_data['last_name']
         avatar = player_data['avatar']
@@ -57,3 +65,4 @@ def create_player(player_data: Dict[str, str]):
         return player
     except Exception as e:
         return None
+

@@ -4,57 +4,63 @@ from rest_framework.response import Response
 from .models import Tournament, Player, Match, PlayerMatch, PlayerTournament
 from .serializers import TournamentSerializer
 from .decorators import jwt_cookie_required
+from django.db import transaction
 
 def update_tournament(tournament_id):
-    tournament = Tournament.objects.get(id=tournament_id)
-    if tournament.status == 'FN':  # Tournament is finished
-        return
-    
-    current_round = tournament.current_round
-    current_round_matches = Match.objects.filter(tournament=tournament, round=current_round)
-
-    # Vérifier si tous les matchs du round actuel sont joués
-    if all(match.state == 'PLY' for match in current_round_matches):
-        # Si on est déjà en finale ('FN'), alors on termine le tournoi
-        if tournament.current_round == 'FN':
-            tournament.status = 'FN'
-            winner = PlayerMatch.objects.get(match__in=current_round_matches, is_winner=True)
-            winner.player.champions += 1
-            tournament.save()
-            winner.player.save()
+    # Utilisation d'une transaction qui verrouille l'objet tournoi
+    with transaction.atomic():
+        # Verrouiller le tournoi pour éviter des mises à jour concurrentes
+        tournament = Tournament.objects.select_for_update().get(id=tournament_id)
+        
+        if tournament.status == 'FN':  # Le tournoi est terminé
             return
-        
-        # Sinon, on récupère les gagnants du round actuel
-        winning_players = list(PlayerMatch.objects.filter(match__in=current_round_matches, is_winner=True))
-        
-        if winning_players:
-            # Faire avancer le round
-            if tournament.current_round == 'QU':  # Quarter to Half
-                tournament.current_round = 'HF'
-            elif tournament.current_round == 'HF':  # Half to Final
-                tournament.current_round = 'FN'
-            tournament.save()
 
-        # Créer les matchs pour le prochain round
-        while len(winning_players) >= 2:
-            player1_match = winning_players.pop(0)
-            player2_match = winning_players.pop(0)
-            player1 = player1_match.player
-            player2 = player2_match.player
+        current_round = tournament.current_round
+        current_round_matches = Match.objects.filter(tournament=tournament, round=current_round)
 
-            tournament_match = Match.objects.create(
-                tournament=tournament,
-                round=tournament.current_round
-            )
+        if all(match.state == 'PLY' for match in current_round_matches):
+            if tournament.current_round == 'FN':
+                tournament.status = 'FN'
+                winner = PlayerMatch.objects.get(match__in=current_round_matches, is_winner=True)
+                winner.player.champions += 1
+                tournament.save()
+                winner.player.save()
+                return
 
-            PlayerMatch.objects.create(
-                match=tournament_match,
-                player=player1
-            )
-            PlayerMatch.objects.create(
-                match=tournament_match,
-                player=player2
-            )
+            winning_players = list(PlayerMatch.objects.filter(match__in=current_round_matches, is_winner=True))
+
+            if winning_players:
+                if tournament.current_round == 'QU':
+                    tournament.current_round = 'HF'
+                elif tournament.current_round == 'HF':
+                    tournament.current_round = 'FN'
+                tournament.save()
+
+            while len(winning_players) >= 2:
+                player1 = winning_players.pop(0).player
+                player2 = winning_players.pop(0).player
+
+                # Vérifier dans la transaction si un match pour ces deux joueurs existe déjà dans ce tournoi et ce round
+                match_exists = Match.objects.filter(
+                    tournament=tournament,
+                    round=tournament.current_round,
+                    playermatch__player=player1
+                ).filter(
+                    playermatch__player=player2
+                ).exists()
+
+                if match_exists:
+                    continue
+
+                tournament_match = Match.objects.create(
+                    tournament=tournament,
+                    round=tournament.current_round
+                )
+                PlayerMatch.objects.create(match=tournament_match, player=player1, player_side='L')
+                PlayerMatch.objects.create(match=tournament_match, player=player2, player_side='R')
+
+
+
 
 class TournamentView(APIView):
 
@@ -63,22 +69,18 @@ class TournamentView(APIView):
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)
 
-        # On récupère un tournoi auquel le joueur participe,
-        # soit en 'PN' (Pending), soit en 'BG' (Begin).
         tournament = Tournament.objects.filter(
             playertournament__player=player,
             status__in=['PN', 'BG']
         ).first()
 
         if tournament:
-            # Si le tournoi est en cours ('BG'), on appelle update_tournament
             if tournament.status == 'BG':
                 update_tournament(tournament.id)
 
             serializer = TournamentSerializer(tournament, context={"player": player})
             return Response({"statusCode": 200, "current_tournament": serializer.data})
         
-        # Sinon, renvoie la liste de tous les tournois 'PN' disponibles
         tournaments = Tournament.objects.filter(status='PN')
         if tournaments.exists():
             serializer = TournamentSerializer(tournaments, many=True, context={"player": player})
@@ -98,26 +100,31 @@ class TournamentView(APIView):
         except Player.DoesNotExist:
             return Response({"statusCode": 400, "message": "Player does not exist"})
 
-        # Créer un tournoi
         if "create" in action:
-            if not name or len(name) == 0:
+            if not name or len(name.strip()) == 0:
                 return Response({"statusCode": 400, "message": "Invalid Tournament name"})
+
+            if len(name) > 100:
+                return Response({"statusCode": 400, "message": "Tournament name too long (max 100 characters)."})
+
+            if Tournament.objects.filter(name=name, status__in=['PN', 'BG']).exists():
+                return Response({"statusCode": 400, "message": "A tournament with this name is already active."})
+
             serializer = TournamentSerializer()
             if serializer.is_player_in_tournament(player):
                 return Response({"statusCode": 400, "message": "Already in a Tournament"})
+
             tournament = Tournament.objects.create(name=name)
             PlayerTournament.objects.create(player=player, tournament=tournament, creator=True)
             serializer = TournamentSerializer(tournament, context={"player": player})
             return Response({"statusCode": 200, "current_tournament": serializer.data}, status=201)
 
-        # Récupération du tournoi
         try:
             tournament = Tournament.objects.get(id=tournament_id)
             serializer = TournamentSerializer(tournament, context={"player": player})
         except Tournament.DoesNotExist:
             return Response({"statusCode": 404, "message": "Not found"})
 
-        # Rejoindre un tournoi
         if "join" in action:
             if tournament.status == 'PN' and serializer.get_players_count(tournament) < 8:
                 if serializer.is_player_in_tournament(player):
@@ -126,9 +133,8 @@ class TournamentView(APIView):
                 return Response({"statusCode": 200, "message": "Successfully joined tournament"})
             return Response({"statusCode": 400, "message": "Tournament is full"})
 
-        # Quitter un tournoi
         elif "leave" in action:
-            if tournament.status != 'PN':  # Must be pending to leave
+            if tournament.status != 'PN':
                 return Response({"statusCode": 400, "message": "Tournament status is not pending"})
             try:
                 player_tournament = PlayerTournament.objects.get(player=player, tournament=tournament)
@@ -141,9 +147,7 @@ class TournamentView(APIView):
                 player_tournament.delete()
                 return Response({"statusCode": 200, "message": "Player removed from Tournament"})
 
-        # Démarrer le tournoi
         elif "start" in action:
-            # Vérifier que le joueur est le créateur
             try:
                 player_tournament = PlayerTournament.objects.get(player=player, tournament=tournament)
                 if not player_tournament.creator:
@@ -151,43 +155,31 @@ class TournamentView(APIView):
             except PlayerTournament.DoesNotExist:
                 return Response({"statusCode": 400, "message": "Player is not in the Tournament"})
 
-            # Vérifier qu'il y a 8 joueurs
             players_count = serializer.get_players_count(tournament)
             if players_count != 8:
                 return Response({"statusCode": 400, "message": f"Cannot start. {players_count} players in tournament."})
 
-            # Mettre le tournoi en 'BG' (Begin) + 'QU' (quarter)
             tournament.status = 'BG'
             tournament.current_round = 'QU'
             tournament.save()
 
-            # Créer 4 matchs de quarts
             pts = PlayerTournament.objects.filter(tournament=tournament).select_related('player')
-            players_list = [pt.player for pt in pts]  # 8 joueurs
+            players_list = [pt.player for pt in pts]
 
-            # Pairer deux par deux
             for i in range(0, 8, 2):
                 match = Match.objects.create(
                     tournament=tournament,
                     state='UPL',
                     round='QU'
                 )
-                # Joueur A (Left)
-                PlayerMatch.objects.create(
-                    player=players_list[i],
-                    match=match,
-                    player_side='L'
-                )
-                # Joueur B (Right)
-                PlayerMatch.objects.create(
-                    player=players_list[i+1],
-                    match=match,
-                    player_side='R'
-                )
+                PlayerMatch.objects.create(player=players_list[i], match=match, player_side='L')
+                PlayerMatch.objects.create(player=players_list[i+1], match=match, player_side='R')
 
             return Response({"statusCode": 200, "message": "Tournament started with 8 players (Quarter Finals created)"})
 
         return Response({"statusCode": 400, "message": "Wrong Action"})
+
+
 
 
 

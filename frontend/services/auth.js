@@ -2,7 +2,7 @@ import pong42 from "./pong42.js";
 import api from "./api.js";
 import Toast from "../components/toast.js";
 import WebSocketAPI from "./websocket.js";
-
+import Navbar from "../components/navbar.js";
 class Auth {
   constructor() {
     this.authenticated = false;
@@ -33,20 +33,18 @@ class Auth {
 
   async initFromAPI() {
     try {
-		console.log("INIT API");
       const data = await api.apiFetch("/player/", true);
+      console.log("Initializing auth state from API:", data);
       if (data.status === 200) {
         this.setSession(data);
       } else {
-		if (this.authenticated)
-			this.notifyListeners("logout");
-        console.error("No user found in API");
+        if (this.authenticated) this.notifyListeners("logout");
+        console.warn("No user found in API");
       }
     } catch (error) {
       this.authenticated = false;
       this.user = null;
-
-      console.error("Failed to initialize auth state:", error);
+      console.warn("Failed to initialize auth state:", error);
     }
   }
 
@@ -74,11 +72,30 @@ class Auth {
         toast.show();
         throw new Error("Login failed");
       }
-      if (!this.checkCookie("jwt_token"))
+
+      // Check if the jwt_token cookie exists before proceeding
+      if (!this.checkCookie("jwt_token")) {
+        // If no token cookie, just navigate to the current page or home
         changePage(pong42.getCurrentPage() || "home");
-      const jwt_token = this.getCookie("jwt_token");
-      const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
-      if (decodedToken.twofa) changePage("#twofactor");
+      } else {
+        // Only try to parse the token if it exists
+        const jwt_token = this.getCookie("jwt_token");
+        if (jwt_token) {
+          try {
+            const decodedToken = JSON.parse(atob(jwt_token.split(".")[1]));
+            if (decodedToken && decodedToken.twofa) {
+              changePage("#twofactor");
+            } else {
+              changePage(pong42.getCurrentPage() || "home");
+            }
+          } catch (tokenError) {
+            console.error("Error parsing JWT token:", tokenError);
+            changePage(pong42.getCurrentPage() || "home");
+          }
+        } else {
+          changePage(pong42.getCurrentPage() || "home");
+        }
+      }
       return data;
     } catch (error) {
       console.error("Login error:", error);
@@ -136,26 +153,44 @@ class Auth {
   }
 
   async setSession(data) {
-	console.log("JE PASSE");
-    const player = data.player;
-    this.authenticated = true;
-    this.user = player;
-    pong42.player.setPlayerInformations(player);
-    this.notifyListeners("login");
-    if (!this.webSocketStatus) {
-      this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
-      this.webSocketStatus.addMessageListener("message", (data) => {
-        pong42.player.updateStatus("ON");
-      });
+    try {
+      const player = data.player;
+      this.authenticated = true;
+      this.user = player;
+
+      // Check if pong42 is properly initialized first
+      if (!pong42.player) {
+        pong42.player = new Player();
+      }
+      // Only proceed with player operations if player exists
+      if (pong42.player) {
+        await pong42.player.init();
+        await pong42.player.tournament.init();
+        pong42.player.setPlayerInformations(player);
+      } else {
+        console.error("pong42.player is null, cannot initialize player data");
+      }
+      this.notifyListeners("login");
+      // Initialize WebSocket status last after everything else is ready
+      if (!this.webSocketStatus) {
+        this.webSocketStatus = new WebSocketAPI(this.urlwsauth);
+
+        // Use a callback that checks if player exists before using it
+        this.webSocketStatus.addMessageListener("message", (data) => {
+          if (pong42.player) {
+            pong42.player.updateStatus("ON");
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error during session setup:", error);
     }
   }
 
   async logout() {
     try {
-      const response = await api.apiFetch(this.urlauthdjangologout, true);
-	if (this.authenticated == true){
-		this.logoutAndNotify()}
-      this.cleanupWebSockets();
+      await api.apiFetch(this.urlauthdjangologout, true);
+      this.logoutAndNotify();
     } catch (error) {
       console.error("Logout error:", error);
       throw error;
@@ -163,21 +198,30 @@ class Auth {
   }
 
   logoutAndNotify() {
-	try {
-		console.log("JE SUIS DANS LOGOUTANDNOTIFY------------------------------------------------------")
-		this.authenticated = false;
-		this.user = null;
-		const toast = new Toast("Success", "Déconnexion réussie", "success");
-		toast.show();
-		this.notifyListeners("logout");
-		if (pong42.getCurrentPage() === "home")
-			changePage("#");
-		else
-			changePage("#home");
-	} catch (error) {
-		console.error("Logout error:", error);
-		throw error;
-	  }
+    try {
+      // First notify listeners so components can clean up
+      this.notifyListeners("logout");
+      // Then clear authentication state
+      this.authenticated = false;
+      this.user = null;
+      this.cleanupWebSockets();
+      // Clean up pong42 if it exists
+      if (typeof pong42 !== "undefined" && pong42) {
+        try {
+          pong42.reset();
+        } catch (e) {
+          console.warn("Error during pong42 cleanup:", e);
+        }
+      }
+
+      // Finally change the page
+      setTimeout(() => {
+        changePage("#home");
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Don't rethrow - we want to complete logout even if there are errors
+    }
   }
 
   isAuthenticated() {

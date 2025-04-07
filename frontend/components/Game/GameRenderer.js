@@ -40,13 +40,15 @@ class GameRenderer {
   }
 
   drawPaddle(paddle) {
-    this.ctx.fillStyle = "white";
+    this.ctx.fillStyle = paddle.color;
     this.ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
   }
 
   drawBall(ball) {
-    this.ctx.fillStyle = "white";
-    this.ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
+    this.ctx.fillStyle = "rgba(255, 255, 108, 0.8)";
+    this.ctx.beginPath();  // Commencer le chemin pour dessiner le cercle
+    this.ctx.arc(ball.x + ball.size / 2, ball.y + ball.size / 2, ball.size / 2, 0, Math.PI * 2);
+    this.ctx.fill();
   }
 }
 

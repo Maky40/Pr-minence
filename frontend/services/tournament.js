@@ -10,6 +10,7 @@ class TournamentService extends EventEmitter {
     this.initData();
     this.init();
   }
+
   init = async () => {
     try {
       await this.getTournaments();
@@ -53,15 +54,6 @@ class TournamentService extends EventEmitter {
     const creatorChanged = this.tournamentCreator !== newValues.creator;
     const playersCountChanged =
       this.tournamentPlayers_count !== newValues.players_count;
-
-    // Log des changements
-    if (statusChanged)
-      console.log(
-        "Status changed:",
-        this.tournamentStatus,
-        "->",
-        newValues.status
-      );
     if (roundChanged)
       console.log(
         "Round changed:",
@@ -385,7 +377,6 @@ class TournamentService extends EventEmitter {
     // Création du nouvel intervalle
     this.interval = setInterval(async () => {
       try {
-        console.log("Checking tournament status");
         await this.updateTournamentStatus();
       } catch (error) {
         console.error("Error updating tournament status:", error);
@@ -408,8 +399,15 @@ class TournamentService extends EventEmitter {
   }
 
   destroy() {
+    // Arrêter l'intervalle de vérification
     this.cleanup();
     this.initData();
+    // Émettre un événement pour informer que le tournoi est quitté
+    this.emit("tournamentLeft", {});
+    // Émettre un événement pour vider la liste des tournois
+    this.emit("tournamentsLoaded", { tournaments: [] });
+    // Réinitialiser les données
+    console.log("[Tournament] Service destroyed and events cleared");
   }
 }
 

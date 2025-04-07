@@ -8,6 +8,26 @@ DOCKER_COMPOSE_FILE = docker-compose.yml
 # Commandes
 NGINX_SCRIPT = nginx/generate_nginx_conf.sh  # Chemin vers ton script .sh qui génère nginx.conf
 
+# No-IP DUC Configuration
+NOIP_VERSION = 3.3.0
+NOIP_TARBALL = noip-duc_$(NOIP_VERSION).tar.gz
+NOIP_FOLDER = noip-duc_$(NOIP_VERSION)
+NOIP_INSTALL_DIR = $(HOME)/.local/noip  # Installation dans le répertoire local
+NOIP_BINARY = $(NOIP_INSTALL_DIR)/noip-duc
+# Variables pour ARM
+ARCH := $(shell uname -m)
+NOIP_ARCH := amd64 # Default arch
+ifeq ($(ARCH),armv7l) # 32-bit ARM
+	NOIP_ARCH := armhf
+endif
+ifeq ($(ARCH),aarch64) # 64-bit ARM
+	NOIP_ARCH := arm64
+endif
+NOIP_DEB = noip-duc_$(NOIP_VERSION)_$(NOIP_ARCH).deb
+
+# Fichier de configuration No-IP (à adapter)
+NOIP_CONF = noip.conf
+
 .PHONY: build up start stop restart logs clean create_nginx_conf
 
 # Cible par défaut (si tu fais simplement "make")
@@ -51,6 +71,7 @@ fclean:
 create_nginx_conf:
 	@echo "Creating nginx.conf using the script..."
 	@bash $(NGINX_SCRIPT)
+
 
 re: fclean
 	@echo "Rebuilding project..."

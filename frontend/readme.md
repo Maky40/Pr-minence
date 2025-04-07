@@ -206,6 +206,8 @@ This component system allows for:
 
 ### Todo List
 
+clean websocket on logout
+
 - 🏆 Tournament System
   - Tournament creation
   - Tournament participation

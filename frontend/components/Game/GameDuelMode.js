@@ -13,6 +13,8 @@ class GameDuelMode extends Component {
     this.state = {
       mode: null,
     };
+    console.log("GameDuelMode initialized");
+    console.log(pong42);
   }
 
   async handleModeSelection(mode) {

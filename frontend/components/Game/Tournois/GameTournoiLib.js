@@ -2,13 +2,15 @@ const statusAffichage = (status) => {
   //convertissage des status en francais
   //    ('UPL', 'En attente des joueurs'),
   //    ('PLY', 'Terminé'),
+  let div = `<div class="d-flex align-items-center justify-content-center text-dark" >`;
   switch (status) {
     case "UPL":
-      return "En attente des joueurs";
+      return (div += `<i class="fas fa-clock fa-2x" ml-2></i><p class="m-3">En attente des joueurs</p></div>`);
     case "PLY":
-      return "Terminé";
+      //return `<i class="fas fa-flag-checkered" aria-hidden="true" fa-4x></i> Terminé`;
+      return (div += `<i class="fas fa-flag-checkered fa-2x"></i> <p class="m-3">Terminé</p></div>`);
     default:
-      return "Erreur";
+      return "🐞 Erreur";
   }
 };
 
@@ -30,12 +32,13 @@ const roundAffichage = (round) => {
 };
 
 const isPlayerIdPresent = (playerId, playersList) => {
-  if (
-    parseInt(playersList[0].player.id) === parseInt(playerId) ||
-    parseInt(playersList[1].player.id) === parseInt(playerId)
-  )
-    return true;
-  return false;
+  if (!playersList || !Array.isArray(playersList) || !playerId) {
+    return false;
+  }
+  return playersList.some(
+    (item) =>
+      item && item.player && parseInt(item.player.id) === parseInt(playerId)
+  );
 };
 const getPlayerFromList = (playerId, playersList) => {
   if (parseInt(playersList[0].player.id) === parseInt(playerId)) {

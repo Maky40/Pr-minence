@@ -2,19 +2,21 @@ import Component from "../utils/Component.js";
 import auth from "../services/auth.js";
 import ModalAlert from "./modal.js";
 import pong42 from "../services/pong42.js";
+import { changePage } from "../utils/Page.js";
 
 export default class Navbar extends Component {
   initListeners() {
+    if (this.isInitialized) return;
     auth.addListener((event) => {
-		console.log("///////////////////EVENT NAVBAR///////////////////")
-		if (event === "logout") {
-			console.log("AUTHENTICATED = FALSE------------");
-			this.setState({ isAuthenticated: false });
-		  }
-        if (event === "login") {
-			console.log("AUTHENTICATED = TRUE------------")
-          this.setState({ isAuthenticated: true });
-        }
+      if (event === "logout") {
+        this.setState({ isAuthenticated: false });
+        this.unsbuscribeToEvents();
+        this.render(this.container);
+      }
+      if (event === "login") {
+        this.setState({ isAuthenticated: true });
+        this.subscribeToEvents();
+      }
     });
 
 	// Écouter les changements de statut de jeu
@@ -30,6 +32,10 @@ export default class Navbar extends Component {
     pong42.player.tournament.on("update", (tournament) => {
       this.setState({ tournament: tournament });
       this.render(this.container);
+      if (data != "game_over_or_aborted" || pong42.currentPage === "game") {
+        changePage("home");
+        return;
+      }
     });
   }
   get_status_display(status) {
@@ -48,6 +54,22 @@ export default class Navbar extends Component {
       isAuthenticated: auth.authenticated,
     };
     this.initListeners();
+    console.log("Navbar initialized", pong42);
+  }
+  unsbuscribeToEvents() {
+    pong42.player.tournament.off("tournamentLeft");
+    pong42.player.tournament.off("update");
+  }
+
+  subscribeToEvents() {
+    pong42.player.tournament.on("tournamentLeft", (tournament) => {
+      this.setState({ tournament: null });
+      this.render(this.container);
+    });
+    pong42.player.tournament.on("update", (tournament) => {
+      this.setState({ tournament: tournament });
+      this.render(this.container);
+    });
   }
 
   template() {
@@ -78,20 +100,37 @@ export default class Navbar extends Component {
                   <i class="fas fa-trophy text-warning me-2"></i>Légendes
                 </a>
               </li>
+               ${
+                 this.state.isAuthenticated && !pong42.matchInOtherTab
+                   ? `
+      <li class="nav-item">
+        <a class="nav-link px-3" href="#game">
+          <i class="fas fa-gamepad text-danger me-2"></i>Jouer
+        </a>
+      </li>
+      `
+                   : ""
+               }
               ${
                 this.state.isAuthenticated
                   ? `
-                  <li class="nav-item">
-                    <a class="nav-link px-3" href="#game">
-                      <i class="fas fa-gamepad text-danger me-2"></i>Jouer
-                    </a>
-                  </li>
                   <li class="nav-item">
                     <a class="nav-link px-3" href="#chat">
                       <i class="fas fa-comments text-info me-2"></i>Chat
                     </a>
                   </li>
-                `
+                  `
+                  : ""
+              }
+              ${
+                this.state.isAuthenticated && pong42.matchInOtherTab
+                  ? `
+                  <li class="nav-item">
+                    <span class="nav-link px-3 text-warning">
+                      <i class="fas fa-exclamation-triangle me-2"></i>Match en cours dans un autre onglet
+                    </span>
+                  </li>
+                  `
                   : ""
               }
             </ul>
@@ -177,11 +216,14 @@ export default class Navbar extends Component {
   attachEventListeners() {
     const logoutBtn = document.getElementById("logoutBtn");
     if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
+      const newLogoutBtn = logoutBtn.cloneNode(true);
+      logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+
+      // Now attach the event with the tracked method
+      this.attachEvent(newLogoutBtn, "click", () => {
         const modal = new ModalAlert(
           "Êtes-vous sûr de vouloir vous déconnecter ?",
           "La raquette orpheline va pleurer... et la balle va disparaître dans le vide numérique.",
-
           "Quitter",
           "Annuler",
           "danger"
