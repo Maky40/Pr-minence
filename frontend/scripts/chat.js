@@ -287,14 +287,12 @@ async function friendshipVerifications(socketActivate) {
 	}
 }
 
-function handleAcceptPlay(event, currentUser, socketActivate) {
+async function handleAcceptPlay(event, currentUser, socketActivate) {
 	try {
 
 		const buttonAccept = event.target;
 		const matchId = buttonAccept.getAttribute("data-id");
-		api.apiFetch("pong/match/individual/accept/", true, "POST", { match_id: matchId })
-			.then(response => console.log("Réponse API :", response))
-			.catch(error => console.error("Erreur API :", error.message));
+		await api.apiFetch("pong/match/individual/accept/", true, "POST", { match_id: matchId })
 		const payload = {
 				type: 'invitation_play',
 				senderId : currentUser.id,

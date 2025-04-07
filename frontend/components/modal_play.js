@@ -88,7 +88,11 @@ async destroy() {
 		this.modalContainer.remove();
 	}
 	if (!this.matchDeleted)
-		await api.apiFetch("pong/match/individual/delete", true, "POST");
+  {
+    console.log("----------------------- DELETE MATCH ------------------------");
+    await api.apiFetch("pong/match/individual/delete", true, "POST");
+  }
+		
 	 // Réinitialise les infos du joueur
 	 this.player.match_id = null;
 	 this.player.paddle = null;
