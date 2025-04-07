@@ -278,7 +278,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 
     async def reset_ball(self, state):
         min_angle = math.radians(10)
-        max_angle = math.radians(40)
+        max_angle = math.radians(20)
         angle = random.uniform(min_angle, max_angle)
         angle *= -1 if random.random() < 0.5 else 1
         speed = 8.5
