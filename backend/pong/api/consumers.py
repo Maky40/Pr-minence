@@ -230,7 +230,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         paddle_right_x = w - 30 - state["paddle_width"]
         paddle_height = state["paddle_height"]
         hitbox_padding = 10
-        max_speed = 18
+        max_speed = 16
 
         if by <= 0:
             state["ball_y"] = 0
@@ -245,7 +245,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             relative_intersect = ball_center_y - paddle_center_y
             normalized = relative_intersect / (paddle_height / 2)
             bounce_angle = normalized * (math.pi / 4)
-            intensity = 1 + abs(normalized) * 1.2
+            intensity = 1 + abs(normalized) * 1.1
             base_speed = min(math.hypot(vx, vy) * 1.05 * intensity, max_speed)
             direction = 1 if is_left else -1
             new_vx = direction * base_speed * math.cos(bounce_angle)
@@ -277,8 +277,8 @@ class PongConsumer(AsyncWebsocketConsumer):
             await self.end_game(self.match_id, state)
 
     async def reset_ball(self, state):
-        min_angle = math.radians(15)
-        max_angle = math.radians(60)
+        min_angle = math.radians(10)
+        max_angle = math.radians(40)
         angle = random.uniform(min_angle, max_angle)
         angle *= -1 if random.random() < 0.5 else 1
         speed = 8.5

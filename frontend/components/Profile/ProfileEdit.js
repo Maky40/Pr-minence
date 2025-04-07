@@ -125,17 +125,17 @@ class ProfileEdit extends Component {
       let formIsValid = true; // Suivi de la validité du formulaire
       const errors = []; // Tableau pour collecter les messages d'erreur
       const formData = new FormData(form);
-      const check_first_name = validateField(formData.get("first_name"),"text", 4, 100)
+	  const check_first_name = validateField("text", formData.get("first_name"), 4, 100);
       if (!check_first_name.isValid)
       {
         formIsValid = false;
         errors.push(check_first_name.message);
       }
-      const check_last_name = validateField(formData.get("last_name"),"text", 4, 100)
+	  const check_last_name = validateField("text", formData.get("last_name"), 4, 100);
       if (!check_last_name.isValid)
       {
         formIsValid = false;
-        errors.push(check_first_name.message);
+        errors.push(check_last_name.message);
       }
 
       if (formIsValid)
