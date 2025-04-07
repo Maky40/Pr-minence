@@ -167,13 +167,16 @@ class PongConsumer(AsyncWebsocketConsumer):
         }))
 
     async def init_game_state(self):
+        direction = 1 if random.random() < 0.5 else -1
+        speed = 8.5
+
         game_states[self.match_id] = {
             "width": 1000,
             "height": 600,
             "ball_x": 500,
             "ball_y": 300,
-            "ball_vx": 7,
-            "ball_vy": 7,
+            "ball_vx": direction * speed,
+            "ball_vy": 0,
             "paddle_left_y": 250,
             "paddle_right_y": 250,
             "paddle_speed_left": 0,
@@ -185,6 +188,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             "running": False,
             "next_engagement_left": True
         }
+
 
     async def start_game_loop(self):
         game_tasks[self.match_id] = asyncio.create_task(self.game_loop(self.match_id))
@@ -277,8 +281,8 @@ class PongConsumer(AsyncWebsocketConsumer):
             await self.end_game(self.match_id, state)
 
     async def reset_ball(self, state):
-        min_angle = math.radians(10)
-        max_angle = math.radians(20)
+        min_angle = math.radians(5)
+        max_angle = math.radians(25)
         angle = random.uniform(min_angle, max_angle)
         angle *= -1 if random.random() < 0.5 else 1
         speed = 8.5
