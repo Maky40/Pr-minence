@@ -3,8 +3,8 @@ services:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "8080:8080"
+      - "8443:8443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Configuration Nginx
       - ./nginx/certs:/etc/nginx/certs:ro # Certificats SSL
