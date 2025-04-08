@@ -33,10 +33,11 @@ class Auth {
 
   async initFromAPI() {
     try {
-      const data = await api.apiFetch("/player/", true);
-      console.log("Initializing auth state from API:", data);
-      if (data.status === 200) {
-        this.setSession(data);
+      const response = await api.apiFetch("/player/", true);
+      console.log("Initializing auth state from API:", response);
+      if (response.status === 200) {
+        const playerData = response.data || response;
+        this.setSession(playerData);
       } else {
         if (this.authenticated) this.notifyListeners("logout");
         console.warn("No user found in API");
@@ -134,14 +135,13 @@ class Auth {
       password: userData.password,
     });
     if (data.status !== 201) {
-      console.error("Registration failed:", data.errors);
       const toast = new Toast("error", "Erreur d'inscription", "error");
       toast.show();
       let error = "";
-      if (data.errors.email) {
+      if (data.data.errors.email) {
         error = "<div>Email already exists</div>";
       }
-      if (data.errors.username) {
+      if (data.data.errors.username) {
         error += "<div>Username already exists</div>";
       }
       throw new Error(error);
@@ -154,6 +154,10 @@ class Auth {
 
   async setSession(data) {
     try {
+      if (!data || data === undefined || !data.player) {
+        console.error("No data provided for session setup");
+        return;
+      }
       const player = data.player;
       this.authenticated = true;
       this.user = player;

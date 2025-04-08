@@ -49,6 +49,8 @@ class Pong42 extends EventEmitter {
           "error",
           5000
         ).show();
+      } else {
+        this.matchInOtherTab = false;
       }
     });
 

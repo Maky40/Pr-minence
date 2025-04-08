@@ -61,12 +61,19 @@ const initSwitch = () => {
 
 const submitForm = async (form, event) => {
   event.preventDefault();
-  const current_password = form.querySelector("#current_password").value;
-  const new_password = form.querySelector("#new_password").value;
-  const confirm_password = form.querySelector("#confirm_password").value;
-  const data = { current_password, new_password, confirm_password };
+  const currentPasswordField = form.querySelector("#current_password");
+  const newPasswordField = form.querySelector("#new_password");
+  const confirmPasswordField = form.querySelector("#confirm_password");
+
+  const data = {
+    current_password: currentPasswordField.value,
+    new_password: newPasswordField.value,
+    confirm_password: confirmPasswordField.value,
+  };
+
   const alertContainer = document.getElementById("alert-container");
-  if (new_password !== confirm_password) {
+
+  if (data.new_password !== data.confirm_password) {
     const alert = new AlertInfo(
       "Les mots de passe ne correspondent pas",
       "danger"
@@ -74,15 +81,22 @@ const submitForm = async (form, event) => {
     alert.render(alertContainer);
     return;
   }
+
   try {
     await pong42.player.updatePassword(data);
-    current_password.value = "";
-    new_password.value = "";
-    confirm_password.value = "";
+
+    // Réinitialiser les champs
+    currentPasswordField.value = "";
+    newPasswordField.value = "";
+    confirmPasswordField.value = "";
+
     const alert = new AlertInfo("Mot de passe mis à jour", "success");
     alert.render(alertContainer);
   } catch (error) {
-    const alert = new AlertInfo(error.message, "danger");
+    const alert = new AlertInfo(
+      error.message || "Erreur lors de la mise à jour",
+      "danger"
+    );
     alert.render(alertContainer);
   }
 };

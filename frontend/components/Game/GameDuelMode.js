@@ -3,8 +3,8 @@ import DuelModeHost from "../DuelMode/DuelModeHost.js";
 import DuelModeGuest from "../DuelMode/DuelModeGuest.js";
 import pong42 from "/services/pong42.js";
 import { changePage } from "../../utils/Page.js";
-import { escapeHTML } from "../../utils/EscapeHtml.js"
-import api from "../../services/api.js"
+import { escapeHTML } from "../../utils/EscapeHtml.js";
+import api from "../../services/api.js";
 import Toast from "../toast.js";
 
 class GameDuelMode extends Component {
@@ -22,56 +22,58 @@ class GameDuelMode extends Component {
     if (mode === "newGame") {
       const duelModeHost = new DuelModeHost();
       duelModeHost.render(this.container);
-	  this.destroy();
+      this.destroy();
     }
     if (mode === "joinGame") {
       let match_id = document.getElementById("matchCode").value;
-	  match_id = escapeHTML(match_id);
+      match_id = escapeHTML(match_id);
       const isValidMatch = await this.verification(match_id);
 
-		if (isValidMatch) {
-		const duelModeGuest = new DuelModeGuest(match_id);
-		duelModeGuest.render(this.container);
-		this.destroy();
-		}
-	}
-	}
+      if (isValidMatch) {
+        const duelModeGuest = new DuelModeGuest(match_id);
+        duelModeGuest.render(this.container);
+        this.destroy();
+      }
+    }
+  }
 
   async verification(match_id) {
-	const matchIdNum = Number(match_id);
-	try {
-		if (Number.isInteger(matchIdNum) && matchIdNum > 0) {
-			const data = await api.apiFetch("pong/match-exists/"+matchIdNum+"/", true, "GET")
-			if (data.state_code === "UPL")
-				return true;
-			else
-				throw new Error("Aucun match en attente ne correspond à ce numéro")
-		}
-		else
-			throw new Error("Sélectionner un nombre entier > 0")
-	} catch (error) {
-		const toast = new Toast("Error", error, "error");
-		toast.show();
-		return false;
-	}
+    const matchIdNum = Number(match_id);
+    try {
+      if (Number.isInteger(matchIdNum) && matchIdNum > 0) {
+        const response = await api.apiFetch(
+          "pong/match-exists/" + matchIdNum + "/",
+          true,
+          "GET"
+        );
+        if (response.data.state_code === "UPL") return true;
+        else
+          throw new Error("Aucun match en attente ne correspond à ce numéro");
+      } else throw new Error("Sélectionner un nombre entier > 0");
+    } catch (error) {
+      const toast = new Toast("Error", error, "error");
+      toast.show();
+      return false;
+    }
   }
   async afterRender() {
-	pong42.player.checkUnplayedAndActiveTournament();
+    pong42.player.checkUnplayedAndActiveTournament();
 
-	// Si l'utilisateur a un tournoi en attente ou actif, on le redirige
-	if (pong42.player.has_unplayed || pong42.player.has_active_tournament) {
-	  changePage("game");
-	  this.destroy();
-	}
+    // Si l'utilisateur a un tournoi en attente ou actif, on le redirige
+    if (pong42.player.has_unplayed || pong42.player.has_active_tournament) {
+      changePage("game");
+      this.destroy();
+    }
 
-	// Attacher l'événement aux boutons de sélection du mode de jeu
-	document.querySelectorAll(".game-mode-card button").forEach((button) => {
-	  this.attachEvent(button, "click", async (e) => {  // Utilisation de async ici
-		e.preventDefault();
-		const mode = e.target.closest(".game-mode-card").dataset.mode;
-		await this.handleModeSelection(mode);
-	  });
-	});
+    // Attacher l'événement aux boutons de sélection du mode de jeu
+    document.querySelectorAll(".game-mode-card button").forEach((button) => {
+      this.attachEvent(button, "click", async (e) => {
+        // Utilisation de async ici
+        e.preventDefault();
+        const mode = e.target.closest(".game-mode-card").dataset.mode;
+        await this.handleModeSelection(mode);
+      });
+    });
   }
 
   template() {

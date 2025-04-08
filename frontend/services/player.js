@@ -35,8 +35,8 @@ class Player extends EventEmitter {
 
   async init() {
     try {
-      const data = await api.apiFetch("/player/", true);
-      this.setPlayerInformations(data);
+      const response = await api.apiFetch("/player/", true);
+      this.setPlayerInformations(response.data);
     } catch (error) {
       console.error("Failed to initialize player state:", error);
       const toast = new Toast(
@@ -71,12 +71,8 @@ class Player extends EventEmitter {
   }
   cancelMatch = async () => {
     try {
-      const data = await api.apiFetch(
-        "pong/match/individual/delete",
-        true,
-        "POST"
-      );
-      if (this.socketMatch){
+      await api.apiFetch("pong/match/individual/delete", true, "POST");
+      if (this.socketMatch) {
         this.socketMatch.close();
         this.socketMatch = null;
       }
@@ -90,8 +86,8 @@ class Player extends EventEmitter {
   };
   checkUnplayed = async () => {
     try {
-      const data = await api.apiFetch("player/matches/", true);
-      this.has_unplayed = data.has_unplayed;
+      const response = await api.apiFetch("player/matches/", true);
+      this.has_unplayed = response.data.has_unplayed;
       return this.has_unplayed;
     } catch (error) {
       console.error("Failed to check unplayed matches:", error);
@@ -106,8 +102,8 @@ class Player extends EventEmitter {
   };
   checkTournament = async () => {
     try {
-      const data = await api.apiFetch("player/tournaments/", true);
-      this.has_active_tournament = data.has_active_tournament;
+      const response = await api.apiFetch("player/tournaments/", true);
+      this.has_active_tournament = response.data.has_active_tournament;
       return this.has_active_tournament;
     } catch (error) {
       console.error("Failed to check active tournament:", error);
@@ -159,11 +155,11 @@ class Player extends EventEmitter {
 
   getFriends = async () => {
     try {
-      const data = await api.apiFetch(
+      const response = await api.apiFetch(
         "/player/friendship/?target=friends",
         true
       );
-      this.friends = data.friendships;
+      this.friends = response.data.friendships;
       return this.friends;
     } catch (error) {
       console.error("Failed to get friends list:", error);
@@ -176,16 +172,16 @@ class Player extends EventEmitter {
     try {
       const formData = new FormData();
       formData.append("avatar", avatarFile);
-      const result = await api.apiFetch(
+      const response = await api.apiFetch(
         "player/avatar/",
         true,
         "POST",
         formData,
         true
       );
-      if (result.avatar_url) {
+      if (response.data.avatar_url) {
         // Set avatar to the returned URL (a string), not the file object
-        this.avatar = result.avatar_url;
+        this.avatar = response.data.avatar_url;
         const updateToast = new Toast(
           "Success",
           "Votre avatar a été mis à jour",
@@ -209,12 +205,17 @@ class Player extends EventEmitter {
 
   updatePassword = async (data) => {
     try {
-      const resultat = await api.apiFetch(
+      const response = await api.apiFetch(
         "/player/change-password/",
         true,
         "POST",
         data
       );
+      if (response.data.status !== 200) {
+        throw new Error(
+          response.data.message ? response.data.message : "erreur inconnue"
+        );
+      }
       const updateToast = new Toast(
         "Success",
         "Votre mot de passe a été mis à jour",
@@ -245,7 +246,7 @@ class Player extends EventEmitter {
         "POST",
         data
       );
-      if (response) {
+      if (response.success) {
         const updateToast = new Toast(
           "Success",
           "Votre double authentification a été mise à jour",
@@ -278,7 +279,7 @@ class Player extends EventEmitter {
         "POST",
         data
       );
-      return response;
+      return response.data;
     } catch (error) {
       console.error("Failed to get QR code:", error);
       const toast = new Toast(
@@ -346,7 +347,7 @@ class Player extends EventEmitter {
       // Send to API
       const response = await api.apiFetch("/player/", true, "POST", playerData);
 
-      if (response) {
+      if (response.success) {
         const updateToast = new Toast(
           "Success",
           "Vos informations ont été mises à jour",
