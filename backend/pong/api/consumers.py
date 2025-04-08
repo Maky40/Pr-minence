@@ -82,6 +82,7 @@ class PongConsumer(AsyncWebsocketConsumer):
                 connected_users[self.match_id] = current - 1
             elif current == 1:
                 del connected_users[self.match_id]
+                await self.delete_match_if_unplayed(self.match_id)
 
         if hasattr(self, "player") and self.player:
             if connected_players.get(self.player.id) == self:
@@ -106,7 +107,15 @@ class PongConsumer(AsyncWebsocketConsumer):
             player_side='L'
         )
         return match.id
-
+    @database_sync_to_async
+    def delete_match_if_unplayed(self, match_id):
+        try:
+            match = Match.objects.get(id=match_id)
+            if match.state == "UPL" and match.tournament is None:
+                PlayerMatch.objects.filter(match=match).delete()
+                match.delete()
+        except Match.DoesNotExist:
+            pass
     @database_sync_to_async
     def assign_player_side(self, match_id, player):
         existing_pm = PlayerMatch.objects.filter(match_id=match_id)
