@@ -2,6 +2,7 @@ import { ENV } from "../env.js";
 import EventEmitter from "../utils/EventEmitter.js";
 import pong42 from "./pong42.js";
 import Toast from "../components/toast.js";
+import ModalAlert from "../components/modal.js";
 
 class TournamentService extends EventEmitter {
   constructor() {
@@ -322,6 +323,37 @@ class TournamentService extends EventEmitter {
     }
   }
 
+  iminthenextTournament() {
+    if (this.tournamentId === 0) {
+      console.warn("No tournament ID available");
+      return false;
+    }
+    if (this.tournamentStatus === "PN") {
+      console.log("Player is in the next tournament");
+      return true;
+    } else {
+      console.log("Player is not in the next tournament");
+      return false;
+    }
+  }
+
+  getNextCurrentUserMatch(matches) {
+    if (this.tournamentId === 0) {
+      console.warn("No tournament ID available");
+      return false;
+    }
+    matches.forEach((match) => {
+      match.players.forEach((player) => {
+        if (player.id === pong42.player.id) {
+          this.emit("nextMatch", match);
+          return match;
+        }
+      });
+    });
+    console.log("No match found for the current user");
+    return null;
+  }
+
   async getTournaments() {
     try {
       const response = await fetch(this.baseUrl, {
@@ -343,6 +375,23 @@ class TournamentService extends EventEmitter {
           this.initData(); // Réinitialiser seulement si c'est un nouveau tournoi
           this.tournamentId = data.current_tournament.id;
           this.emit("tournamentCreatedOrJoinOrIn", data.current_tournament);
+          if (data.current_tournament.status === "BG") {
+            const myNextMatch = this.getNextCurrentUserMatch(
+              data.current_tournament.matches
+            );
+            console.log("myNextMatch", myNextMatch);
+            if (myNextMatch) {
+              const modal = new ModalAlert(
+                "Match",
+                "Vous avez un match !",
+                "Jouer!"
+              );
+              modal.show();
+              modal.on("confirm", () => {
+                modal.hide();
+              });
+            }
+          }
           this.startStatusCheckInterval();
         }
         return data.current_tournament;
