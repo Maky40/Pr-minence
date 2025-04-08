@@ -15,10 +15,6 @@ const statusAffichage = (status) => {
 };
 
 const roundAffichage = (round) => {
-  //convertissage des rounds en francais
-  //    ('QU', 'Quart de finale'),
-  //    ('HF', 'Demi-finale'),
-  //    ('FN', 'Finale'),
   switch (round) {
     case "QU":
       return "Quart de finale";

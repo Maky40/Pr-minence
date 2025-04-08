@@ -337,6 +337,7 @@ class TournamentService extends EventEmitter {
 
       // Check if player is in tournament
       if (data.current_tournament) {
+        console.log(data);
         // Si c'est la première fois qu'on récupère ce tournoi ou si l'ID a changé
         if (this.tournamentId !== data.current_tournament.id) {
           this.initData(); // Réinitialiser seulement si c'est un nouveau tournoi

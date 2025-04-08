@@ -57,8 +57,6 @@ class GameTournoisMode extends Component {
     e.preventDefault();
     const inputElement = document.getElementById("tournamentName");
     if (!inputElement) return;
-
-    console.log("Creating tournament...");
     const inputValue = escapeHTML(inputElement.value.trim());
 
     if (!inputValue) {
@@ -334,9 +332,11 @@ class GameTournoisMode extends Component {
                                                     <span class="visually-hidden">Loading...</span>
                                                 </div>
                                             </td></tr>`
-                                        : tournaments.map((tournament) => {
-                                            return tournament.players_count < 8
-                                              ? `
+                                        : tournaments
+                                            .map((tournament) => {
+                                              return tournament.players_count <
+                                                8
+                                                ? `
                                               <tr>
                                                 <td class="fs-5 py-4">${tournament.name}</td>
                                                 <td class="text-end">
@@ -347,14 +347,15 @@ class GameTournoisMode extends Component {
                                                 </td>
                                               </tr>
                                             `
-                                              : `
+                                                : `
                                               <tr>
                                                 <td colspan="2" class="fs-5 py-4 text-muted">
                                                   ${tournament.name} est complet
                                                 </td>
                                               </tr>
                                             `;
-                                          })
+                                            })
+                                            .join("")
                                     }
                                     </tbody>
                                 </table>
