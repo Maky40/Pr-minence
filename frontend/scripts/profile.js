@@ -4,7 +4,20 @@ import FriendsList from "../components/FriendsList.js";
 import pong42 from "../services/pong42.js";
 import api from "../services/api.js"
 
-const init = () => {
+
+const waitForPlayerAsync = () => {
+    return new Promise(resolve => {
+        const interval = setInterval(() => {
+            if (pong42.player && pong42.player.id) { // Vérifie si player est défini
+                clearInterval(interval); // Arrête l'intervalle
+                resolve(); // Résout la promesse quand pong42.player est défini
+            }
+        }, 100); // Vérifie toutes les 100ms
+    });
+};
+
+const init = async () => {
+	await waitForPlayerAsync(); // Attends que pong42.player soit défini
   const profilInfoContainer = document.getElementById("profile-info");
   const profileStatsContainer = document.getElementById("profile-stats");
   const profileFriendsContainer = document.getElementById("profile-friends");
