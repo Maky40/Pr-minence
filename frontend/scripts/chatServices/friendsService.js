@@ -65,3 +65,12 @@ export async function deleteFriend(id) {
 	const toast = new Toast("Success", "Demande d'ajout refusee", "success");
 	toast.show();
 }
+
+export async function verifyFriend(id) {
+	const response = await api.apiFetch("/player/friendship/?target=friends", true, "GET");
+	if (!response || !response.friendships) {
+		return false;
+	}
+	const isFriend = response.friendships.some(friend => friend.id == id);
+	return isFriend;
+}

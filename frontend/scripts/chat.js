@@ -1,4 +1,4 @@
-import { requestFriend, deleteFriend, searchFriends, addFriend } from './chatServices/friendsService.js';
+import { requestFriend, deleteFriend, searchFriends, addFriend, verifyFriend } from './chatServices/friendsService.js';
 import { initWebSocket, closeAndOpenNew, sendMessage, inviteForPlay } from './chatServices/liveChatService.js';
 import { showSuggestions, renderFriendRequests, displayFriendChat, blockedElements, unblockedElements, updateFriendsList } from './chatServices/uiService.js';
 import Toast from "../../components/toast.js";
@@ -165,7 +165,7 @@ function handlePushEnterFriend(event, friendToAdd, friendsList) {
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 
-function handleRequestsClick(event, elements) {
+async function handleRequestsClick(event, elements) {
     // Vérifie si le clic était sur un bouton accept ou reject
     const acceptButton = event.target.closest('.accept-request');
     const rejectButton = event.target.closest('.reject-request');
@@ -173,13 +173,28 @@ function handleRequestsClick(event, elements) {
 
     if (acceptButton) {
         const userId = acceptButton.dataset.username;
-        requestFriend(userId, elements["friends-list"]);}
+		const isAlreadyFriend = await verifyFriend(userId);
+		if (isAlreadyFriend) {
+			card.remove();
+			return;
+		}
+        requestFriend(userId, elements["friends-list"]);
+    }
     else if (rejectButton) {
         const userId = rejectButton.dataset.username;
-        deleteFriend(userId);}
+		const isAlreadyFriend = await verifyFriend(userId);
+		console.log(isAlreadyFriend);
+		if (isAlreadyFriend) {
+			card.remove();
+			return;
+		}
+        deleteFriend(userId);
+    }
 	if (card) {
-		card.remove();}
+		card.remove();
+	}
 }
+
 
 
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
