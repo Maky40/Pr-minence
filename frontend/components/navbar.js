@@ -26,6 +26,10 @@ export default class Navbar extends Component {
           this.disableRefreshWarning();
         }
       });
+      pong42.player.addListener("update", (player) => {
+        this.setState({ player: player });
+        this.render(this.container);
+      });
       pong42.on("match_update", (data) => {
         this.render(this.container);
         console.log("Match update received:", data);
