@@ -6,17 +6,19 @@ import datetime
 import jwt
 import uuid
 from .models import Player
+from datetime import datetime, timedelta, timezone
 
 
 def generate_jwt(id: int, two_factor: bool) -> str:
+    now = datetime.now(timezone.utc)
     payload = {
         'id': id,
         'twofa': two_factor,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1),
-        'iat': datetime.datetime.utcnow(),
+        'exp': now + timedelta(days=1),
+        'iat': now,
     }
-    jwt_token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
-    return jwt_token
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
 
 def jwt_cookie_required(view_func):
     def wrapped_view(request):
