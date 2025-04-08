@@ -1,8 +1,14 @@
 import api from "../../services/api.js";
 import { templateManager } from "../app.js";
-import { displayMessage, displayInvitation, displayInvitationRefuse, displayInvitationAccept, displayInvitationCanceled } from "./uiService.js";
+import {
+  displayMessage,
+  displayInvitation,
+  displayInvitationRefuse,
+  displayInvitationAccept,
+  displayInvitationCanceled,
+} from "./uiService.js";
 import pong42 from "../../../services/pong42.js";
-import WebSocketAPI from "../../services/websocket.js"
+import WebSocketAPI from "../../services/websocket.js";
 import { ENV } from "../../env.js";
 import InviteForPlayComponent from "../../components/modal_play.js";
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
@@ -10,11 +16,10 @@ import InviteForPlayComponent from "../../components/modal_play.js";
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 export function initWebSocket(otherUserId, socketActivate, currentUser) {
-
-	const ws = new WebSocket(`${ENV.WS_URL_CHAT}${otherUserId}/`);
-	templateManager.addWebSocket(ws);
-	socketActivate.socket = ws;
-	socketActivate.otherUserId = otherUserId;
+  const ws = new WebSocket(`${ENV.WS_URL_CHAT}${otherUserId}/`);
+  templateManager.addWebSocket(ws);
+  socketActivate.socket = ws;
+  socketActivate.otherUserId = otherUserId;
 
   setupWebSocketListeners(socketActivate, otherUserId, currentUser);
 }
@@ -30,26 +35,48 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
     return;
   }
   socketActivate.socket.onmessage = (event) => {
-        try {
-			const data = JSON.parse(event.data);
-			if (data.type === "chat_message")
-				displayMessage(data.senderName, data.senderId, data.message, otherUserId);
-			else if (data.message === "invitation")
-			{
-				displayInvitation(data.senderName, data.senderId, data.matchId, otherUserId);
-			}
-			else if (data.message === "refuse"){
-				displayInvitationRefuse(data.senderName, data.senderId, data.matchId, otherUserId);}
-			else if (data.message === "annuler") {
-				displayInvitationCanceled(data.senderName, data.senderId, data.matchId, otherUserId);
-			}
-			else{
-				displayInvitationAccept(data.senderName, data.senderId, data.matchId, otherUserId);
-			}
-		} catch (error) {
-			console.error("Erreur de traitement du message reçu :", error);
-		}
-    };
+    try {
+      const data = JSON.parse(event.data);
+      if (data.type === "chat_message")
+        displayMessage(
+          data.senderName,
+          data.senderId,
+          data.message,
+          otherUserId
+        );
+      else if (data.message === "invitation") {
+        displayInvitation(
+          data.senderName,
+          data.senderId,
+          data.matchId,
+          otherUserId
+        );
+      } else if (data.message === "refuse") {
+        displayInvitationRefuse(
+          data.senderName,
+          data.senderId,
+          data.matchId,
+          otherUserId
+        );
+      } else if (data.message === "annuler") {
+        displayInvitationCanceled(
+          data.senderName,
+          data.senderId,
+          data.matchId,
+          otherUserId
+        );
+      } else {
+        displayInvitationAccept(
+          data.senderName,
+          data.senderId,
+          data.matchId,
+          otherUserId
+        );
+      }
+    } catch (error) {
+      console.error("Erreur de traitement du message reçu :", error);
+    }
+  };
 
   socketActivate.socket.onclose = (event) => {
     console.log("WebSocket fermée :", event);
@@ -84,23 +111,29 @@ export function sendMessage(socketActivate, currentUser, message) {
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 export async function inviteForPlay(socketActivate, currentUser) {
+  const response = await api.apiFetch(
+    "pong/match/individual/create/",
+    true,
+    "POST"
+  );
+  let id_match = response.data.match_id;
+  const payload = {
+    type: "invitation_play",
+    senderId: currentUser.id,
+    senderName: currentUser.username,
+    message: "invitation",
+    matchId: id_match,
+  };
+  const ws = new WebSocketAPI(`${ENV.WS_URL_GAME}${id_match}/`);
+  pong42.player.match_id = id_match;
+  pong42.player.paddle = "left";
+  pong42.player.socketMatch = ws;
+  socketActivate.socket.send(JSON.stringify(payload));
 
-	const response = await api.apiFetch("pong/match/individual/create/", true, "POST");
-	let id_match = response.match_id;
-	const payload = {
-		type: 'invitation_play',
-		senderId : currentUser.id,
-		senderName: currentUser.username,
-		message: "invitation",
-		matchId: id_match,
-	};
-	const ws = new WebSocketAPI(`${ENV.WS_URL_GAME}${id_match}/`);
-	pong42.player.match_id = id_match;
-	pong42.player.paddle = "left";
-	pong42.player.socketMatch = ws;
-	socketActivate.socket.send(JSON.stringify(payload));
-
-	window.inviteForPlay = new InviteForPlayComponent(socketActivate, pong42.player);
-	window.inviteForPlay.render(document.body);
-	window.inviteForPlay.show();
+  window.inviteForPlay = new InviteForPlayComponent(
+    socketActivate,
+    pong42.player
+  );
+  window.inviteForPlay.render(document.body);
+  window.inviteForPlay.show();
 }

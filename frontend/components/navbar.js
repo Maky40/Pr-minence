@@ -17,25 +17,25 @@ export default class Navbar extends Component {
         this.setState({ isAuthenticated: true });
         this.subscribeToEvents();
       }
-    });
-
-	// Écouter les changements de statut de jeu
-	pong42.player.addListener("gameStatusChanged", (isPlaying) => {
-		console.log("PLAYER GAME STATUS CHANGED:", isPlaying);
-		this.setState({ isPlaying: isPlaying });
-	  });
-
-    pong42.player.tournament.on("tournamentLeft", (tournament) => {
-      this.setState({ tournament: null });
-      this.render(this.container);
-    });
-    pong42.player.tournament.on("update", (tournament) => {
-      this.setState({ tournament: tournament });
-      this.render(this.container);
-      if (data != "game_over_or_aborted" || pong42.currentPage === "game") {
-        changePage("home");
-        return;
-      }
+      pong42.player.addListener("gameStatusChanged", (isPlaying) => {
+        this.setState({ isPlaying: isPlaying });
+        if (isPlaying || pong42.player.isInGame || pong42.matchInOtherTab) {
+          this.setupBeforeUnloadListener();
+        }
+        if (!isPlaying) {
+          this.disableRefreshWarning();
+        }
+      });
+      pong42.on("match_update", (data) => {
+        this.render(this.container);
+        console.log("Match update received:", data);
+        if (data != "game_over_or_aborted" || pong42.currentPage === "game") {
+          this.disableRefreshWarning();
+          changePage("home");
+          return;
+        }
+        this.setupBeforeUnloadListener();
+      });
     });
   }
   get_status_display(status) {
@@ -52,15 +52,34 @@ export default class Navbar extends Component {
     super();
     this.state = {
       isAuthenticated: auth.authenticated,
+      isPlaying: false,
     };
     this.initListeners();
     console.log("Navbar initialized", pong42);
   }
+  setupBeforeUnloadListener() {
+    const handleBeforeUnload = (event) => {
+      if (pong42.player && pong42.player.isInGame) {
+        const message =
+          "Attention! Quitter ou rafraîchir la page peut interrompre votre partie en cours.";
+        event.preventDefault();
+        event.returnValue = message;
+        return message;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    this.beforeUnloadHandler = handleBeforeUnload;
+  }
+  disableRefreshWarning() {
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener("beforeunload", this.beforeUnloadHandler);
+    }
+  }
   unsbuscribeToEvents() {
     pong42.player.tournament.off("tournamentLeft");
     pong42.player.tournament.off("update");
+    pong42.off("match_update");
   }
-
   subscribeToEvents() {
     pong42.player.tournament.on("tournamentLeft", (tournament) => {
       this.setState({ tournament: null });
@@ -72,11 +91,17 @@ export default class Navbar extends Component {
     });
   }
 
-  template() {
+  destroy() {
+    this.disableRefreshWarning();
+    this.unsbuscribeToEvents();
+    this.beforeUnloadHandler = null;
+    super.destroy();
+  }
 
-	if (this.state.isPlaying) {
-		return '';
-	  }
+  template() {
+    if (this.state.isPlaying) {
+      return "";
+    }
 
     return `
       <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(to right, #1a1a1a, #2d2d2d);">
