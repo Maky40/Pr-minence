@@ -50,6 +50,13 @@ class InviteForPlayComponent extends Component {
     // Garde une référence et attache les événements
     this.container = this.modalContainer;
     this.attachEventListeners();
+
+	// cas du reload de la page
+	window.addEventListener("beforeunload", async (event) => {
+		if (!this.preventSendCancelled) {
+			this.sendCancelled();
+		}
+	});
 }
 
 show() {
@@ -92,7 +99,7 @@ async destroy() {
     console.log("----------------------- DELETE MATCH ------------------------");
     await api.apiFetch("pong/match/individual/delete", true, "POST");
   }
-		
+
 	 // Réinitialise les infos du joueur
 	 this.player.match_id = null;
 	 this.player.paddle = null;

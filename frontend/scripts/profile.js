@@ -18,24 +18,22 @@ const waitForPlayerAsync = () => {
 
 const init = async () => {
 	await waitForPlayerAsync(); // Attends que pong42.player soit défini
-  const profilInfoContainer = document.getElementById("profile-info");
-  const profileStatsContainer = document.getElementById("profile-stats");
-  const profileFriendsContainer = document.getElementById("profile-friends");
+	const profilInfoContainer = document.getElementById("profile-info");
+	const profileStatsContainer = document.getElementById("profile-stats");
+	const profileFriendsContainer = document.getElementById("profile-friends");
 
-  // Initialize components
-  const profileManager = new ProfileManager();
-  profileManager.setState({
-    profile: pong42.player,
-    isEditing: false,
-  });
-  profileManager.render(profilInfoContainer);
+	// Initialize components
+	const profileManager = new ProfileManager();
+	profileManager.setState({
+		profile: pong42.player,
+		isEditing: false,
+	});
+	profileManager.render(profilInfoContainer);
 
-  setStats(profileStatsContainer);
+	setStats(profileStatsContainer);
 
-  const friendsList = new FriendsList();
-  friendsList.render(profileFriendsContainer);
-
-  //chargement du listener
+	const friendsList = new FriendsList();
+	friendsList.render(profileFriendsContainer);
 };
 
 
