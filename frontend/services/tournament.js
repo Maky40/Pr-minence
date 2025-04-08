@@ -2,7 +2,8 @@ import { ENV } from "../env.js";
 import EventEmitter from "../utils/EventEmitter.js";
 import pong42 from "./pong42.js";
 import Toast from "../components/toast.js";
-import ModalAlert from "../components/modal.js";
+import ModalGame from "../components/modal_tournament.js";
+import { changePage } from "../utils/Page.js";
 
 class TournamentService extends EventEmitter {
   constructor() {
@@ -110,6 +111,8 @@ class TournamentService extends EventEmitter {
     this.tournamentMatches = [];
     this.tournamentCreator = false;
     this.tournamentPlayers_count = 0;
+    this.messageShowed = false;
+    this.endMessageShowed = false;
     if (this.interval) clearInterval(this.interval);
   }
   get_status_display(status) {
@@ -323,33 +326,20 @@ class TournamentService extends EventEmitter {
     }
   }
 
-  iminthenextTournament() {
-    if (this.tournamentId === 0) {
-      console.warn("No tournament ID available");
-      return false;
-    }
-    if (this.tournamentStatus === "PN") {
-      console.log("Player is in the next tournament");
-      return true;
-    } else {
-      console.log("Player is not in the next tournament");
-      return false;
-    }
-  }
-
   getNextCurrentUserMatch(matches) {
     if (this.tournamentId === 0) {
       console.warn("No tournament ID available");
       return false;
     }
-    matches.forEach((match) => {
-      match.players.forEach((player) => {
-        if (player.id === pong42.player.id) {
-          this.emit("nextMatch", match);
-          return match;
-        }
-      });
-    });
+    const foundMatch = matches.find((match) =>
+      match.players.some(
+        (player) => parseInt(player.player.id) === parseInt(pong42.player.id)
+      )
+    );
+    if (foundMatch) {
+      return foundMatch;
+    }
+
     console.log("No match found for the current user");
     return null;
   }
@@ -366,43 +356,69 @@ class TournamentService extends EventEmitter {
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch tournaments");
       }
-
-      // Check if player is in tournament
       if (data.current_tournament) {
-        console.log(data);
-        // Si c'est la première fois qu'on récupère ce tournoi ou si l'ID a changé
         if (this.tournamentId !== data.current_tournament.id) {
           this.initData(); // Réinitialiser seulement si c'est un nouveau tournoi
           this.tournamentId = data.current_tournament.id;
           this.emit("tournamentCreatedOrJoinOrIn", data.current_tournament);
-          if (data.current_tournament.status === "BG") {
-            const myNextMatch = this.getNextCurrentUserMatch(
-              data.current_tournament.matches
-            );
-            console.log("myNextMatch", myNextMatch);
-            if (myNextMatch) {
-              const modal = new ModalAlert(
-                "Match",
-                "Vous avez un match !",
-                "Jouer!"
-              );
-              modal.show();
-              modal.on("confirm", () => {
-                modal.hide();
-              });
-            }
-          }
           this.startStatusCheckInterval();
+        }
+
+        if (data.current_tournament.status === "BG") {
+          const myNextMatch = this.getNextCurrentUserMatch(
+            data.current_tournament.matches
+          );
+
+          if (
+            myNextMatch &&
+            !this.messageShowed &&
+            pong42.currentPage !== "game" &&
+            myNextMatch.status === "UPL"
+          ) {
+            this.messageShowed = true;
+            const modalGame = new ModalGame(
+              "Nouveau match pour le tournois",
+              "Vous avez un nouveau match !",
+              "GOOOOO !",
+              "Annuler",
+              "info",
+              () => {
+                this.messageShowed = true;
+                changePage("game");
+              }
+            );
+            modalGame.render(document.body);
+            modalGame.show();
+          }
+          const currentPlayerMatchInfo = myNextMatch?.players?.find(
+            (player) => player.player.id === pong42.player.id
+          );
+          if (
+            myNextMatch &&
+            myNextMatch.state === "PLY" &&
+            currentPlayerMatchInfo &&
+            !currentPlayerMatchInfo.is_winner &&
+            !this.endMessageShowed
+          ) {
+            this.stopStatusCheckInterval();
+            this.endMessageShowed = true;
+            const modalGame = new ModalGame(
+              "Vous avez perdu !",
+              "Le tournois est fini pour vous ! merci d'avoir joué !",
+              "Snif !",
+              "Annuler",
+              "alert",
+              () => {}
+            );
+            modalGame.render(document.body);
+            modalGame.show();
+          }
         }
         return data.current_tournament;
       } else {
-        // Si le joueur n'est plus dans un tournoi mais qu'on avait un tournoi avant
         if (this.tournamentId !== 0) {
           this.initData();
         }
-
-        // Emit tournaments list
-        console.log("[Tournament] Emitting tournaments list");
         this.emit("tournamentsLoaded", {
           tournaments: data.tournaments || [],
         });
