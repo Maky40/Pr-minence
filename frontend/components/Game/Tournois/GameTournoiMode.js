@@ -36,6 +36,7 @@ class GameTournoisMode extends Component {
     };
 
     this.playerInTournamentListener = (tournament) => {
+      console.log("Tournament updated:", tournament);
       if (this.container && tournament && tournament.id) {
         this.goToLobby(tournament.id);
       }

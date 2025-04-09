@@ -341,8 +341,9 @@ class TournamentService extends EventEmitter {
         throw new Error(data.message || "Failed to create tournament");
 
       // Mettre à jour les informations du tournoi
-      this.updateTournamentInfo(data);
-      this.emit("update", this.tournamentInfo);
+      this.updateTournamentInfo(data.current_tournament);
+      console.log(data, "from APIIIIII");
+      this.emit("update", data.current_tournament);
       this.startStatusCheckInterval();
 
       return data;
@@ -453,7 +454,8 @@ class TournamentService extends EventEmitter {
    * @returns {Object|null} Le match trouvé ou null
    */
   getNextCurrentUserMatch(matches) {
-    if (!this.tournamentId) {
+    console.log(this.tournamentInfo.tournamentId);
+    if (!this.tournamentInfo.tournamentId) {
       console.warn("No tournament ID available");
       return null;
     }
@@ -559,12 +561,10 @@ class TournamentService extends EventEmitter {
     this.stopStatusCheckInterval();
 
     // Vérification de la présence d'un tournamentId
-    if (!this.tournamentId && !this.firstTime) {
+    if (!this.tournamentId) {
       console.warn("No tournament ID provided");
       return;
     }
-    this.firstTime = false;
-
     this.interval = setInterval(async () => {
       try {
         await this.updateTournamentStatus();
