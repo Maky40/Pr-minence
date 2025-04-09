@@ -81,7 +81,10 @@ export default class Navbar extends Component {
   }
   unsbuscribeToEvents() {
     pong42.player.tournament.off("tournamentLeft");
-    pong42.player.tournament.off("update");
+    if (pong42.player.tournament) {
+      console.log("Unsubscribing from tournament events");
+      pong42.player.tournament.off("update", this.handleTournamentUpdate);
+    }
     pong42.off("match_update");
   }
   subscribeToEvents() {
@@ -89,11 +92,21 @@ export default class Navbar extends Component {
       this.setState({ tournament: null });
       this.render(this.container);
     });
-    pong42.player.tournament.on("update", (tournament) => {
-      this.setState({ tournament: tournament });
-      this.render(this.container);
-    });
+    if (pong42.player.tournament) {
+      console.log("Subscribing to tournament events");
+      pong42.player.tournament.on("update", this.handleTournamentUpdate);
+    }
   }
+
+  handleTournamentUpdate = (tournament) => {
+    console.log("Tournament update received:", tournament);
+    this.setState({ tournament });
+    console.log("Tournament state updated:", this.state.tournament);
+
+    if (this.container) {
+      this.render(this.container);
+    }
+  };
 
   destroy() {
     this.disableRefreshWarning();

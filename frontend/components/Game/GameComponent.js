@@ -5,6 +5,7 @@ import pong42 from "../../services/pong42.js";
 import { changePage } from "../../utils/Page.js";
 import GameRenderer from "./GameRenderer.js";
 import Music from "../../utils/Music.js";
+import GameOverComponent from "./GameOverComponent.js";
 
 class GameComponent extends Component {
   constructor() {
@@ -28,10 +29,9 @@ class GameComponent extends Component {
       countdown: 5,
       isGameStarted: false,
       isGameOver: false,
-      winner: null,
       muted: false,
     };
-
+    this.winner = null;
     this.gameObjects = this.initializeGameObjects();
     this.webSocket = pong42.player.socketMatch;
     this.movement = new GameMovement(
@@ -39,6 +39,10 @@ class GameComponent extends Component {
       this.gameConfig,
       this.gameState
     );
+    this.tournament = null;
+    if (pong42.player.tournament) {
+      this.tournament = pong42.player.tournament.tournamentInfo;
+    }
     this.renderer = null;
     this.animationFrameId = null;
 
@@ -50,8 +54,8 @@ class GameComponent extends Component {
     this.handleKeyUp = this.handleKeyUp.bind(this);
     this.handleSilence = this.handleSilence.bind(this);
 
-	pong42.player.game = true;
-	pong42.player.notifyListeners("gameStatusChanged", true);
+    pong42.player.game = true;
+    pong42.player.notifyListeners("gameStatusChanged", true);
   }
 
   handleKeyDown(event) {
@@ -74,6 +78,18 @@ class GameComponent extends Component {
     }
   }
 
+  showGameOver() {
+    // Nettoyer le jeu
+    console.log(pong42, "Game Over");
+    // Créer et afficher le composant de fin de jeu
+    const gameOverComponent = new GameOverComponent(this, (template) => {
+      this.container.innerHTML = template;
+      gameOverComponent.afterRender();
+    });
+
+    gameOverComponent.render(this.container);
+    this.destroy();
+  }
   initializeGameObjects() {
     const { WIDTH, HEIGHT, PADDLE_WIDTH, PADDLE_HEIGHT, BALL_SIZE } =
       this.gameConfig;
@@ -145,7 +161,6 @@ class GameComponent extends Component {
           changePage("home");
           return;
         }
-        console.log("[DEBUG] WebSocket message received:", message.type);
 
         switch (message.type) {
           case "players_info":
@@ -184,22 +199,17 @@ class GameComponent extends Component {
 
             let winner = "right";
             if (message.score_left > message.score_right) winner = "left";
-            this.state.winner =
+            this.winner =
               pong42.player.paddle === winner ? "You win!" : "You lose!";
 
             this.state.isGameOver = true;
             await this.music.stop();
             await this.music.play("final");
-            await this.destroy();
-            if (
-              pong42.player.tournament &&
-              pong42.player.tournament.tournamentId
-            )
-              pong42.player.tournament.startStatusCheckInterval();
             pong42.tabManager.notifyMatchGameOverOrAborted({
               match_id: this.webSocket.matchId,
             });
-            this.update();
+            this.showGameOver();
+            await this.destroy();
             break;
         }
       } catch (error) {
@@ -226,18 +236,6 @@ class GameComponent extends Component {
     // Add new listeners
     document.addEventListener("keydown", this.handleKeyDown);
     document.addEventListener("keyup", this.handleKeyUp);
-
-    const btnLeaveGame = document.getElementById("btnLeaveGame");
-    if (btnLeaveGame) {
-      btnLeaveGame.addEventListener("click", () => {
-        this.destroy();
-        this.webSocket.removeAllListeners();
-        this.webSocket.close();
-        pong42.player.socketMatch = null;
-        this.music.stop();
-        changePage("home");
-      });
-    }
 
     const btnSilence = document.getElementById("btnSilence");
     if (btnSilence) {
@@ -371,16 +369,15 @@ class GameComponent extends Component {
     if (btnSilence) {
       btnSilence.removeEventListener("click", this.handleSilence);
     }
-
-	pong42.player.game = false;
-	pong42.player.notifyListeners("gameStatusChanged", false);
+    pong42.player.game = false;
+    pong42.player.notifyListeners("gameStatusChanged", false);
   }
 
   template() {
-	const controls = this.getControlsToDisplay();
-	// Affichage du compte à rebours tant que la partie n'a pas commencé
-	if (!this.state.isGameStarted) {
-	  return `
+    const controls = this.getControlsToDisplay();
+    // Affichage du compte à rebours tant que la partie n'a pas commencé
+    if (!this.state.isGameStarted) {
+      return `
 		<div class="game-container position-relative">
 		  <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center" id="gameOverlay"
 			   style="background: rgba(0, 0, 0, 0.85); z-index: 1000;">
@@ -414,64 +411,9 @@ class GameComponent extends Component {
 		  </canvas>
 		</div>
 	  `;
-	}
+    }
 
-	if (this.state.isGameOver) {
-	  return `
-		<div class="game-container position-relative vh-100 bg-dark">
-		  <canvas id="gameCanvas"
-				  width="${this.gameConfig.WIDTH}"
-				  height="${this.gameConfig.HEIGHT}"
-				  class="position-absolute top-50 start-50 translate-middle shadow-lg opacity-50">
-		  </canvas>
-
-		  <!-- Game Over Overlay -->
-		  <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
-			   style="background: rgba(0, 0, 0, 0.8); z-index: 1000;">
-			<div class="text-center">
-			  <h1 class="display-1 text-danger mb-4"
-				  style="font-family: 'Orbitron', sans-serif; text-shadow: 0 0 20px rgba(255, 0, 0, 0.7);">
-				GAME OVER
-			  </h1>
-
-			  <!-- Final Score -->
-			  <div class="bg-black bg-opacity-75 p-4 rounded-pill border border-3 border-info mb-4">
-				<div class="d-flex justify-content-center align-items-center gap-5">
-				  <div class="text-center">
-					<div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
-					  ${this.gameState.score1}
-					</div>
-					<small class="text-white-50">${this.gameState.player1}</small>
-				  </div>
-				  <div class="text-danger display-6">VS</div>
-				  <div class="text-center">
-					<div class="display-6 text-info" style="font-family: 'Orbitron', sans-serif;">
-					  ${this.gameState.score2}
-					</div>
-					<small class="text-white-50">${this.gameState.player2}</small>
-				  </div>
-				</div>
-			  </div>
-
-			  <!-- Winner Display -->
-			  <div class="mb-5">
-				<h2 class="text-warning" style="font-family: 'Orbitron', sans-serif;">
-				  <span class="text-info">${this.state.winner} </span>
-				</h2>
-			  </div>
-
-			  <!-- Return Button -->
-			  <button class="btn btn-outline-info btn-lg px-5" id="btnLeaveGame">
-				<i class="fas fa-home me-2"></i>
-				Return to Menu
-			  </button>
-			</div>
-		  </div>
-		</div>
-	  `;
-	}
-
-	return `
+    return `
 	  <div class="game-container position-relative vh-100 bg-dark">
 		<!-- Canvas Background -->
 		<canvas id="gameCanvas"
@@ -497,8 +439,8 @@ class GameComponent extends Component {
 						</div>
 						<div class="score-label">
 						  <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
-							this.gameState.player1
-						  }</small>
+                this.gameState.player1
+              }</small>
 						</div>
 						<div class="score-glow"></div>
 					  </div>
@@ -513,8 +455,8 @@ class GameComponent extends Component {
 						</div>
 						<div class="score-label">
 						  <small class="text-white-50 text-uppercase" style="letter-spacing: 2px;">${
-							this.gameState.player2
-						  }</small>
+                this.gameState.player2
+              }</small>
 						</div>
 						<div class="score-glow"></div>
 					  </div>
@@ -530,17 +472,13 @@ class GameComponent extends Component {
 					<div class="d-flex flex-column gap-2">
 					  <div class="text-white text-center mb-2">
 						<div><span class="badge ${
-						  this.gameState.keys[controls.upKey]
-							? "bg-info"
-							: "bg-warning"
-						} text-dark" id="upKey">
+              this.gameState.keys[controls.upKey] ? "bg-info" : "bg-warning"
+            } text-dark" id="upKey">
 						  ${controls.up}
 						</span> Up</div>
 						<div class="mt-1"><span class="badge ${
-						  this.gameState.keys[controls.downKey]
-							? "bg-info"
-							: "bg-warning"
-						} text-dark" id="downKey">
+              this.gameState.keys[controls.downKey] ? "bg-info" : "bg-warning"
+            } text-dark" id="downKey">
 						  ${controls.down}
 						</span> Down</div>
 					  </div>
@@ -558,7 +496,6 @@ class GameComponent extends Component {
 	  </div>
 	`;
   }
-
 
   afterRender() {
     this.init();

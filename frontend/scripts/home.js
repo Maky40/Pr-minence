@@ -1,4 +1,5 @@
 import auth from "../services/auth.js";
+import GameOverComponent from "../components/Game/GameOverComponent.js";
 
 const updateUI = () => {
   try {

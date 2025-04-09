@@ -209,7 +209,7 @@ class GameTournoisMode extends Component {
         );
 
         const cleanupTournamentCreated = pong42.player.tournament.on(
-          "tournamentCreatedOrJoinOrIn",
+          "update",
           this.playerInTournamentListener
         );
 

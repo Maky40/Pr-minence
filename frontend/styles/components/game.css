@@ -67,3 +67,44 @@
     opacity: 0;
   }
 }
+
+/* Animation minimale pour GameOverComponent */
+.animate__animated {
+  animation-duration: 1s;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 40px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate__fadeIn {
+  animation-name: fadeIn;
+}
+
+.animate__fadeInUp {
+  animation-name: fadeInUp;
+}
+
+/* Amélioration hover pour le bouton */
+#btnLeaveGame:hover {
+  box-shadow: 0 0 15px rgba(13, 202, 240, 0.5);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
