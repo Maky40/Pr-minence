@@ -116,7 +116,7 @@ export async function inviteForPlay(socketActivate, currentUser) {
     true,
     "POST"
   );
-  let id_match = response.data.match_id;
+  let id_match = response.match_id;
   const payload = {
     type: "invitation_play",
     senderId: currentUser.id,

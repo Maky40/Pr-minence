@@ -17,8 +17,8 @@ export async function renderFriendRequests(requestsList) {
       true,
       "GET"
     );
-    if (responseFriendRequests.data.friendships.length > 0) {
-      responseFriendRequests.data.friendships.forEach((friendships) => {
+    if (responseFriendRequests.friendships.length > 0) {
+      responseFriendRequests.friendships.forEach((friendships) => {
         const requestCard = `
 					<div class="col-md-4 mb-3">
 						<div class="card">
@@ -244,14 +244,14 @@ export async function displayFriendChat(friendName, blocked) {
       "GET"
     );
     if (
-      !response.data ||
-      !response.data.players ||
-      response.data.players.length === 0
+      !response ||
+      !response.players ||
+      response.players.length === 0
     ) {
       throw new Error(`Aucun joueur trouvé avec le nom : ${friendName}`);
     }
 
-    const profile = response.data.players[0];
+    const profile = response.players[0];
 
     // Mise à jour de l'UI avec les nouvelles infos
     updatedFriendFrontName.textContent = friendName;

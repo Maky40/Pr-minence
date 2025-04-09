@@ -4,7 +4,7 @@ import DuelModeGuest from "../DuelMode/DuelModeGuest.js";
 import pong42 from "/services/pong42.js";
 import { changePage } from "../../utils/Page.js";
 import { escapeHTML } from "../../utils/EscapeHtml.js";
-import api from "../../services/api.js";
+import api from "../../services/api2.js";
 import Toast from "../toast.js";
 
 class GameDuelMode extends Component {

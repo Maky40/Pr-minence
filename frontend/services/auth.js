@@ -1,5 +1,5 @@
 import pong42 from "./pong42.js";
-import api from "./api.js";
+import api from "./api2.js";
 import Toast from "../components/toast.js";
 import WebSocketAPI from "./websocket.js";
 import Navbar from "../components/navbar.js";

@@ -59,9 +59,9 @@ export async function init() {
 
 async function initializeCurrentUser(currentUser) {
   const response = await api.apiFetch("/player/", true, "GET");
-  if (response.data && response.data.player) {
-    currentUser.username = response.data.player.username;
-    currentUser.id = response.data.player.id;
+  if (response && response.player) {
+    currentUser.username = response.player.username;
+    currentUser.id = response.player.id;
   } else {
     console.error("Erreur : réponse API invalide", response);
   }
@@ -256,8 +256,8 @@ async function handleFriendsListClick(
       true,
       "GET"
     );
-    await displayFriendChat(otherUser.username, response.data.is_blocked_by_me);
-    if (response.data.is_blocked_by_me) {
+    await displayFriendChat(otherUser.username, response.is_blocked_by_me);
+    if (response.is_blocked_by_me) {
       if (socketActivate.socket) {
         socketActivate.socket.close();
         delete socketActivate.otherUserId;
@@ -351,7 +351,7 @@ async function friendshipVerifications(socketActivate) {
     true,
     "GET"
   );
-  if (response.data.friendships.length === 0) {
+  if (response.friendships.length === 0) {
     throw new Error("Vous n'etes pas encore pote");
   }
 }

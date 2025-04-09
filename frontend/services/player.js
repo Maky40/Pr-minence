@@ -1,4 +1,4 @@
-import api from "./api.js";
+import api from "./api2.js";
 import Toast from "../components/toast.js";
 import EventEmitter from "../utils/EventEmitter.js";
 import TournamentService from "./tournament.js";
