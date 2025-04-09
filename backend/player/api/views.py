@@ -59,7 +59,6 @@ class PlayerInfo(APIView):
     @method_decorator(jwt_cookie_required)
     def get(self, request):
         try:
-            # Récupérer les données d'un autre utilisateur à l'aide de son username
             username = request.query_params.get('username')
             if username:
                 player = Player.objects.filter(username=username)
@@ -72,7 +71,6 @@ class PlayerInfo(APIView):
                     "message": "User found successfully"
                 })
 
-            # Sinon, récupérer les données personnelles de l'utilisateur connecté
             player = Player.objects.get(id=request.decoded_token['id'])
             serializer = PlayerInfoSerializer(player)
             return Response({
@@ -522,11 +520,6 @@ def get_player_matches(request):
 @api_view(['GET'])
 @jwt_cookie_required
 def get_player_tournaments(request):
-    """
-    Récupère la liste des tournois auxquels le joueur participe (via PlayerTournament).
-    Retourne aussi un booléen 'has_active_tournament' qui indique si le joueur
-    a au moins un tournoi dont le statut n'est pas 'FN' (Finish).
-    """
     try:
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)

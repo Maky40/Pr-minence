@@ -10,9 +10,6 @@ from .models import Player, Match, PlayerMatch, PlayerTournament
 from .decorators import jwt_cookie_required
 
 def has_unplayed_match(player: Player) -> bool:
-    """
-    Vérifie si le joueur a déjà un match Unplayed (sans tournoi).
-    """
     return PlayerMatch.objects.filter(
         player=player,
         match__state='UPL',
@@ -20,10 +17,6 @@ def has_unplayed_match(player: Player) -> bool:
     ).exists()
 
 def is_in_active_tournament(player: Player) -> bool:
-    """
-    Vérifie si le joueur est dans un tournoi dont le statut est 'PN' (Pending) ou 'BG' (Begin).
-    """
-
     return PlayerTournament.objects.filter(
         player=player,
         tournament__status__in=['PN', 'BG']
@@ -33,10 +26,6 @@ def is_in_active_tournament(player: Player) -> bool:
 
 @api_view(['GET'])
 def match_exists_view(request, match_id):
-    """
-    Vérifie si un match avec 'match_id' existe dans la base.
-    Renvoie 200 si oui, 404 sinon.
-    """
     try:
         match = Match.objects.get(id=match_id)
         return Response({
@@ -50,9 +39,7 @@ def match_exists_view(request, match_id):
 @api_view(['POST'])
 @jwt_cookie_required
 def create_individual_match(request):
-    """
-    Crée un match "1 vs 1" sans tournoi et associe le joueur initiateur (côté "Left").
-    """
+
     try:
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)
@@ -149,11 +136,7 @@ def accept_individual_match(request):
 @api_view(['POST'])
 @jwt_cookie_required
 def refuse_individual_match(request):
-    """
-    Le joueur refuse le match :
-    - Si le match n'a qu'un seul joueur (le créateur), on le supprime.
-    - Sinon, on se contente de signaler que l'invitation est refusée.
-    """
+
     match_id = request.data.get('match_id')
     if not match_id:
         return Response({"error": "No match_id provided"}, status=400)

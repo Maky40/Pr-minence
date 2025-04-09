@@ -103,7 +103,7 @@ class TournamentView(APIView):
             if not name or len(name.strip()) == 0:
                 return Response({"statusCode": 400, "message": "Invalid Tournament name"})
 
-            if len(name) > 100:
+            if len(name) > 40:
                 return Response({"statusCode": 400, "message": "Tournament name too long (max 100 characters)."})
 
             if Tournament.objects.filter(name=name, status__in=['PN', 'BG']).exists():
