@@ -82,7 +82,8 @@ export function initializeGameWebSocket(component, matchId, options = {}) {
       existingSocket.removeAllListeners();
     }
   }
-  const wsUrlGame = matchId ? `${ENV.WS_URL_GAME}${matchId}/` : ENV.WS_URL_GAME;
+  const wsUrlBase = options.local ? ENV.WS_URL_LOCAL : ENV.WS_URL_GAME;
+  const wsUrlGame = matchId ? `${wsUrlBase}${matchId}/` : `${wsUrlBase}/`;
   console.log(
     "[GAME] Connecting to:",
     matchId ? `match ${matchId}` : "game server for new match"
@@ -96,6 +97,10 @@ export function initializeGameWebSocket(component, matchId, options = {}) {
   pong42.player.socketMatch = webSocketMatch;
 
   // Add a special handler for host mode (when no matchId is provided)
+  if (options.local) {
+    console.log("[GAME] Local mode detected, setting up local WebSocket");
+    pong42.player.paddle = "left";
+  }
   if (!matchId && options.isHost) {
     webSocketMatch.addMessageListener("message", (data) => {
       try {
@@ -150,6 +155,7 @@ function setupStandardWebSocketListeners(
     component.setState({
       loading: true,
       isConnected: true,
+      local: options.local || false,
       ...(options.waitingGuest !== undefined
         ? { waitingGuest: options.waitingGuest }
         : {}),
@@ -256,7 +262,7 @@ export function handleGameStart(component, webSocketMatch) {
     webSocketMatch.removeAllListeners();
 
     // Create and render game component
-    const game = new GameComponent();
+    const game = new GameComponent(component.state.local);
     game.updatePlayerNames({
       player1: component.state.player1,
       player2: component.state.player2,

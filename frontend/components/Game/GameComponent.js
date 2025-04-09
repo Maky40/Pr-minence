@@ -8,7 +8,7 @@ import Music from "../../utils/Music.js";
 import GameOverComponent from "./GameOverComponent.js";
 
 class GameComponent extends Component {
-  constructor() {
+  constructor(local) {
     console.log("[DEBUG] GameComponent constructor");
     super();
     this.gameConfig = GAME_CONFIG;
@@ -24,7 +24,7 @@ class GameComponent extends Component {
       player1: "Player 1",
       player2: "Player 2",
     };
-
+    this.local = local || false;
     this.state = {
       countdown: 5,
       isGameStarted: false,
@@ -284,14 +284,26 @@ class GameComponent extends Component {
     if (this.themeAudio) {
       this.themeAudio.muted = this.state.muted;
     }
-
-    this.movement.updatePaddlePosition(
-      this.gameState.keys,
-      pong42.player.paddle,
-      (direction) => {
-        this.webSocket.send({ type: "move", direction });
-      }
-    );
+    if (!this.local) {
+      this.movement.updatePaddlePosition(
+        this.gameState.keys,
+        pong42.player.paddle,
+        (direction) => {
+          this.webSocket.send({ type: "move", direction });
+        }
+      );
+    }
+    if (this.local) {
+      this.movement.updateLocalPaddles(this.gameState.keys, (left, right) => {
+        this.webSocket.send(
+          JSON.stringify({
+            type: "local_move",
+            leftDir: left,
+            rightDir: right,
+          })
+        );
+      });
+    }
 
     this.renderer.draw(this.gameObjects, this.gameState);
     this.animationFrameId = requestAnimationFrame(this.gameLoop);

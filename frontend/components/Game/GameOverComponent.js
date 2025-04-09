@@ -104,7 +104,7 @@ class GameOverComponent extends Component {
 
           <!-- Tournament Display -->
           ${
-            this.tournament.tournamentCurren_round
+            this.tournament && this.tournament.tournamentCurren_round
               ? `
             <div class="mb-5 animate__animated animate__fadeIn">
               ${(() => {
