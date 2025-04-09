@@ -141,42 +141,6 @@ class TournamentService extends EventEmitter {
     const playersCountChanged =
       this.current_tournament_info.players_count !==
       newTournamentData.players_count;
-
-    // Logs des changements pour le débogage
-    if (statusChanged) {
-      console.log(
-        "Status changed:",
-        this.current_tournament_info.status,
-        "->",
-        newTournamentData.status
-      );
-    }
-    if (roundChanged) {
-      console.log(
-        "Round changed:",
-        this.current_tournament_info.current_round,
-        "->",
-        newTournamentData.current_round
-      );
-    }
-    if (matchesChanged) console.log("Matches changed");
-    if (creatorChanged) {
-      console.log(
-        "Creator changed:",
-        this.current_tournament_info.creator,
-        "->",
-        newTournamentData.creator
-      );
-    }
-    if (playersCountChanged) {
-      console.log(
-        "Players count changed:",
-        this.current_tournament_info.players_count,
-        "->",
-        newTournamentData.players_count
-      );
-    }
-
     const hasChanged =
       statusChanged ||
       roundChanged ||
@@ -220,9 +184,7 @@ class TournamentService extends EventEmitter {
   resetTournamentInfo() {
     this.previous_tournament_info = this.current_tournament_info;
     this.current_tournament_info = null;
-    this.messageShowed = false;
-    this.endMessageShowed = false;
-    this.iDendMessageShowed = null;
+    this.idMatchmessageShowed = null;
 
     if (this.interval) {
       clearInterval(this.interval);
@@ -342,7 +304,6 @@ class TournamentService extends EventEmitter {
 
       // Mettre à jour les informations du tournoi
       this.updateTournamentInfo(data.current_tournament);
-      console.log(data, "from APIIIIII");
       this.emit("update", data.current_tournament);
       this.startStatusCheckInterval();
 
@@ -489,7 +450,6 @@ class TournamentService extends EventEmitter {
       // Vérifier si la réponse est du JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        console.error("[Tournament] Non-JSON response received");
         this.emit("tournamentsLoaded", { tournaments: [] });
         return null;
       }
@@ -572,7 +532,7 @@ class TournamentService extends EventEmitter {
         console.error("Error updating tournament status:", error);
         this.stopStatusCheckInterval(); // Arrêt de l'intervalle en cas d'erreur
       }
-    }, 500);
+    }, 5000);
   }
 
   /**
