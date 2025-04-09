@@ -54,8 +54,6 @@ class PlayerSearch(APIView):
                 "message": str(e)
             }, status=500)
 
-
-
 class PlayerInfo(APIView):
 
     @method_decorator(jwt_cookie_required)
@@ -155,8 +153,6 @@ class PlayerInfo(APIView):
                 "status": 500,
                 "message": str(e),
             })
-
-
 
 
 class TwoFactorActivation(APIView):
@@ -508,7 +504,7 @@ def get_player_matches(request):
         matches_info.append({
             "match_id": match_obj.id,
             "state": match_obj.state,
-            "created": match_obj.created.isoformat(),  # format de date en ISO8601
+            "created": match_obj.created.isoformat(),
             "tournament_id": match_obj.tournament.id if match_obj.tournament else None,
             "score": pm.score,
             "is_winner": pm.is_winner,
