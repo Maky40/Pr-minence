@@ -62,6 +62,16 @@ class GameSelectionComponent extends Component {
   }
 
   template() {
+    if (pong42.matchInOtherTab)
+      return `
+        <div class="container mt-5">
+          <div class="card alert alert-danger card-body">
+            <h4>Erreur</h4>
+            <p>Une partie est déjà en cours dans un autre onglet</p>
+            <button class="btn btn-primary mt-3" onclick="changePage('#home')">Retour à l'accueil</button>
+          </div>
+        </div>
+      `;
     if (this.state.loading) {
       return `
         <div class="container mt-5">

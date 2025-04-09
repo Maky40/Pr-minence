@@ -31,7 +31,7 @@ NOIP_CONF = noip.conf
 .PHONY: build up start stop restart logs clean create_nginx_conf
 
 # Cible par défaut (si tu fais simplement "make")
-all: build
+all: ssl-certs build 
 
 # Build Docker images et démarre les conteneurs
 build: create_nginx_conf
@@ -55,6 +55,18 @@ stop:
 
 # Redémarre les conteneurs
 restart: stop up
+
+ssl-certs:
+	@if [ ! -f nginx/certs/private.key ] && [ ! -f nginx/certs/certificate.crt ]; then \
+		echo "$(GREEN)SSL certificates not found, generating...$(NC)"; \
+		mkdir -p nginx/certs; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:4096 \
+		-keyout nginx/certs/private.key -out nginx/certs/certificate.crt \
+		-config nginx/ssl.conf; \
+	else \
+		echo "$(GREEN)SSL certificates already exist.$(NC)"; \
+	fi
+
 
 # Voir les logs des conteneurs
 logs:

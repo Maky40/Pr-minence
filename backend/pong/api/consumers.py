@@ -78,8 +78,12 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         if hasattr(self, "match_id"):
             current = connected_users.get(self.match_id, 0)
-            if current > 1:
-                connected_users[self.match_id] = current - 1
+            if current == 2 :
+                connected_users[self.match_id] = 1
+                state = game_states.get(self.match_id)
+                if state and state["running"] :
+                    await self.forfeit_match(self.match_id, state)
+                
             elif current == 1:
                 del connected_users[self.match_id]
                 await self.delete_match_if_unplayed(self.match_id)
@@ -131,6 +135,17 @@ class PongConsumer(AsyncWebsocketConsumer):
             return "right"
         return None
 
+    async def forfeit_match(self, match_id, state) :
+        if self.paddle == "left" :
+            state["score_left"] = 0
+            state["score_right"] = 10
+        else :
+            state["score_left"] = 10
+            state["score_right"] = 0
+        
+        state["running"] = False
+        await self.end_game(match_id, state)
+        
     async def is_match_ready(self, match_id):
         return connected_users.get(match_id, 0) >= 2
 

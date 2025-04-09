@@ -73,6 +73,7 @@ class ProfileEdit extends Component {
     uploadButton?.addEventListener("click", async () => {
       try {
         const result = await pong42.player.updateAvatar(this.avatarFile);
+        console.log(result);
         if (!result) {
           console.error("Error uploading avatar");
           return;
@@ -125,28 +126,33 @@ class ProfileEdit extends Component {
       let formIsValid = true; // Suivi de la validité du formulaire
       const errors = []; // Tableau pour collecter les messages d'erreur
       const formData = new FormData(form);
-	  const check_first_name = validateField("text", formData.get("first_name"), 4, 100);
-      if (!check_first_name.isValid)
-      {
+      const check_first_name = validateField(
+        "text",
+        formData.get("first_name"),
+        4,
+        100
+      );
+      if (!check_first_name.isValid) {
         formIsValid = false;
         errors.push(check_first_name.message);
       }
-	  const check_last_name = validateField("text", formData.get("last_name"), 4, 100);
-      if (!check_last_name.isValid)
-      {
+      const check_last_name = validateField(
+        "text",
+        formData.get("last_name"),
+        4,
+        100
+      );
+      if (!check_last_name.isValid) {
         formIsValid = false;
         errors.push(check_last_name.message);
       }
 
-      if (formIsValid)
-      {
+      if (formIsValid) {
         await pong42.player.updatePlayerInformations(formData);
         this.emit("save", pong42.player);
+      } else {
+        this.displayErrors(errors);
       }
-      else
-        {
-          this.displayErrors(errors);
-        }
     });
 
     cancelButton?.addEventListener("click", () => {
@@ -155,9 +161,9 @@ class ProfileEdit extends Component {
   }
 
   displayErrors(errors) {
-    const errorDiv = document.getElementById('errorMessages');
-    errorDiv.innerHTML = errors.join('<br>'); // Affiche toutes les erreurs séparées par une nouvelle ligne
-    errorDiv.style.display = 'block'; // Affiche le div d'erreur
+    const errorDiv = document.getElementById("errorMessages");
+    errorDiv.innerHTML = errors.join("<br>"); // Affiche toutes les erreurs séparées par une nouvelle ligne
+    errorDiv.style.display = "block"; // Affiche le div d'erreur
   }
 }
 
