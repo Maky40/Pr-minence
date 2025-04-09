@@ -11,9 +11,13 @@ class Pong42 extends EventEmitter {
     this.timeout = 30000;
     const newPlayer = new Player();
     this.player = newPlayer;
-    this.tabManager = new TabManager();
+    this.tabManager = null;
     this.matchInOtherTab = false;
-    this.setupTabMessageHandlers();
+    this.intervals = [];
+  }
+
+  initializeTabManager() {
+    this.tabManager = new TabManager(this);
   }
 
   async handleMessage(message) {
@@ -30,6 +34,18 @@ class Pong42 extends EventEmitter {
         reject(error);
       }
     });
+  }
+
+  // Méthode pour enregistrer un intervalle
+  registerInterval(intervalId) {
+    this.intervals.push(intervalId);
+  }
+
+  // Méthode pour nettoyer tous les intervalles
+  clearAllIntervals() {
+    console.log("[PONG42] Clearing all intervals");
+    this.intervals.forEach((intervalId) => clearInterval(intervalId));
+    this.intervals = []; // Réinitialiser le tableau
   }
 
   setupTabMessageHandlers() {
@@ -101,6 +117,8 @@ class Pong42 extends EventEmitter {
     });
   }
   reset() {
+    // Nettoyer tous les intervalles
+    this.clearAllIntervals();
     // Nettoyer le player si nécessaire
     if (this.player) {
       this.player.destroy();
@@ -129,4 +147,7 @@ class Pong42 extends EventEmitter {
 }
 
 const pong42 = new Pong42();
+
+pong42.initializeTabManager();
+pong42.setupTabMessageHandlers();
 export default pong42;

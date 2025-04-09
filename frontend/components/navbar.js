@@ -99,9 +99,9 @@ export default class Navbar extends Component {
   }
 
   handleTournamentUpdate = (tournament) => {
-    console.log("Tournament update received:", tournament);
+    console.log("[NAVBARR] - Tournament update received:", tournament);
     this.setState({ tournament });
-    console.log("Tournament state updated:", this.state.tournament);
+    console.log("[NAVBARR] - Tournament state updated:", this.state.tournament);
 
     if (this.container) {
       this.render(this.container);

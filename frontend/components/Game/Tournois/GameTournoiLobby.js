@@ -23,26 +23,46 @@ class GameTournoiLobby extends Component {
       "tournamentLeft",
       () => {
         this.setState({ loading: true });
-        this.leaveTimeout = setTimeout(() => {
-          if (!auth.authenticated) {
-            this.setState({ loading: false });
-            this.destroy();
-            return;
-          }
-          pong42.player.checkUnplayedAndActiveTournament();
-          this.setState({ loading: false });
-          changePage("game");
-          this.destroy();
-        }, 100);
+
+        // Appeler une fonction async séparée
+        this.handleTournamentLeft();
       }
     );
     const cleanupUpdate = pong42.player.tournament.on("update", () => {
-      this.fetchTournamentDetails();
+      if (auth.authenticated) {
+        this.fetchTournamentDetails();
+      }
     });
     this.cleanupFunctions.push(cleanupTournamentLeft);
     this.cleanupFunctions.push(cleanupUpdate);
   }
+  async handleTournamentLeft() {
+    try {
+      if (!auth.authenticated) {
+        this.setState({ loading: false });
+        this.destroy();
+        return;
+      }
+      this.leaveTimeout = setTimeout(async () => {
+        if (!auth.authenticated) {
+          this.setState({ loading: false });
+          this.destroy();
+          return;
+        }
 
+        await pong42.player.checkUnplayedAndActiveTournament();
+        this.setState({ loading: false });
+        changePage("game");
+        this.destroy();
+      }, 100);
+    } catch (error) {
+      console.error("Erreur dans handleTournamentLeft:", error);
+      this.setState({
+        loading: false,
+        error: "Erreur lors du traitement du tournoi quitté.",
+      });
+    }
+  }
   async afterRender() {
     if (!this.state.initialized && !this.state.loading) {
       await this.fetchTournamentDetails();
@@ -56,12 +76,14 @@ class GameTournoiLobby extends Component {
       if (!data || typeof data !== "object") {
         throw new Error("Données de tournoi invalides reçues");
       }
+
+      //const currentTournamentStatus = this.state.tournament.status || null;|| currentTournamentStatus != data.status
       this.setState({
         tournament: data,
         loading: false,
         initialized: true,
       });
-      if (this.container) {
+      if (this.container && pong42.currentPage === "game") {
         this.render(this.container);
       }
       if (data) {
@@ -76,7 +98,7 @@ class GameTournoiLobby extends Component {
         GameTournoiLobbyTabInstance.render(this.container);
         if (pong42.player.waitingMatch && pong42.isMasterTab())
           this.goToWaiting(pong42.player.waitingMatchID);
-      }
+      } else changePage("game");
     } catch (error) {
       console.error("Erreur dans fetchTournamentDetails:", error);
       this.setState({

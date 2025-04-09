@@ -8,6 +8,7 @@ import { changePage } from "../../utils/Page.js";
 class GameSelectionComponent extends Component {
   constructor() {
     super();
+    console.log("[DEBUG] GameSelectionComponent constructor");
     this.selectedMode = null;
     this.handleModeSelection = this.handleModeSelection.bind(this);
     this.state = {
@@ -18,7 +19,6 @@ class GameSelectionComponent extends Component {
   }
 
   handleModeSelection(mode) {
-    console.log(`Mode sélectionné: ${mode}`);
     this.selectedMode = mode;
 
     // Nettoyage avant de changer de mode

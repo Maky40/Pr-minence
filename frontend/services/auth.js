@@ -204,14 +204,18 @@ class Auth {
   logoutAndNotify() {
     try {
       // First notify listeners so components can clean up
+      if (pong42.player.tournament) {
+        pong42.player.tournament.destroy();
+      }
       this.notifyListeners("logout");
       // Then clear authentication state
       this.authenticated = false;
       this.user = null;
       this.cleanupWebSockets();
-      // Clean up pong42 if it exists
+
       if (typeof pong42 !== "undefined" && pong42) {
         try {
+          pong42.clearAllIntervals();
           pong42.reset();
         } catch (e) {
           console.warn("Error during pong42 cleanup:", e);
@@ -221,7 +225,7 @@ class Auth {
       // Finally change the page
       setTimeout(() => {
         changePage("#home");
-      }, 100);
+      }, 10);
     } catch (error) {
       console.error("Logout error:", error);
       // Don't rethrow - we want to complete logout even if there are errors

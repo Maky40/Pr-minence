@@ -4,6 +4,7 @@ import pong42 from "./pong42.js";
 import Toast from "../components/toast.js";
 import { changePage } from "../utils/Page.js";
 import { msgNewMatch, handleMatchResult } from "../utils/TournamentMsg.js";
+import auth from "./auth.js";
 
 class TournamentService extends EventEmitter {
   constructor() {
@@ -21,7 +22,10 @@ class TournamentService extends EventEmitter {
     try {
       await this.getTournaments();
       if (this.current_tournament_info) {
-        console.log("[Tournament] Emitting initial update event");
+        console.log(
+          "[Tournament] Emitting initial update even EMIT 1",
+          this.tournamentInfo
+        );
         this.emit("update", this.tournamentInfo);
       }
       this.startStatusCheckInterval();
@@ -175,6 +179,10 @@ class TournamentService extends EventEmitter {
     this.current_tournament_info = { ...tournamentData };
 
     // Émettre un événement de mise à jour
+    console.log(
+      "[Tournament] Tournament updated EMIT2:",
+      this.current_tournament_info
+    );
     this.emit("update", this.tournamentInfo);
   }
 
@@ -304,7 +312,11 @@ class TournamentService extends EventEmitter {
 
       // Mettre à jour les informations du tournoi
       this.updateTournamentInfo(data.current_tournament);
-      this.emit("update", data.current_tournament);
+      console.log(
+        "[Tournament] Tournament created successfully EMIT3",
+        data.current_tournament
+      );
+      this.emit("update", this.tournamentInfo);
       this.startStatusCheckInterval();
 
       return data;
@@ -338,6 +350,7 @@ class TournamentService extends EventEmitter {
 
       // Mise à jour des informations
       this.updateTournamentInfo(data);
+      console.log("[Tournament] Tournament joined successfully EMIT4", data);
       this.emit("update", this.tournamentInfo);
       this.startStatusCheckInterval();
 
@@ -408,29 +421,35 @@ class TournamentService extends EventEmitter {
       throw error;
     }
   }
-
+  getUplayMatch(match) {
+    if (match.state === "UPL") {
+      return match;
+    }
+    return null;
+  }
+  getUplayMatches(matches) {
+    const uplayMatches = matches.filter((match) => this.getUplayMatch(match));
+    return uplayMatches;
+  }
   /**
    * Trouve le prochain match du joueur actuel
    * @param {Array} matches - Liste des matches du tournoi
    * @returns {Object|null} Le match trouvé ou null
    */
   getNextCurrentUserMatch(matches) {
-    console.log(this.tournamentInfo.tournamentId);
     if (!this.tournamentInfo.tournamentId) {
       console.warn("No tournament ID available");
       return null;
     }
-
-    const foundMatch = matches.find((match) => {
+    const matchesUplay = this.getUplayMatches(matches);
+    const foundMatch = matchesUplay.find((match) => {
       return match.players.some(
         (player) => parseInt(player.player.id) === parseInt(pong42.player.id)
       );
     });
-
     if (foundMatch) {
       return foundMatch;
     }
-
     console.log("No match found for the current user");
     return null;
   }
@@ -468,7 +487,7 @@ class TournamentService extends EventEmitter {
           this.resetTournamentInfo();
           this.updateTournamentInfo(data.current_tournament);
           console.log(
-            "[Tournament] Tournament changed or new tournament detected"
+            "[Tournament] Tournament changed or new tournament detected EMIT5"
           );
           this.emit("update", this.tournamentInfo);
           this.startStatusCheckInterval();
@@ -478,10 +497,12 @@ class TournamentService extends EventEmitter {
         const myNextMatch = this.getNextCurrentUserMatch(
           data.current_tournament.matches
         );
-
+        console.log(
+          "[Tournament] Current tournament status:",
+          data.current_tournament.status
+        );
         // Si le tournoi est en cours (BG: "Begining" - démarré)
         if (data.current_tournament.status === "BG") {
-          // Notification de nouveau match
           if (
             myNextMatch &&
             pong42.currentPage !== "game" &&
@@ -512,33 +533,61 @@ class TournamentService extends EventEmitter {
       throw error;
     }
   }
+  /**
+   * Vérifie et met à jour le statut du tournoi
+   */
+  async checkAndUpdateTournamentStatus() {
+    try {
+      if (!this.tournamentId) {
+        console.warn("No tournament ID available");
+        this.stopStatusCheckInterval();
+        return;
+      }
+
+      if (auth.isAuthenticated) {
+        await this.updateTournamentStatus();
+      } else {
+        this.stopStatusCheckInterval();
+      }
+    } catch (error) {
+      console.error("Error updating tournament status:", error);
+      this.stopStatusCheckInterval(); // Arrêt de l'intervalle en cas d'erreur
+    }
+  }
 
   /**
    * Démarre l'intervalle de vérification du statut du tournoi
    */
   startStatusCheckInterval() {
-    // Nettoyage de l'intervalle existant
+    if (this.interval) {
+      console.warn("[Tournament] Interval already running, skipping");
+      return;
+    }
+    if (!auth.isAuthenticated) {
+      console.warn("[Tournament] User is not authenticated, skipping interval");
+      return;
+    }
     this.stopStatusCheckInterval();
+    // Nettoyage de l'intervalle existant
 
     // Vérification de la présence d'un tournamentId
     if (!this.tournamentId) {
       console.warn("No tournament ID provided");
       return;
     }
+
     this.interval = setInterval(async () => {
-      try {
-        await this.updateTournamentStatus();
-      } catch (error) {
-        console.error("Error updating tournament status:", error);
-        this.stopStatusCheckInterval(); // Arrêt de l'intervalle en cas d'erreur
-      }
+      console.log("[Tournament] Checking tournament status every 5 seconds");
+      await this.checkAndUpdateTournamentStatus();
     }, 5000);
+    pong42.registerInterval(this.interval); // Enregistrement de l'intervalle
   }
 
   /**
    * Arrête l'intervalle de vérification
    */
   stopStatusCheckInterval() {
+    console.log("[Tournament] Stopping status check interval");
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;

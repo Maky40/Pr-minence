@@ -1,10 +1,12 @@
 import Toast from "../components/toast.js";
+import pong42 from "./pong42.js";
 
 /**
  * Gère les onglets multiples et la communication entre eux
  */
 class TabManager {
-  constructor() {
+  constructor(pong42Instance) {
+    this.pong42 = pong42Instance;
     // Identifiant unique pour cet onglet
     this.tabId = this.generateTabId();
 
@@ -107,6 +109,7 @@ class TabManager {
       () => this.updateMasterTabPing(),
       1000
     );
+    this.pong42.registerInterval(this.masterTabInterval);
   }
 
   /**

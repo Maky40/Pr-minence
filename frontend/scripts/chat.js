@@ -32,8 +32,8 @@ export async function init() {
   let currentUser = {};
   let otherUser = {};
 
-	// Initialize currentUser
-	await initializeCurrentUser(currentUser);
+  // Initialize currentUser
+  await initializeCurrentUser(currentUser);
 
   // Initialize UI elements
   const elements = initializeUIElements();
@@ -45,10 +45,11 @@ export async function init() {
   renderFriendRequests(elements["requests-list"]);
   updateFriendsList(elements["friends-list"]);
 
-  setInterval(() => {
+  const interval = setInterval(() => {
     const updateRequestList = document.getElementById("requests-list");
     if (updateRequestList) renderFriendRequests(updateRequestList);
   }, 60000);
+  pong42.registerInterval(interval);
 
   auth.webSocketStatus.addMessageListener("message", (event) => {
     const data = JSON.parse(event);

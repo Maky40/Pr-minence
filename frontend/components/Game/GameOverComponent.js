@@ -41,7 +41,7 @@ class GameOverComponent extends Component {
         }
         pong42.player.socketMatch = null;
         if (this.music) this.music.stop();
-        changePage("home");
+        changePage("game");
         if (pong42.player.tournament && pong42.player.tournament.tournamentId)
           pong42.player.tournament.startStatusCheckInterval();
       });

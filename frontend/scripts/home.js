@@ -1,11 +1,13 @@
 import auth from "../services/auth.js";
-import GameOverComponent from "../components/Game/GameOverComponent.js";
 
 const updateUI = () => {
   try {
     const loggedSection = document.querySelector("#logged");
     const notLoggedSection = document.querySelector("#not-logged");
-
+    console.log(
+      "Updating UI based on authentication state:",
+      auth.authenticated
+    );
     if (!loggedSection || !notLoggedSection) {
       return;
     }
