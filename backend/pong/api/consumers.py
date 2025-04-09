@@ -502,7 +502,7 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
             if not state["running"]:
                 break
             await self.broadcast_game_state(state)
-            await asyncio.sleep(1/120)
+            await asyncio.sleep(1/60)
 
     async def update_positions(self, state):
         state["paddle_left_y"] += state["paddle_speed_left"]
