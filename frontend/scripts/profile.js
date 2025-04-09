@@ -28,6 +28,7 @@ const init = async () => {
 		profile: pong42.player,
 		isEditing: false,
 	});
+
 	profileManager.render(profilInfoContainer);
 
 	setStats(profileStatsContainer);

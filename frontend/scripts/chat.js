@@ -15,9 +15,6 @@ export async function init() {
 	let currentUser = {};
 	let otherUser = {};
 
-	// Verify authentication
-	// if (!pong42.authenticated)
-	// 	changePage("connexion");
 	// Initialize currentUser
 	await initializeCurrentUser(currentUser);
 

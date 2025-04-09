@@ -9,7 +9,7 @@ class ProfileView extends Component {
       first_name: "",
       last_name: "",
       email: "",
-      status: "OF",
+      status: "ON",
       avatar: "/assets/avatars/default.png",
     };
 
