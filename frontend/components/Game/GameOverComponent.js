@@ -11,10 +11,11 @@ class GameOverComponent extends Component {
     this.local = gameComponent.local;
     this.previousTournamentInfo =
       pong42.player.tournament.previousTournamentInfo;
-    this.tournament = pong42.player.currentTournamentId;
+    this.tournament = pong42.player.tournament.tournamentInfo;
     this.music = gameComponent.music;
     this.renderFunction = renderFunction;
     this.winner = gameComponent.winner || "Game Over";
+    this.gestTournament = false;
   }
 
   displayTournamentRound(currentTournementRound) {
@@ -26,26 +27,13 @@ class GameOverComponent extends Component {
     return tournamentRoundDisplay[currentTournementRound] || "Match";
   }
 
-  setupEventListeners = async () => {
+  setupEventListeners = () => {
     const btnLeaveGame = document.getElementById("btnLeaveGame");
     if (btnLeaveGame) {
       this.attachEvent(btnLeaveGame, "click", async () => {
         try {
           this.destroy();
-          if (this.webSocket) {
-            this.webSocket.removeAllListeners();
-            this.webSocket.close();
-          }
-          pong42.player.socketMatch = null;
-          if (this.music) await this.music.stop();
-          if (
-            pong42.player.tournament &&
-            pong42.player.tournament.currentTournamentId
-          ) {
-            await pong42.player.tournament.getTournaments();
-            pong42.player.tournament.startStatusCheckInterval();
-          }
-          changePage("game");
+          this.handleTournamentStatus();
         } catch (error) {
           console.error("Erreur lors de la déconnexion :", error);
         }
@@ -53,24 +41,41 @@ class GameOverComponent extends Component {
     }
   };
 
-  afterRender() {
-    this.setupEventListeners();
+  async handleTournamentStatus() {
+    if (
+      pong42.player.tournament &&
+      pong42.player.tournament.currentTournamentId &&
+      !this.gestTournament
+    ) {
+      this.gestTournament = true;
+      //await pong42.player.tournament.getTournaments();
+      pong42.player.tournament.startStatusCheckInterval();
+    }
+    this.destroy();
+    if (this.webSocket) {
+      this.webSocket.removeAllListeners();
+      this.webSocket.close();
+    }
+    pong42.player.socketMatch = null;
+    if (this.music) await this.music.stop();
+    changePage("game");
   }
 
-  render(container) {
-    if (this.renderFunction) {
-      this.container = container;
-      this.renderFunction(this.template());
-      this.afterRender();
-    } else {
-      super.render(container);
-    }
+  afterRender() {
+    this.attachEvent(window, "beforeunload", () => {
+      this.handleTournamentStatus();
+      this.destroy();
+    });
+    this.setupEventListeners();
+  }
+  destroy() {
+    this.detachEvent(window, "beforeunload");
+    this.detachEvent(window, "resize");
+    this.detachEvent(document, "click");
+    this.detachEvent(document, "keydown");
   }
 
   template() {
-    // Récupération des données de tournoi
-    const tournamentName = this.tournament?.name || "Tournoi";
-
     return `
     <div class="game-container position-relative vh-100 bg-dark">
       <canvas id="gameCanvas"
