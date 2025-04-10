@@ -540,14 +540,34 @@ def get_player_tournaments(request):
 class MatchHistoryView(APIView):
     @method_decorator(jwt_cookie_required)
     def get(self, request):
-        player_id = request.decoded_token['id']
+        try:
+            username = request.query_params.get('username')
 
-        # Récupérer tous les matchs PLY auxquels le joueur a participé
-        player_matches = PlayerMatch.objects.filter(
-            player__id=player_id,
-            match__state='PLY'
-        ).select_related('match').order_by('-match__created')
+            if username:
+                player = Player.objects.get(username__exact=username)
+            else:
+                player = Player.objects.get(id=request.decoded_token['id'])
 
-        matches = [pm.match for pm in player_matches]
-        serializer = PlayerMatchHistorySerializer(matches, many=True)
-        return Response({"statusCode": 200, "matches": serializer.data})
+            player_matches = PlayerMatch.objects.filter(
+                player=player,
+                match__state='PLY'
+            ).select_related('match').order_by('-match__created')
+
+            matches = [pm.match for pm in player_matches]
+            serializer = PlayerMatchHistorySerializer(matches, many=True)
+
+            return Response({
+                "statusCode": 200,
+                "matches": serializer.data
+            })
+
+        except Player.DoesNotExist:
+            return Response({
+                "statusCode": 404,
+                "message": "User not found",
+            })
+        except Exception as e:
+            return Response({
+                "statusCode": 500,
+                "message": str(e),
+            })

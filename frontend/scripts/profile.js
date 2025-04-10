@@ -32,10 +32,11 @@ const init = async () => {
 
   profileManager.render(profilInfoContainer);
 
-  setStats(profileStatsContainer);
-
-  const friendsList = new FriendsList();
-  friendsList.render(profileFriendsContainer);
+	setStats(profileStatsContainer);
+	document.getElementById('stats-button').addEventListener('click', () => {
+		const username = pong42.player.username;
+		changePage(`stats-${username}`);
+	  });
 };
 
 async function setStats(profileStatsContainer) {

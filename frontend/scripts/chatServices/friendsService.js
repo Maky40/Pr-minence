@@ -24,6 +24,8 @@ export async function searchFriends(query) {
 
 export async function addFriend(friendName, friendsList) {
 	try {
+		if (!friendName)
+			return ;
 		const response_id = await api.apiFetch("/player/?username=" + friendName, true, "GET");
 		if (response_id.status === 404 || response_id.status === 500) {
 			const toast = new Toast("Error", "L'utilisateur n'existe pas", "error");
