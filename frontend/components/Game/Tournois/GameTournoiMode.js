@@ -2,6 +2,7 @@ import Component from "../../../utils/Component.js";
 import GameTournoiLobby from "./GameTournoiLobby.js";
 import pong42 from "../../../services/pong42.js";
 import { escapeHTML } from "../../../utils/EscapeHtml.js";
+import { changePage } from "../../../utils/Page.js";
 
 class GameTournoisMode extends Component {
   constructor() {
@@ -64,12 +65,12 @@ class GameTournoisMode extends Component {
       inputElement.classList.add("is-invalid");
       return;
     }
-
     try {
       this.setState({ loading: true, error: null });
       await this.createTournament(inputValue);
       inputElement.value = "";
       inputElement.classList.remove("is-valid");
+      changePage("game");
     } catch (error) {
       this.setState({
         error: error.message,

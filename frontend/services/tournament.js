@@ -312,10 +312,6 @@ class TournamentService extends EventEmitter {
 
       // Mettre à jour les informations du tournoi
       this.updateTournamentInfo(data.current_tournament);
-      console.log(
-        "[Tournament] Tournament created successfully EMIT3",
-        data.current_tournament
-      );
       this.emit("update", this.tournamentInfo);
       this.startStatusCheckInterval();
 
@@ -351,7 +347,6 @@ class TournamentService extends EventEmitter {
       // Mise à jour des informations
       this.updateTournamentInfo(data);
       this.emit("update", this.tournamentInfo);
-      changePage("game");
       console.log("[Tournament] Tournament joined successfully EMIT4");
       this.startStatusCheckInterval();
 
