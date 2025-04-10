@@ -86,8 +86,11 @@ class PongConsumer(AsyncWebsocketConsumer):
                 connected_users[self.match_id] = 1
                 state = game_states.get(self.match_id)
                 match_state = await self.get_match_state(self.match_id)
-                if state and match_state != "PLY" and state["running"]:
-                    await self.forfeit_match(self.match_id, state)
+                if state and match_state != "PLY" :
+                    if state["running"] :
+                        await self.forfeit_match(self.match_id, state)
+                    elif state["score_left"] == 0 and state["score_right"] == 0:
+                        await self.forfeit_match(self.match_id, state)
                 
             elif current == 1:
                 del connected_users[self.match_id]
