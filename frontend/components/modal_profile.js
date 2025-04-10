@@ -36,6 +36,7 @@ export default class ModalProfile extends Component {
 							<!-- ProfileStatsFriend sera inséré ici -->
 						</div>
 						<div class="modal-footer">
+							<button type="button" class="btn btn-primary me-auto" id="fullStatsBtn">Page Stats</button>
 							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
 						</div>
 					</div>
@@ -47,7 +48,7 @@ export default class ModalProfile extends Component {
   async setStats() {
     const response = await api.apiFetch("player/match-history/", true, "GET");
     const opponentId = this.state.profile.id;
-    const matchesBetween = response.data.matches.filter((match) =>
+    const matchesBetween = response.matches.filter((match) =>
       match.players.some((p) => p.player_id === opponentId)
     );
     let victories = 0;
@@ -66,6 +67,7 @@ export default class ModalProfile extends Component {
     // Met à jour l'état dans ModalProfile
     this.setState({ victories, defeats, lastTwoMatches });
   }
+
   async render(container) {
     // Vérifie si le modal existe déjà pour éviter les doublons
     if (document.getElementById("profileModal")) {
@@ -114,5 +116,13 @@ export default class ModalProfile extends Component {
       this.destroy();
       document.body.focus();
     });
+	document.getElementById('fullStatsBtn').addEventListener('click', () => {
+		const modalInstance = bootstrap.Modal.getInstance(document.getElementById("profileModal"));
+		modalInstance.hide();
+		document.getElementById("profileModal").addEventListener("hidden.bs.modal", () => {
+		  changePage(`stats-${this.state.profile.username}`);
+		  this.destroy();
+		});
+	  });
   }
 }

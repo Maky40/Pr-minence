@@ -10,7 +10,7 @@ import ModalProfile from "../../components/modal_profile.js";
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
 export async function renderFriendRequests(requestsList) {
-  requestsList.innerHTML = ""; // Clear existing requests
+  requestsList.innerHTML = "";
   try {
     const responseFriendRequests = await api.apiFetch(
       "/player/friendship/?target=invites",

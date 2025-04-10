@@ -1,0 +1,4 @@
+const init = () => {
+  };
+
+  export { init };

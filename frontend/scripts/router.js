@@ -9,6 +9,8 @@ export const routes = {
   profile: { template: "profile.html", authRequired: true },
   login42: { template: "login42.html" },
   twofactor: { template: "twofactor.html" },
+  stats: { template: "stats.html", dynamic: true},
+  404: { template: "404.html" },
 };
 
 export class Router {
@@ -24,6 +26,10 @@ export class Router {
 
   handleRoute() {
     const hash = window.location.hash.substring(1) || "home";
+	if (hash.startsWith('stats-')) {
+		this.templateManager.loadTemplate('stats.html');
+		return;
+	  }
     const route = this.routes[hash];
     if (route) {
       this.templateManager.loadTemplate(route.template);

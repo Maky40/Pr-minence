@@ -24,14 +24,24 @@ import pong42 from "../services/pong42.js";
 import WebSocketAPI from "../services/websocket.js";
 import { ENV } from "../env.js";
 import auth from "../services/auth.js";
-import { changePage } from "../utils/Page.js";
+
+const waitForWebSocketStatus = () => {
+	return new Promise(resolve => {
+        const interval = setInterval(() => {
+		if (auth.webSocketStatus) {
+			clearInterval(interval); // Arrête l'intervalle
+			resolve(); // Résout la promesse quand auth.websocketstatus est défini
+		}
+	}, 100); // Vérifie toutes les 100ms
+});
+};
 
 export async function init() {
-  console.log("init() called");
   let socketActivate = {};
   let currentUser = {};
   let otherUser = {};
-
+  // Wait for WebSocketStatus init (for refresh)
+  await waitForWebSocketStatus();
 	// Initialize currentUser
 	await initializeCurrentUser(currentUser);
 
@@ -105,7 +115,7 @@ function addEventListeners(elements, socketActivate, currentUser, otherUser) {
     handleSearchBlur(elements["search-friend"])
   );
   elements["search-friend"].addEventListener("input", (event) =>
-    handleSearchInput(event.target.value, elements)
+    handleSearchInput(event.target.value.trim(), elements)
   );
   document.addEventListener("click", (event) =>
     hideDropDownList(event, elements)
@@ -244,6 +254,8 @@ async function handleFriendsListClick(
   otherUser
 ) {
   try {
+	if (!await haveFriend())
+		return ;
     const friend = event.target
       .closest(".list-group-item")
       .querySelector(".friend-name");
@@ -275,6 +287,22 @@ async function handleFriendsListClick(
   }
 }
 
+async function haveFriend()
+{
+	const [requestsResponse, friendsResponse] = await Promise.all([
+		api.apiFetch("/player/friendship/?target=requests", true, "GET"),
+		api.apiFetch("/player/friendship/?target=friends", true, "GET"),
+	  ]);
+	  if (
+		requestsResponse.friendships.length === 0 &&
+		friendsResponse.friendships.length === 0
+	  ) {
+		return false;
+	  }
+	  else {
+		return true;
+	  }
+}
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
 /////////////////////////////////////////////║                        SEND MESSAGE                        ║/////////////////////////////////////////////
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
