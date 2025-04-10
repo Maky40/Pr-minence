@@ -59,7 +59,7 @@ export default class Navbar extends Component {
       isPlaying: false,
     };
     this.initListeners();
-    console.log("Navbar initialized", pong42);
+    console.log("Navbar initialized");
   }
   setupBeforeUnloadListener() {
     const handleBeforeUnload = (event) => {

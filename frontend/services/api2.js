@@ -84,11 +84,7 @@ class Api {
               })
               .join(" | ");
           }
-
-          // Affichage d'une notification
-          const toast = new Toast("Erreur de requête", errorMessage, "error");
-          toast.show();
-
+          
           // Retourner un objet structuré pour une meilleure gestion côté client
           return {
             status: 400,

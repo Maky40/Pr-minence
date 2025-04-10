@@ -34,7 +34,7 @@ class Auth {
   async initFromAPI() {
     try {
       const response = await api.apiFetch("/player/", true);
-      console.log("Initializing auth state from API:", response);
+      console.log("Initializing auth state from API");
       if (response.status === 200) {
         const playerData = response.data || response;
         this.setSession(playerData);
@@ -155,7 +155,7 @@ class Auth {
   async setSession(data) {
     try {
       if (!data || data === undefined || !data.player) {
-        console.error("No data provided for session setup");
+        console.log("No data provided for session setup");
         return;
       }
       const player = data.player;

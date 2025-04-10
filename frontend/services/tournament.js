@@ -404,8 +404,8 @@ class TournamentService extends EventEmitter {
    * @returns {Object|null} Le match trouvé ou null
    */
   getNextCurrentUserMatch(matches) {
-    if (!this.currentTournamentId) {
-      console.warn("No tournament ID available");
+    if (!this.tournamentInfo.tournamentId) {
+      console.log("No tournament ID available");
       return null;
     }
     const matchesUplay = this.getUplayMatches(matches);
@@ -505,7 +505,8 @@ class TournamentService extends EventEmitter {
    */
   async checkAndUpdateTournamentStatus() {
     try {
-      if (!this.currentTournamentId) {
+      if (!this.tournamentId) {
+        console.log("No tournament ID available");
         this.stopStatusCheckInterval();
         return;
       }
@@ -526,19 +527,19 @@ class TournamentService extends EventEmitter {
    */
   startStatusCheckInterval() {
     if (this.interval) {
-      console.warn("[Tournament] Interval already running, skipping");
+      console.log("[Tournament] Interval already running, skipping");
       return;
     }
     if (!auth.isAuthenticated) {
-      console.warn("[Tournament] User is not authenticated, skipping interval");
+      console.log("[Tournament] User is not authenticated, skipping interval");
       return;
     }
     this.stopStatusCheckInterval();
     // Nettoyage de l'intervalle existant
 
     // Vérification de la présence d'un tournamentId
-    if (!this.currentTournamentId) {
-      console.warn("No tournament ID provided");
+    if (!this.tournamentId) {
+      console.log("No tournament ID provided");
       return;
     }
 
