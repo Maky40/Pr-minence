@@ -4,18 +4,14 @@ import { changePage } from "../../utils/Page.js";
 
 class GameOverComponent extends Component {
   constructor(gameComponent, renderFunction) {
-    super(); // Appel nécessaire à super()
+    super();
     this.gameConfig = gameComponent.gameConfig;
     this.gameState = gameComponent.gameState;
     this.webSocket = gameComponent.webSocket;
+    this.local = gameComponent.local;
     this.previousTournamentInfo =
       pong42.player.tournament.previousTournamentInfo;
     this.tournament = pong42.player.tournament.tournamentInfo;
-    console.log(
-      this.tournament,
-      this.previousTournamentInfo,
-      pong42.player.tournament
-    );
     this.music = gameComponent.music;
     this.renderFunction = renderFunction;
     this.winner = gameComponent.winner || "Game Over";
@@ -30,23 +26,32 @@ class GameOverComponent extends Component {
     return tournamentRoundDisplay[currentTournementRound] || "Match";
   }
 
-  setupEventListeners() {
+  setupEventListeners = async () => {
     const btnLeaveGame = document.getElementById("btnLeaveGame");
     if (btnLeaveGame) {
-      this.attachEvent(btnLeaveGame, "click", () => {
-        this.destroy();
-        if (this.webSocket) {
-          this.webSocket.removeAllListeners();
-          this.webSocket.close();
+      this.attachEvent(btnLeaveGame, "click", async () => {
+        try {
+          this.destroy();
+          if (this.webSocket) {
+            this.webSocket.removeAllListeners();
+            this.webSocket.close();
+          }
+          pong42.player.socketMatch = null;
+          if (this.music) await this.music.stop();
+          if (
+            pong42.player.tournament &&
+            pong42.player.tournament.tournamentId
+          ) {
+            await pong42.player.tournament.getTournaments();
+            pong42.player.tournament.startStatusCheckInterval();
+          }
+          changePage("game");
+        } catch (error) {
+          console.error("Erreur lors de la déconnexion :", error);
         }
-        pong42.player.socketMatch = null;
-        if (this.music) this.music.stop();
-        changePage("game");
-        if (pong42.player.tournament && pong42.player.tournament.tournamentId)
-          pong42.player.tournament.startStatusCheckInterval();
       });
     }
-  }
+  };
 
   afterRender() {
     this.setupEventListeners();
@@ -162,14 +167,18 @@ class GameOverComponent extends Component {
           `
               : ""
           }
-
+          ${
+            this.local
+              ? ``
+              : `
           <!-- Winner Message -->
           <div class="mb-5 animate__animated animate__fadeInUp">
             <h2 class="badge bg-info bg-gradient fs-3 p-3" style="font-family: 'Orbitron', sans-serif;">
               ${this.winner}
             </h2>
           </div>
-
+          `
+          }
           <!-- Return Button -->
           <button class="btn btn-outline-info btn-lg px-5 animate__animated animate__fadeIn" id="btnLeaveGame">
             <i class="fas fa-home me-2"></i>
