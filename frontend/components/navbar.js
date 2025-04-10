@@ -63,7 +63,7 @@ export default class Navbar extends Component {
   }
   setupBeforeUnloadListener() {
     const handleBeforeUnload = (event) => {
-      if (pong42.player && pong42.player.isInGame) {
+      if (this.state.isPlaying) {
         const message =
           "Attention! Quitter ou rafraîchir la page peut interrompre votre partie en cours.";
         event.preventDefault();

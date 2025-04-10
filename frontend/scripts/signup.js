@@ -85,7 +85,6 @@ const init = () => {
   document
     .getElementById("signupForm")
     .addEventListener("submit", singupHandler);
-  document.getElementById("avatar").addEventListener("change", avatarHandler);
 };
 
 export { init };
