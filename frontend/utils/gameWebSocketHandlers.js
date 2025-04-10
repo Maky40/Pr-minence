@@ -89,9 +89,10 @@ export function initializeGameWebSocket(component, matchId, options = {}) {
     }
   }
   const wsUrlBase = options.local ? ENV.WS_URL_LOCAL : ENV.WS_URL_GAME;
-  const wsUrlGame = `${wsUrlBase}${
-    matchId || (options.local ? generateRamdomMatchId() : "")
-  }/`;
+  const wsUrlGameBase = matchId ? `${wsUrlBase}${matchId}/` : `${wsUrlBase}/`;
+  const wsUrlGame = options.local
+    ? wsUrlGameBase + generateRamdomMatchId() + "/"
+    : wsUrlGameBase;
 
   // Create WebSocket and store it
   const webSocketMatch = new WebSocketAPI(wsUrlGame);

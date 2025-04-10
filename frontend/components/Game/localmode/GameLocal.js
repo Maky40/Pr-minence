@@ -11,6 +11,7 @@ class GameLocal extends Component {
     this.webSocketMatch = initializeGameWebSocket(this, pong42.player.id, {
       local: true,
     });
+    console.log("[GAME] GameLocal constructor");
   }
 }
 

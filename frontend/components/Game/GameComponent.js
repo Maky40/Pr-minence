@@ -409,19 +409,19 @@ class GameComponent extends Component {
         ${
           this.local
             ? `<div class="d-flex justify-content-center gap-4">
-				  <div class="text-white">
-					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up
+				  <div class="text-white"> PLAYER 1
+					<span class="badge bg-warning text-dark">↑ </span> Up
 				  </div>
 				  <div class="text-white">
-					<span class="badge bg-warning text-dark">${controls.down}</span> Down
+					<span class="badge bg-warning text-dark">↓</span> Down
 				  </div>
 				</div>
         <div class="d-flex justify-content-center gap-4">
-				  <div class="text-white">
-					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up
+				  <div class="text-white"> PLAYER 1
+					<span class="badge bg-warning text-dark">w</span> Up
 				  </div>
 				  <div class="text-white">
-					<span class="badge bg-warning text-dark">${controls.down}</span> Down
+					<span class="badge bg-warning text-dark">s</span> Down
 				  </div>
 				</div>`
             : `<div class="d-flex justify-content-center gap-4">
@@ -435,7 +435,6 @@ class GameComponent extends Component {
         }
 				</div>
 			  </div>
-			</div>
 		  </div>
 		  <canvas id="gameCanvas"
 				  width="${this.gameConfig.WIDTH}"
