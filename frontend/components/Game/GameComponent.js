@@ -405,13 +405,34 @@ class GameComponent extends Component {
 			  </div>
 			  <div class="mt-4">
 				<p class="text-warning mb-2">Controls:</p>
-				<div class="d-flex justify-content-center gap-4">
+				
+        ${
+          this.local
+            ? `<div class="d-flex justify-content-center gap-4">
 				  <div class="text-white">
 					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up
 				  </div>
 				  <div class="text-white">
 					<span class="badge bg-warning text-dark">${controls.down}</span> Down
 				  </div>
+				</div>
+        <div class="d-flex justify-content-center gap-4">
+				  <div class="text-white">
+					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up
+				  </div>
+				  <div class="text-white">
+					<span class="badge bg-warning text-dark">${controls.down}</span> Down
+				  </div>
+				</div>`
+            : `<div class="d-flex justify-content-center gap-4">
+				  <div class="text-white">
+					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up
+				  </div>
+				  <div class="text-white">
+					<span class="badge bg-warning text-dark">${controls.down}</span> Down
+				  </div>
+				</div>`
+        }
 				</div>
 			  </div>
 			</div>
