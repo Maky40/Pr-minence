@@ -11,6 +11,12 @@ import { ENV } from "../env.js";
  * @returns {WebSocketAPI} The WebSocket instance
  */
 
+function generateRamdomMatchId() {
+  // Generate a random match ID
+  const randomMatchId = Math.floor(Math.random() * 1000000);
+  return randomMatchId;
+}
+
 function reuseExistingWebSocket(component, options = {}) {
   // Si aucune connexion existante ou si on force une nouvelle connexion
   if (!pong42.player.socketMatch || options.forceNewConnection) {
@@ -83,11 +89,9 @@ export function initializeGameWebSocket(component, matchId, options = {}) {
     }
   }
   const wsUrlBase = options.local ? ENV.WS_URL_LOCAL : ENV.WS_URL_GAME;
-  const wsUrlGame = matchId ? `${wsUrlBase}${matchId}/` : `${wsUrlBase}/`;
-  console.log(
-    "[GAME] Connecting to:",
-    matchId ? `match ${matchId}` : "game server for new match"
-  );
+  const wsUrlGame = `${wsUrlBase}${
+    matchId || (options.local ? generateRamdomMatchId() : "")
+  }/`;
 
   // Create WebSocket and store it
   const webSocketMatch = new WebSocketAPI(wsUrlGame);
