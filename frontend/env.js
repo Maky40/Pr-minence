@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-// const API_HOST = "42pong.ddns.net:8443";
-//  const API_HOST = "42pong.zapto.org:8443";
-const API_HOST = "42pong.bounceme.net:8443";
-=======
 //const API_HOST = "42pong.ddns.net:8443";
   const API_HOST = "42pong.zapto.org:8443";
 //const API_HOST = "42pong.bounceme.net:8443";
->>>>>>> 81a37f7 (forfeit working again without destroying stats)
 
 const ENV = {
   API_URL: `https://${API_HOST}/`,
