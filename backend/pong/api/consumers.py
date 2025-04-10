@@ -82,10 +82,11 @@ class PongConsumer(AsyncWebsocketConsumer):
 
         if hasattr(self, "match_id"):
             current = connected_users.get(self.match_id, 0)
-            if current == 2 and state["running"]:
+            if current == 2 :
                 connected_users[self.match_id] = 1
                 state = game_states.get(self.match_id)
-                if state :
+                match_state = await self.get_match_state(self.match_id)
+                if state and match_state != "PLY" and state["running"]:
                     await self.forfeit_match(self.match_id, state)
                 
             elif current == 1:
