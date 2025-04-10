@@ -15,14 +15,11 @@ class GameTournoisMode extends Component {
       initialized: false,
       tournament: null,
     };
-
-    // Bind all handler methods to preserve "this" context
     this.handleInputChange = this.handleInputChange.bind(this);
     this.handleCreateTournament = this.handleCreateTournament.bind(this);
     this.handleRefreshTournaments = this.handleRefreshTournaments.bind(this);
     this.handleJoinTournament = this.handleJoinTournament.bind(this);
 
-    // Define event listeners with proper bindings
     this.tournamentLoadedListener = (data) => {
       this.setState({
         tournaments: data.tournaments || [],
@@ -43,7 +40,6 @@ class GameTournoisMode extends Component {
       }
     };
 
-    // Store cleanup functions
     this.cleanupFunctions = [];
   }
 
@@ -223,8 +219,8 @@ class GameTournoisMode extends Component {
         await pong42.player.tournament.getTournaments();
 
         // If already in a tournament, go to lobby
-        if (pong42.player.tournament.tournamentId) {
-          this.goToLobby(pong42.player.tournament.tournamentId);
+        if (pong42.player.tournament.currentTournamentId) {
+          this.goToLobby(pong42.player.tournament.currentTournamentId);
         }
 
         this.showNoTournament();

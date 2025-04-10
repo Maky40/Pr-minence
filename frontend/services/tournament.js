@@ -83,7 +83,7 @@ class TournamentService extends EventEmitter {
   /**
    * Propriété pour accéder facilement à l'ID du tournoi
    */
-  get tournamentId() {
+  get currentTournamentId() {
     return this.current_tournament_info?.id || 0;
   }
 
@@ -133,8 +133,7 @@ class TournamentService extends EventEmitter {
 
     return {
       hasChanged,
-      tournamentChanged:
-        this.current_tournament_info.id !== newTournamentData.id,
+      tournamentChanged: this.currentTournamentId !== newTournamentData.id,
       changes: {
         statusChanged,
         roundChanged,
@@ -233,7 +232,6 @@ class TournamentService extends EventEmitter {
       );
       if (!tournament || !tournament.id) {
         this.resetTournamentInfo();
-        this.emit("tournamentLeft", {});
         this.stopStatusCheckInterval();
         return;
       }
@@ -406,7 +404,7 @@ class TournamentService extends EventEmitter {
    * @returns {Object|null} Le match trouvé ou null
    */
   getNextCurrentUserMatch(matches) {
-    if (!this.tournamentInfo.tournamentId) {
+    if (!this.currentTournamentId) {
       console.warn("No tournament ID available");
       return null;
     }
@@ -451,7 +449,7 @@ class TournamentService extends EventEmitter {
         // Si le tournoi a changé ou est nouveau
         if (
           !this.current_tournament_info ||
-          this.tournamentId !== data.current_tournament.id
+          this.currentTournamentId !== data.current_tournament.id
         ) {
           this.resetTournamentInfo();
           this.updateTournamentInfo(data.current_tournament);
@@ -488,7 +486,7 @@ class TournamentService extends EventEmitter {
         return data.current_tournament;
       } else {
         // L'utilisateur n'est pas dans un tournoi
-        if (this.tournamentId !== 0) {
+        if (this.currentTournamentId !== 0) {
           this.resetTournamentInfo();
         }
         this.emit("tournamentsLoaded", {
@@ -507,8 +505,7 @@ class TournamentService extends EventEmitter {
    */
   async checkAndUpdateTournamentStatus() {
     try {
-      if (!this.tournamentId) {
-        console.warn("No tournament ID available");
+      if (!this.currentTournamentId) {
         this.stopStatusCheckInterval();
         return;
       }
@@ -540,7 +537,7 @@ class TournamentService extends EventEmitter {
     // Nettoyage de l'intervalle existant
 
     // Vérification de la présence d'un tournamentId
-    if (!this.tournamentId) {
+    if (!this.currentTournamentId) {
       console.warn("No tournament ID provided");
       return;
     }

@@ -11,7 +11,7 @@ class GameOverComponent extends Component {
     this.local = gameComponent.local;
     this.previousTournamentInfo =
       pong42.player.tournament.previousTournamentInfo;
-    this.tournament = pong42.player.tournament.tournamentInfo;
+    this.tournament = pong42.player.currentTournamentId;
     this.music = gameComponent.music;
     this.renderFunction = renderFunction;
     this.winner = gameComponent.winner || "Game Over";
@@ -40,7 +40,7 @@ class GameOverComponent extends Component {
           if (this.music) await this.music.stop();
           if (
             pong42.player.tournament &&
-            pong42.player.tournament.tournamentId
+            pong42.player.tournament.currentTournamentId
           ) {
             await pong42.player.tournament.getTournaments();
             pong42.player.tournament.startStatusCheckInterval();

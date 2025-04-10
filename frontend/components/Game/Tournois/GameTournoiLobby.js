@@ -76,7 +76,7 @@ class GameTournoiLobby extends Component {
       if (!data || typeof data !== "object") {
         throw new Error("Données de tournoi invalides reçues");
       }
-      console.log("update tournament", data);
+
       //const currentTournamentStatus = this.state.tournament.status || null;|| currentTournamentStatus != data.status
       this.setState({
         tournament: data,

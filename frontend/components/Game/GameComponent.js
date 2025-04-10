@@ -41,7 +41,7 @@ class GameComponent extends Component {
     );
     this.tournament = null;
     if (pong42.player.tournament) {
-      this.tournament = pong42.player.tournament.tournamentInfo;
+      this.tournament = pong42.player.tournament.currentTournamentId;
     }
     this.renderer = null;
     this.animationFrameId = null;
