@@ -135,8 +135,6 @@ class GameComponent extends Component {
 
     // 🎯 Ajout de la gestion de fermeture de WebSocket
     this.webSocket.onclose = (event) => {
-      console.warn("[WS CLOSED]", event.code, event.reason);
-
       if (event.code === 4000) {
         // Fermeture volontaire du backend pour remplacer une ancienne connexion
         console.log("Ancienne WebSocket fermée volontairement (code 4000)");
@@ -409,15 +407,15 @@ class GameComponent extends Component {
         ${
           this.local
             ? `<div class="d-flex justify-content-center gap-4">
-				  <div class="text-white"> PLAYER 1
+				  <div class="text-info"> PLAYER 1
 					<span class="badge bg-warning text-dark">↑ </span> Up
 				  </div>
-				  <div class="text-white">
+				  <div class="text-info">
 					<span class="badge bg-warning text-dark">↓</span> Down
 				  </div>
 				</div>
         <div class="d-flex justify-content-center gap-4">
-				  <div class="text-white"> PLAYER 1
+				  <div class="text-white"> PLAYER 2
 					<span class="badge bg-warning text-dark">w</span> Up
 				  </div>
 				  <div class="text-white">
