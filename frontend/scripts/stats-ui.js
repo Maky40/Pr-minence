@@ -58,7 +58,7 @@ export function renderStats(player, stats) {
 	  const currentPlayer = match.players.find(p => p.username === username);
 	  const row = document.createElement('tr');
 	  row.innerHTML = `
-		<td>${new Date(match.created).toLocaleString()}</td>
+		<td>${new Date(match.created).toLocaleString('fr-FR')}</td>
 		<td>${opponent.username}</td>
 		<td>${currentPlayer.score} - ${opponent.score}</td>
 		<td>${currentPlayer.is_winner ? 'Victoire' : 'Défaite'}</td>

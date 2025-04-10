@@ -11,6 +11,7 @@ import pong42 from "../../../services/pong42.js";
 import WebSocketAPI from "../../services/websocket.js";
 import { ENV } from "../../env.js";
 import InviteForPlayComponent from "../../components/modal_play.js";
+import Toast from "../../components/toast.js";
 /////////////////////////////////////////////╔════════════════════════════════════════════════════════════╗/////////////////////////////////////////////
 /////////////////////////////////////////////║                    SOCKET CHAT MANAGEMENT                  ║/////////////////////////////////////////////
 /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
@@ -44,6 +45,10 @@ export function setupWebSocketListeners(socketActivate, otherUserId) {
           data.message,
           otherUserId
         );
+        else if (data.type === "error"){
+          const toast = new Toast("Error", "Pas de message a plus de 500 caracteres SAPERLIPOPETTE", "error");
+		      toast.show();
+        }
       else if (data.message === "invitation") {
         displayInvitation(
           data.senderName,
