@@ -3,6 +3,7 @@ import {
 	deleteFriend,
 	searchFriends,
 	addFriend,
+	verifyFriend,
   } from "./chatServices/friendsService.js";
   import {
 	initWebSocket,
@@ -225,7 +226,7 @@ import {
   /////////////////////////////////////////////║                       FRIENDS REQUESTS                     ║/////////////////////////////////////////////
   /////////////////////////////////////////////╚════════════════════════════════════════════════════════════╝/////////////////////////////////////////////
 
-  function handleRequestsClick(event, elements) {
+  async function handleRequestsClick(event, elements) {
 	// Vérifie si le clic était sur un bouton accept ou reject
 	const acceptButton = event.target.closest(".accept-request");
 	const rejectButton = event.target.closest(".reject-request");
@@ -233,9 +234,17 @@ import {
 
 	if (acceptButton) {
 	  const userId = acceptButton.dataset.username;
+	  const isAlreadyFriend = await verifyFriend(userId);
+	  if (isAlreadyFriend) {
+		card.remove();
+		return;}
 	  requestFriend(userId, elements["friends-list"]);
 	} else if (rejectButton) {
 	  const userId = rejectButton.dataset.username;
+	  const isAlreadyFriend = await verifyFriend(userId);
+	  if (isAlreadyFriend) {
+		card.remove();
+		return;}
 	  deleteFriend(userId);
 	}
 	if (card) {
