@@ -397,7 +397,6 @@ class PongConsumer(AsyncWebsocketConsumer):
             else:
                 state["paddle_speed_right"] = -10 if direction == "up" else 10 if direction == "down" else 0
                 
-
 class LocalPongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.local_id = self.scope["url_route"]["kwargs"].get("local_id")
@@ -406,7 +405,9 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
         if self.local_id is None or self.random_id is None:
             await self.close()
             return
+
         self.connection_key = f"{self.local_id}_{self.random_id}"
+        self.room_group_name = f"local_pong_{self.connection_key}"
 
         if self.connection_key in active_local_connections:
             old_consumer = active_local_connections[self.connection_key]
@@ -416,24 +417,22 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
 
         active_local_connections[self.connection_key] = self
 
-        self.room_group_name = f"local_pong_{self.local_id}_{self.random_id}"
-
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
+
         if self.connection_key not in local_game_states:
-            self.init_game_state(self.connection_key)
+            self.init_game_state()
 
         await self.send_json({
-            "message": f"Local Pong: connected => (local_id={self.connection_key}, random_id={self.random_id})"
-    })
+            "message": f"Local Pong: connected => (key={self.connection_key})"
+        })
 
         state = local_game_states[self.connection_key]
         if not state.get("running"):
-            await self.start_game(self.connection_key)
-
+            await self.start_game()
 
     async def disconnect(self, code):
-        if hasattr(self, "key") and self.connection_key in active_local_connections:
+        if hasattr(self, "connection_key") and self.connection_key in active_local_connections:
             if active_local_connections[self.connection_key] == self:
                 del active_local_connections[self.connection_key]
 
@@ -467,6 +466,7 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
             "type": "game_start",
             "message": "La partie va commencer dans 5 secondes (local)."
         })
+
         await self.channel_layer.group_send(self.room_group_name, {
             "type": "players_info",
             "left_username": "Player 1",
@@ -475,27 +475,21 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
 
         if self.connection_key in local_game_tasks:
             local_game_tasks[self.connection_key].cancel()
-            del local_game_tasks[self.connection_key]
-
-        state["running"] = False
-        state["score_left"] = 0
-        state["score_right"] = 0
-
-        local_game_tasks[self.connection_key] = asyncio.create_task(self.game_loop(self.connection_key))
+        local_game_tasks[self.connection_key] = asyncio.create_task(self.game_loop())
 
         if self.connection_key in countdown_tasks:
             countdown_tasks[self.connection_key].cancel()
-        countdown_tasks[self.connection_key] = asyncio.create_task(self.do_countdown(self.connection_key))
+        countdown_tasks[self.connection_key] = asyncio.create_task(self.do_countdown())
 
-    async def do_countdown(self, local_id):
+    async def do_countdown(self):
         await asyncio.sleep(5)
-        state = local_game_states.get(local_id)
+        state = local_game_states.get(self.connection_key)
         if state:
             state["running"] = True
 
-    async def game_loop(self, local_id):
+    async def game_loop(self):
         while True:
-            state = local_game_states.get(local_id)
+            state = local_game_states.get(self.connection_key)
             if not state:
                 break
             if not state["running"]:
@@ -530,7 +524,6 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
         hitbox_padding = 10
         max_speed = 16
 
-
         if by <= 0:
             state["ball_y"] = 0
             state["ball_vy"] = -vy
@@ -557,10 +550,8 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
         if bx <= paddle_left_x + state["paddle_width"]:
             if (state["paddle_left_y"] - hitbox_padding <= ball_center_y <=
                 state["paddle_left_y"] + paddle_height + hitbox_padding):
-                new_vx, new_vy = bounce_off_paddle(state["paddle_left_y"], state["paddle_speed_left"], True)
-                state["ball_vx"], state["ball_vy"] = new_vx, new_vy
+                state["ball_vx"], state["ball_vy"] = bounce_off_paddle(state["paddle_left_y"], state["paddle_speed_left"], True)
             else:
-
                 state["score_right"] += 1
                 await self.reset_ball(state)
                 return
@@ -568,8 +559,7 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
         elif bx + ball_size >= paddle_right_x:
             if (state["paddle_right_y"] - hitbox_padding <= ball_center_y <=
                 state["paddle_right_y"] + paddle_height + hitbox_padding):
-                new_vx, new_vy = bounce_off_paddle(state["paddle_right_y"], state["paddle_speed_right"], False)
-                state["ball_vx"], state["ball_vy"] = new_vx, new_vy
+                state["ball_vx"], state["ball_vy"] = bounce_off_paddle(state["paddle_right_y"], state["paddle_speed_right"], False)
             else:
                 state["score_left"] += 1
                 await self.reset_ball(state)
@@ -580,9 +570,7 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
             await self.end_game(state)
 
     async def reset_ball(self, state):
-        min_angle = math.radians(5)
-        max_angle = math.radians(25)
-        angle = random.uniform(min_angle, max_angle)
+        angle = random.uniform(math.radians(5), math.radians(25))
         angle *= -1 if random.random() < 0.5 else 1
         speed = 8.5
         direction = 1 if state["next_engagement_left"] else -1
@@ -655,19 +643,8 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
             left_dir = data.get("leftDir")
             right_dir = data.get("rightDir")
 
-            if left_dir == "up":
-                state["paddle_speed_left"] = -10
-            elif left_dir == "down":
-                state["paddle_speed_left"] = 10
-            else:
-                state["paddle_speed_left"] = 0
-
-            if right_dir == "up":
-                state["paddle_speed_right"] = -10
-            elif right_dir == "down":
-                state["paddle_speed_right"] = 10
-            else:
-                state["paddle_speed_right"] = 0
+            state["paddle_speed_left"] = -10 if left_dir == "up" else 10 if left_dir == "down" else 0
+            state["paddle_speed_right"] = -10 if right_dir == "up" else 10 if right_dir == "down" else 0
 
     def send_json(self, content):
         return self.send(text_data=json.dumps(content))
