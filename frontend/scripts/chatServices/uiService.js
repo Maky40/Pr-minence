@@ -51,12 +51,13 @@ export async function updateFriendsList(friendsList) {
       api.apiFetch("/player/friendship/?target=requests", true, "GET"),
       api.apiFetch("/player/friendship/?target=friends", true, "GET"),
     ]);
+
     renderFriendList(friendsList, friendsResponse, "friends");
     renderFriendList(friendsList, requestsResponse, "requests");
 
     if (
-      requestsResponse.data.friendships.length === 0 &&
-      friendsResponse.data.friendships.length === 0
+      requestsResponse.friendships.length === 0 &&
+      friendsResponse.friendships.length === 0
     ) {
       renderEmptyFriendsList(friendsList);
     }

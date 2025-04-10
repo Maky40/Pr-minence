@@ -6,8 +6,9 @@ class InviteForPlayComponent extends Component {
     super();
     this.socketActivate = socketActivate;
     this.player = player;
-    this.modalContainer = document.createElement("div");
+	this.modalContainer = document.createElement("div");
   }
+
 
   template() {
     return `
@@ -30,13 +31,13 @@ class InviteForPlayComponent extends Component {
         </div>
       </div>
     `;
-  }
+}
 
   render(container) {
     // Supprime l'ancien modal si déjà présent
     const existingModal = document.getElementById("playModal");
     if (existingModal) {
-      existingModal.remove();
+        existingModal.remove();
     }
 
     // Crée un nouveau conteneur modal
@@ -49,82 +50,97 @@ class InviteForPlayComponent extends Component {
     // Garde une référence et attache les événements
     this.container = this.modalContainer;
     this.attachEventListeners();
-  }
 
-  show() {
-    const modalElement = this.container.querySelector("#playModal");
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-  }
-
-  closeModalMatchAccepted() {
-    this.preventDestroy = true;
-    this.preventSendCancelled = true;
-    const modalElement = document.getElementById("playModal");
-    if (modalElement) {
-      const modalInstance = bootstrap.Modal.getInstance(modalElement);
-      if (modalInstance) {
-        modalInstance.hide(); // Ferme le modal proprement
-      }
-    }
-  }
-
-  closeModalMatchRefused() {
-    this.preventSendCancelled = true;
-    this.matchDeleted = true;
-    const modalElement = document.getElementById("playModal");
-    if (modalElement) {
-      const modalInstance = bootstrap.Modal.getInstance(modalElement);
-      if (modalInstance) {
-        modalInstance.hide(); // Ferme le modal proprement
-      }
-    }
-  }
-  async destroy() {
-    if (this.preventDestroy) return;
-    if (this.modalContainer) {
-      this.modalContainer.remove();
-    }
-    if (!this.matchDeleted) {
-      await api.apiFetch("pong/match/individual/delete", true, "POST");
-    }
-
-    // Réinitialise les infos du joueur
-    this.player.match_id = null;
-    this.player.paddle = null;
-    if (this.player.socketMatch) {
-      this.player.socketMatch.close();
-      this.player.socketMatch = null;
-    }
-  }
-
-  attachEventListeners() {
-    const modalElement = this.container.querySelector("#playModal");
-    const cancelButton = modalElement.querySelector("#cancel-match");
-    if (cancelButton) {
-      cancelButton.addEventListener("click", () => {
-        this.sendCancelled();
-        bootstrap.Modal.getInstance(modalElement).hide();
-      });
-    }
-    modalElement.addEventListener("hidden.bs.modal", () => {
-      this.sendCancelled();
-      this.destroy();
-      document.body.focus();
-    });
-  }
-
-  sendCancelled() {
-    if (this.preventSendCancelled) return;
-    const payload = {
-      type: "invitation_play",
-      senderId: this.player.id,
-      senderName: this.player.username,
-      message: "annuler",
-      matchId: this.player.match_id,
-    };
-    this.socketActivate.socket.send(JSON.stringify(payload));
-  }
+	// cas du reload de la page
+	window.addEventListener("beforeunload", async (event) => {
+		if (!this.preventSendCancelled) {
+			this.sendCancelled();
+		}
+	});
 }
+
+show() {
+	const modalElement = this.container.querySelector("#playModal");
+	const modal = new bootstrap.Modal(modalElement);
+	modal.show();
+}
+
+closeModalMatchAccepted() {
+	this.preventDestroy = true;
+	this.preventSendCancelled = true;
+    const modalElement = document.getElementById("playModal");
+    if (modalElement) {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide(); // Ferme le modal proprement
+        }
+    }
+}
+
+closeModalMatchRefused() {
+	this.preventSendCancelled = true;
+	this.matchDeleted = true;
+    const modalElement = document.getElementById("playModal");
+    if (modalElement) {
+        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+        if (modalInstance) {
+            modalInstance.hide(); // Ferme le modal proprement
+        }
+    }
+}
+async destroy() {
+	if (this.preventDestroy)
+		return;
+	if (this.modalContainer) {
+		this.modalContainer.remove();
+	}
+	if (!this.matchDeleted)
+  {
+    console.log("----------------------- DELETE MATCH ------------------------");
+    await api.apiFetch("pong/match/individual/delete", true, "POST");
+  }
+
+	 // Réinitialise les infos du joueur
+	 this.player.match_id = null;
+	 this.player.paddle = null;
+	 if (this.player.socketMatch) {
+		this.player.socketMatch.close();
+		this.player.socketMatch = null;
+	}
+
+}
+
+attachEventListeners() {
+	const modalElement = this.container.querySelector("#playModal");
+	const cancelButton = modalElement.querySelector("#cancel-match");
+	if (cancelButton) {
+		cancelButton.addEventListener("click", () => {
+			this.sendCancelled();
+			bootstrap.Modal.getInstance(modalElement).hide();
+		});
+	}
+	modalElement.addEventListener("hidden.bs.modal", () => {
+		this.sendCancelled();
+		this.destroy();
+		document.body.focus();
+	});
+}
+
+sendCancelled() {
+	if (this.preventSendCancelled)
+		return ;
+	const payload = {
+		type: 'invitation_play',
+		senderId : this.player.id,
+		senderName: this.player.username,
+		message: "annuler",
+		matchId: this.player.match_id,
+	};
+	this.socketActivate.socket.send(JSON.stringify(payload));
+}
+
+}
+
+
 
 export default InviteForPlayComponent;
