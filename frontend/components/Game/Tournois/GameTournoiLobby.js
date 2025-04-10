@@ -28,13 +28,19 @@ class GameTournoiLobby extends Component {
         this.handleTournamentLeft();
       }
     );
+
     const cleanupUpdate = pong42.player.tournament.on("update", () => {
       if (auth.authenticated) {
-        this.fetchTournamentDetails();
+        this.handleFetchTournamentDetails();
       }
     });
     this.cleanupFunctions.push(cleanupTournamentLeft);
     this.cleanupFunctions.push(cleanupUpdate);
+  }
+  async handleFetchTournamentDetails() {
+    if (auth.authenticated) {
+      await this.fetchTournamentDetails();
+    }
   }
   async handleTournamentLeft() {
     try {
@@ -63,9 +69,9 @@ class GameTournoiLobby extends Component {
       });
     }
   }
-  async afterRender() {
+  afterRender() {
     if (!this.state.initialized && !this.state.loading) {
-      await this.fetchTournamentDetails();
+      this.handleFetchTournamentDetails();
     }
   }
 
@@ -87,7 +93,10 @@ class GameTournoiLobby extends Component {
         this.render(this.container);
       }
       if (data) {
-        if (!data.id) changePage("game");
+        if (!data.id) {
+          console.error("Aucun ID de tournoi trouvé dans les données");
+          changePage("game");
+        }
         const GameTournoiLobbyTabInstance = new GameTournoiLobbyTab(
           data,
           this.leaveTournament.bind(this),
@@ -108,7 +117,7 @@ class GameTournoiLobby extends Component {
       });
     }
   }
-  goToWaiting(matchId) {
+  async goToWaiting(matchId) {
     if (matchId === 0) return;
     const matchInfo = getMatchInfo(matchId, this.state.tournament.matches);
     const playerInfo = getPlayerFromList(pong42.player.id, matchInfo.players);

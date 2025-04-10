@@ -141,8 +141,6 @@ class Pong42 extends EventEmitter {
     // Recréer le tabManager (facultatif)
     this.tabManager = new TabManager();
     this.setupTabMessageHandlers();
-
-    console.log("[PONG42] Instance réinitialisée");
   }
 }
 

@@ -105,7 +105,7 @@ class Player extends EventEmitter {
     try {
       const response = await api.apiFetch("player/tournaments/", true);
       this.has_active_tournament = response.data.has_active_tournament;
-      if (!this.has_active_tournament) {
+      if (!this.has_active_tournament && !this.waitingMatch) {
         this.notifyListeners("updateTournament");
       }
       return this.has_active_tournament;

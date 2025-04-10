@@ -78,15 +78,9 @@ class GameComponent extends Component {
     }
   }
 
-  showGameOver() {
-    // Nettoyer le jeu
-    console.log(pong42, "Game Over");
-    // Créer et afficher le composant de fin de jeu
-    const gameOverComponent = new GameOverComponent(this, (template) => {
-      this.container.innerHTML = template;
-      gameOverComponent.afterRender();
-    });
-
+  async showGameOver() {
+    const gameOverComponent = new GameOverComponent();
+    await gameOverComponent.init(this);
     gameOverComponent.render(this.container);
     this.destroy();
   }
@@ -367,20 +361,50 @@ class GameComponent extends Component {
   }
 
   async destroy() {
+    // Annuler l'animation frame
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
     }
 
-    // Correctly remove the event listeners
+    // Supprimer les écouteurs d'événements
     document.removeEventListener("keydown", this.handleKeyDown);
     document.removeEventListener("keyup", this.handleKeyUp);
 
+    // Nettoyer les événements UI
     const btnSilence = document.getElementById("btnSilence");
     if (btnSilence) {
       btnSilence.removeEventListener("click", this.handleSilence);
     }
-    pong42.player.game = false;
-    pong42.player.notifyListeners("gameStatusChanged", false);
+
+    // Nettoyer la WebSocket si elle n'a pas été fermée
+    if (
+      this.webSocket &&
+      this.webSocket.isConnected &&
+      this.webSocket.isConnected()
+    ) {
+      this.webSocket.removeAllListeners();
+      this.webSocket.close();
+      this.webSocket = null;
+    }
+
+    // Arrêter la musique
+    if (this.music) {
+      await this.music.stop();
+      this.music = null;
+    }
+
+    // Mettre à jour l'état global
+    if (pong42 && pong42.player) {
+      pong42.player.game = false;
+      pong42.player.notifyListeners("gameStatusChanged", false);
+    }
+
+    // Nettoyer les référence aux objets du jeu
+    this.gameObjects = null;
+    this.renderer = null;
+
+    console.log("[Game] Component successfully destroyed");
   }
 
   template() {
