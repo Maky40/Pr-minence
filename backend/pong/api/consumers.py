@@ -400,45 +400,55 @@ class PongConsumer(AsyncWebsocketConsumer):
 
 class LocalPongConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.local_id = self.scope["url_route"]["kwargs"].get("local_id", None)
-        if self.local_id is None:
+        self.key = self.scope["url_route"]["kwargs"].get("local_id")
+        self.random_id = self.scope["url_route"]["kwargs"].get("random_id")
+
+    # Contrôle validité
+        if self.key is None or self.random_id is None:
             await self.close()
             return
 
-        if self.local_id in active_local_connections:
-            await self.accept()
-            await self.send_json({"error": f"Une partie locale pour l'ID {self.local_id} est déjà en cours."})
-            await self.close()
-            return
-        
-        active_local_connections[self.local_id] = self
+    # On crée la clé composite
+        self.key = (self.key, self.random_id)
 
-        self.room_group_name = f"local_pong_{self.local_id}"
+    # Remplace la logique qui utilisait `active_local_connections[self.key]`
+        if self.key in active_local_connections:
+            old_consumer = active_local_connections[self.key]
+            if old_consumer != self:
+                await old_consumer.close()
+            del active_local_connections[self.key]
+
+    # On enregistre la nouvelle connexion
+        active_local_connections[self.key] = self
+
+        self.room_group_name = f"local_pong_{self.key}_{self.random_id}"
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        if self.local_id not in local_game_states:
-            self.init_game_state()
+    # Pareil pour l'état du jeu
+        if self.key not in local_game_states:
+            self.init_game_state(self.key)
 
         await self.send_json({
-            "message": f"Local Pong: connected (local_id={self.local_id})"
-        })
+            "message": f"Local Pong: connected => (local_id={self.key}, random_id={self.random_id})"
+    })
 
-        state = local_game_states[self.local_id]
+        state = local_game_states[self.key]
         if not state.get("running"):
-            await self.start_game()
+            await self.start_game(self.key)
+
 
     async def disconnect(self, code):
-        if hasattr(self, "local_id") and self.local_id in active_local_connections:
-            if active_local_connections[self.local_id] == self:
-                del active_local_connections[self.local_id]
+        if hasattr(self, "key") and self.key in active_local_connections:
+            if active_local_connections[self.key] == self:
+                del active_local_connections[self.key]
 
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     def init_game_state(self):
         direction = 1 if random.random() < 0.5 else -1
         speed = 8.5
-        local_game_states[self.local_id] = {
+        local_game_states[self.key] = {
             "width": 1000,
             "height": 600,
             "ball_x": 500,
@@ -458,7 +468,7 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
         }
 
     async def start_game(self):
-        state = local_game_states[self.local_id]
+        state = local_game_states[self.key]
         await self.channel_layer.group_send(self.room_group_name, {
             "type": "game_start",
             "message": "La partie va commencer dans 5 secondes (local)."
@@ -469,19 +479,19 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
             "right_username": "Player 2"
         })
 
-        if self.local_id in local_game_tasks:
-            local_game_tasks[self.local_id].cancel()
-            del local_game_tasks[self.local_id]
+        if self.key in local_game_tasks:
+            local_game_tasks[self.key].cancel()
+            del local_game_tasks[self.key]
 
         state["running"] = False
         state["score_left"] = 0
         state["score_right"] = 0
 
-        local_game_tasks[self.local_id] = asyncio.create_task(self.game_loop(self.local_id))
+        local_game_tasks[self.key] = asyncio.create_task(self.game_loop(self.key))
 
-        if self.local_id in countdown_tasks:
-            countdown_tasks[self.local_id].cancel()
-        countdown_tasks[self.local_id] = asyncio.create_task(self.do_countdown(self.local_id))
+        if self.key in countdown_tasks:
+            countdown_tasks[self.key].cancel()
+        countdown_tasks[self.key] = asyncio.create_task(self.do_countdown(self.key))
 
     async def do_countdown(self, local_id):
         await asyncio.sleep(5)
@@ -646,7 +656,7 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         action_type = data.get("type")
-        state = local_game_states.get(self.local_id)
+        state = local_game_states.get(self.key)
         if not state:
             return
 
@@ -670,13 +680,3 @@ class LocalPongConsumer(AsyncWebsocketConsumer):
 
     def send_json(self, content):
         return self.send(text_data=json.dumps(content))
-
-
-
-
-
-
-
-
-
-
