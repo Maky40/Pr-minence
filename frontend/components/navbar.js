@@ -30,6 +30,10 @@ export default class Navbar extends Component {
         this.setState({ player: player });
         this.render(this.container);
       });
+      pong42.player.addListener("updateTournament", () => {
+        this.setState({ tournament: null });
+        this.render(this.container);
+      });
       pong42.on("match_update", (data) => {
         this.render(this.container);
         console.log("Match update received:", data);
@@ -192,7 +196,7 @@ export default class Navbar extends Component {
                   </li>
                 `
                   : this.state.tournament &&
-                    this.state.tournament.tournamentStatus
+                    this.state.tournament.tournamentStatus !== "FN"
                   ? `
                   <li class="nav-item text-sm">
                     <a href="#game" class="btn ${

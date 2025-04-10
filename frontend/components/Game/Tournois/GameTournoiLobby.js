@@ -87,6 +87,7 @@ class GameTournoiLobby extends Component {
         this.render(this.container);
       }
       if (data) {
+        if (!data.id) changePage("game");
         const GameTournoiLobbyTabInstance = new GameTournoiLobbyTab(
           data,
           this.leaveTournament.bind(this),

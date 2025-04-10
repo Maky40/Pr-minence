@@ -171,7 +171,6 @@ class TournamentService extends EventEmitter {
     this.previous_tournament_info = this.current_tournament_info;
     this.current_tournament_info = null;
     this.idMatchmessageShowed = null;
-
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
@@ -233,6 +232,7 @@ class TournamentService extends EventEmitter {
       if (!tournament || !tournament.id) {
         this.resetTournamentInfo();
         this.stopStatusCheckInterval();
+        this.emit("update", { tournament: null });
         return;
       }
 

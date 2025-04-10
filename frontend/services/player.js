@@ -3,6 +3,7 @@ import Toast from "../components/toast.js";
 import EventEmitter from "../utils/EventEmitter.js";
 import TournamentService from "./tournament.js";
 import { ENV } from "../env.js";
+import pong42 from "./pong42.js";
 
 class Player extends EventEmitter {
   constructor() {
@@ -104,6 +105,9 @@ class Player extends EventEmitter {
     try {
       const response = await api.apiFetch("player/tournaments/", true);
       this.has_active_tournament = response.data.has_active_tournament;
+      if (!this.has_active_tournament) {
+        this.notifyListeners("updateTournament");
+      }
       return this.has_active_tournament;
     } catch (error) {
       console.error("Failed to check active tournament:", error);
