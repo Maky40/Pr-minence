@@ -6,6 +6,7 @@ import {
   roundAffichage,
   isPlayerIdPresent,
 } from "./GameTournoiLib.js";
+import { changePage } from "../../../utils/Page.js";
 class GameTournoiLobbyTab extends Component {
   constructor(
     tournament,
@@ -23,6 +24,11 @@ class GameTournoiLobbyTab extends Component {
   }
 
   afterRender() {
+    if (!this.tournament) {
+      this.destroy();
+      changePage("home");
+      return;
+    }
     const startTournamentButton = this.container.querySelector(
       "#startTournamentButton"
     );
@@ -30,7 +36,6 @@ class GameTournoiLobbyTab extends Component {
     const leaveButton = this.container.querySelector("#leaveTournamentButton");
     this.attachEvent(startTournamentButton, "click", async (e) => {
       e.preventDefault();
-      console.log("startTournamentButton");
       try {
         this.setState({ loading: true });
         await this.startTournament(this.tournament.id);
@@ -41,7 +46,6 @@ class GameTournoiLobbyTab extends Component {
         });
       }
     });
-    console.log(this.tournament.current_round);
     this.attachEvent(leaveButton, "click", (e) => {
       e.preventDefault();
       this.leaveTournament();
