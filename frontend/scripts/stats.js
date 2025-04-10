@@ -39,10 +39,11 @@ async function loadPage(username) {
 
   function calculateStats(player, matches) {
 	const tournamentMatches = matches.filter(match => match.tournament_match);
-	const tournamentWins = tournamentMatches.filter(match => {
-		const currentPlayer = match.players.find(p => p.username === player.username);
-		return currentPlayer && currentPlayer.is_winner;
-	}).length;
+	// const tournamentWins = tournamentMatches.filter(match => {
+	// 	const currentPlayer = match.players.find(p => p.username === player.username);
+	// 	return currentPlayer && currentPlayer.is_winner;
+	// }).length;
+	const tournamentWins = player.champions;
 	const tournamentLosses = tournamentMatches.filter(match => {
 		const currentPlayer = match.players.find(p => p.username === player.username);
 		return currentPlayer && !currentPlayer.is_winner;
