@@ -108,43 +108,22 @@ class TournamentService extends EventEmitter {
       };
     }
 
-    // Vérifier si c'est un tournoi différent
-    const tournamentChanged =
-      this.current_tournament_info.id !== newTournamentData.id;
-    if (tournamentChanged) {
-      console.log(
-        "Tournament ID changed:",
-        this.current_tournament_info.id,
-        "->",
-        newTournamentData.id
-      );
-      return {
-        hasChanged: true,
-        tournamentChanged: true,
-        changes: {},
-      };
-    }
-
-    // Vérifier chaque propriété individuellement
+    // Comparer les propriétés pour détecter les changements
     const statusChanged =
       this.current_tournament_info.status !== newTournamentData.status;
     const roundChanged =
       this.current_tournament_info.current_round !==
       newTournamentData.current_round;
-
-    // Comparer les matches (JSON.stringify pour comparaison profonde)
-    let matchesChanged = false;
-    if (this.current_tournament_info.matches && newTournamentData.matches) {
-      matchesChanged =
-        JSON.stringify(this.current_tournament_info.matches) !==
-        JSON.stringify(newTournamentData.matches);
-    }
-
+    const matchesChanged =
+      JSON.stringify(this.current_tournament_info.matches) !==
+      JSON.stringify(newTournamentData.matches);
     const creatorChanged =
       this.current_tournament_info.creator !== newTournamentData.creator;
     const playersCountChanged =
       this.current_tournament_info.players_count !==
       newTournamentData.players_count;
+
+    // Déterminer si un changement a eu lieu
     const hasChanged =
       statusChanged ||
       roundChanged ||
@@ -154,7 +133,8 @@ class TournamentService extends EventEmitter {
 
     return {
       hasChanged,
-      tournamentChanged: false,
+      tournamentChanged:
+        this.current_tournament_info.id !== newTournamentData.id,
       changes: {
         statusChanged,
         roundChanged,
@@ -164,7 +144,6 @@ class TournamentService extends EventEmitter {
       },
     };
   }
-
   /**
    * Met à jour les informations de tournoi
    * @param {Object} tournamentData - Nouvelles données de tournoi
@@ -248,30 +227,24 @@ class TournamentService extends EventEmitter {
     try {
       // Récupérer les dernières données du tournoi
       const tournament = await this.getTournaments();
-
-      // Si le joueur n'est plus dans un tournoi
+      console.log(
+        "[Tournament] Tournament status updated from server EMIT3:",
+        tournament
+      );
       if (!tournament || !tournament.id) {
-        if (this.tournamentId !== 0) {
-          this.resetTournamentInfo();
-          this.emit("tournamentLeft", {});
-          this.stopStatusCheckInterval();
-        }
+        this.resetTournamentInfo();
+        this.emit("tournamentLeft", {});
+        this.stopStatusCheckInterval();
         return;
       }
 
       // Détecter les changements
       const { hasChanged, tournamentChanged, changes } =
         this.detectChanges(tournament);
-
       // Si changement détecté, mettre à jour et notifier
       if (hasChanged) {
-        // Sauvegarder l'ancien statut pour comparaison
         const oldStatus = this.current_tournament_info?.status;
-
-        // Mettre à jour les données
         this.updateTournamentInfo(tournament);
-
-        // Notifier du changement de statut si nécessaire
         if (changes.statusChanged) {
           this.notifyStatusChange(tournament.status, oldStatus);
         }
