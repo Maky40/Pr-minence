@@ -352,6 +352,7 @@ class TournamentService extends EventEmitter {
       this.updateTournamentInfo(data);
       this.emit("update", this.tournamentInfo);
       changePage("game");
+      console.log("[Tournament] Tournament joined successfully EMIT4");
       this.startStatusCheckInterval();
 
       return data;
