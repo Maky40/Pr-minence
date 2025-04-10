@@ -51,7 +51,7 @@ class GameDuelMode extends Component {
           throw new Error("Aucun match en attente ne correspond à ce numéro");
       } else throw new Error("Sélectionner un nombre entier > 0");
     } catch (error) {
-      const toast = new Toast("Error", error, "error");
+      const toast = new Toast("Error", "Le match n'existe pas", "error");
       toast.show();
       return false;
     }
