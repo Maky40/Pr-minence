@@ -85,7 +85,7 @@ class TournamentView(APIView):
             serializer = TournamentSerializer(tournaments, many=True, context={"player": player})
             return Response({"statusCode": 200, "tournaments": serializer.data})
 
-        return Response({"statusCode": 404, "message": "No active tournaments found"})
+        return Response({"statusCode": 404, "message": "Aucun tournoi en cours."})
 
     @method_decorator(jwt_cookie_required)
     def post(self, request):
@@ -97,21 +97,21 @@ class TournamentView(APIView):
         try:
             player = Player.objects.get(id=player_id)
         except Player.DoesNotExist:
-            return Response({"statusCode": 400, "message": "Player does not exist"})
+            return Response({"statusCode": 400, "message": "Ce joueur n'existe pas."})
 
         if "create" in action:
             if not name or len(name.strip()) == 0:
-                return Response({"statusCode": 400, "message": "Invalid Tournament name"})
+                return Response({"statusCode": 400, "message": "Nom de tournoi non valide."})
 
             if len(name) > 40:
-                return Response({"statusCode": 400, "message": "Tournament name too long (max 100 characters)."})
+                return Response({"statusCode": 400, "message": "Nom de tournoi trop long(40 caracteres maximum)."})
 
             if Tournament.objects.filter(name=name, status__in=['PN', 'BG']).exists():
-                return Response({"statusCode": 400, "message": "A tournament with this name is already active."})
+                return Response({"statusCode": 400, "message": "Un tournoi en cours ou en attente avec le meme nom existe deja."})
 
             serializer = TournamentSerializer()
             if serializer.is_player_in_tournament(player):
-                return Response({"statusCode": 400, "message": "Already in a Tournament"})
+                return Response({"statusCode": 400, "message": "Vous etes deja dans un tournoi."})
 
             tournament = Tournament.objects.create(name=name)
             PlayerTournament.objects.create(player=player, tournament=tournament, creator=True)
@@ -122,41 +122,41 @@ class TournamentView(APIView):
             tournament = Tournament.objects.get(id=tournament_id)
             serializer = TournamentSerializer(tournament, context={"player": player})
         except Tournament.DoesNotExist:
-            return Response({"statusCode": 404, "message": "Not found"})
+            return Response({"statusCode": 404, "message": "Ce joueur n'existe pas."})
 
         if "join" in action:
             if tournament.status == 'PN' and serializer.get_players_count(tournament) < 8:
                 if serializer.is_player_in_tournament(player):
-                    return Response({"statusCode": 400, "message": "Already in a Tournament"})
+                    return Response({"statusCode": 400, "message": "Vous etes deja dans un tournoi."})
                 PlayerTournament.objects.create(player=player, tournament=tournament)
-                return Response({"statusCode": 200, "message": "Successfully joined tournament"})
-            return Response({"statusCode": 400, "message": "Tournament is full"})
+                return Response({"statusCode": 200, "message": "Vous venez de rejoindre un tournoi."})
+            return Response({"statusCode": 400, "message": "Le tournoi est deja plein."})
 
         elif "leave" in action:
             if tournament.status != 'PN':
-                return Response({"statusCode": 400, "message": "Tournament status is not pending"})
+                return Response({"statusCode": 400, "message": "Le tournoi a deja commence.Vous ne pouvez donc pas le quitter."})
             try:
                 player_tournament = PlayerTournament.objects.get(player=player, tournament=tournament)
             except PlayerTournament.DoesNotExist:
-                return Response({"statusCode": 400, "message": "Player is not in the Tournament"})
+                return Response({"statusCode": 400, "message": "Le joueur n'est pas dans le tournoi."})
             if player_tournament.creator:
                 tournament.delete()
-                return Response({"statusCode": 200, "message": "Tournament deleted along with player"})
+                return Response({"statusCode": 200, "message": "Tournoi supprime par le createur de celui-ci."})
             else:
                 player_tournament.delete()
-                return Response({"statusCode": 200, "message": "Player removed from Tournament"})
+                return Response({"statusCode": 200, "message": "Le joueur vient de quitter le tournoi."})
 
         elif "start" in action:
             try:
                 player_tournament = PlayerTournament.objects.get(player=player, tournament=tournament)
                 if not player_tournament.creator:
-                    return Response({"statusCode": 403, "message": "Only the tournament creator can start the tournament"})
+                    return Response({"statusCode": 403, "message": "Seul le createur du tournoi peut supprimer celui-ci."})
             except PlayerTournament.DoesNotExist:
-                return Response({"statusCode": 400, "message": "Player is not in the Tournament"})
+                return Response({"statusCode": 400, "message": "Le joueur n'est pas dans le tournoi"})
 
             players_count = serializer.get_players_count(tournament)
             if players_count != 8:
-                return Response({"statusCode": 400, "message": f"Cannot start. {players_count} players in tournament."})
+                return Response({"statusCode": 400, "message": f"Le tournoi ne peut pas commencer. {players_count} joueurs sont dans le tournoi."})
 
             tournament.status = 'BG'
             tournament.current_round = 'QU'
@@ -174,9 +174,9 @@ class TournamentView(APIView):
                 PlayerMatch.objects.create(player=players_list[i], match=match, player_side='L')
                 PlayerMatch.objects.create(player=players_list[i+1], match=match, player_side='R')
 
-            return Response({"statusCode": 200, "message": "Tournament started with 8 players (Quarter Finals created)"})
+            return Response({"statusCode": 200, "message": "Le tournoi commence"})
 
-        return Response({"statusCode": 400, "message": "Wrong Action"})
+        return Response({"statusCode": 400, "message": "Cette action n'existe pas."})
 
 
 

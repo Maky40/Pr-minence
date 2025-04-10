@@ -33,7 +33,7 @@ def match_exists_view(request, match_id):
             "state_code": match.state,          # Renvoie "UPL" ou "PLY"
         }, status=status.HTTP_200_OK)
     except Match.DoesNotExist:
-        return Response({"detail": "Match not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail": "Le Match n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
@@ -44,19 +44,19 @@ def create_individual_match(request):
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)
     except Player.DoesNotExist:
-        return Response({"error": "Player not found"}, status=404)
+        return Response({"error": "Ce joueur n'existe pas."}, status=404)
 
     # Vérifier qu'il n'a pas déjà un match unplayed
     if has_unplayed_match(player):
         return Response(
-            {"error": "You already have an unplayed match. Please delete it or finish it before creating a new one."},
+            {"error": "Vous avez deja un match en cours non joue. Veuillez annuler ou terminer celui ci avant d'en lancer un autre"},
             status=400
         )
 
     # Vérifier qu'il n'est pas dans un tournoi actif
     if is_in_active_tournament(player):
         return Response(
-            {"error": "You are currently in an active tournament. You cannot create an individual match now."},
+            {"error": "Vous etes dans un tournoi en cours. Vous ne pouvez pas lancer de match tant que le tournoi n'est pas fini."},
             status=400
         )
 
@@ -81,53 +81,37 @@ def create_individual_match(request):
 @api_view(['POST'])
 @jwt_cookie_required
 def accept_individual_match(request):
-    """
-    Le joueur invité accepte le match : on l'associe au match (côté "Right").
-    """
     match_id = request.data.get('match_id')
     if not match_id:
-        return Response({"error": "No match_id provided"}, status=400)
+        return Response({"error": "Aucun match_id fourni dans la requete."}, status=400)
 
     try:
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)
     except Player.DoesNotExist:
-        return Response({"error": "Player not found"}, status=404)
+        return Response({"error": "Ce joueur n'existe pas."}, status=404)
 
     # Vérifier qu'il n'a pas déjà un match unplayed
     if has_unplayed_match(player):
         return Response(
-            {"error": "You already have an unplayed match. Please delete it or finish it before accepting a new one."},
+            {"error": "Vous avez deja un match en cours non joue. Veuillez annuler ou terminer celui ci avant d'en lancer un autre."},
             status=400
         )
 
     # Vérifier qu'il n'est pas dans un tournoi actif
     if is_in_active_tournament(player):
         return Response(
-            {"error": "You are currently in an active tournament. You cannot accept an individual match now."},
+            {"error": "Vous etes dans un tournoi en cours. Vous ne pouvez pas lancer de match tant que le tournoi n'est pas fini."},
             status=400
         )
 
     # Vérifier que le match existe
     match = get_object_or_404(Match, id=match_id, state='UPL', tournament__isnull=True)
-
-    # # Vérifier combien de joueurs sont déjà dans ce match
-    # existing_count = PlayerMatch.objects.filter(match=match).count()
-    # if existing_count >= 2:
-    #     return Response({"error": "Match is already full"}, status=400)
-
-    # # Associer le joueur (côté Right)
-    # PlayerMatch.objects.create(
-    #     player=player,
-    #     match=match,
-    #     player_side='R'
-    # )
-
-    # Construire l'URL du WebSocket Pong (exemple)
+    
     pong_url = f"wss://pong/ws/pong/{match.id}/"
 
     return Response({
-        "message": "Match accepted successfully",
+        "message": "Match accepte.",
         "pong_url": pong_url
     }, status=200)
 
@@ -139,21 +123,17 @@ def refuse_individual_match(request):
 
     match_id = request.data.get('match_id')
     if not match_id:
-        return Response({"error": "No match_id provided"}, status=400)
+        return Response({"error": "Aucun match_id fourni dans la requete."}, status=400)
 
-    # On récupère le match (unplayed, sans tournoi)
     match = get_object_or_404(Match, id=match_id, state='UPL', tournament__isnull=True)
 
     # Vérifier le nombre de joueurs déjà inscrits
     existing_count = PlayerMatch.objects.filter(match=match).count()
     if existing_count <= 1:
-        # S'il n'y a qu'un seul joueur (celui qui a initié),
-        # on peut supprimer le match
         match.delete()
-        return Response({"message": "Invitation refused and match deleted"}, status=200)
+        return Response({"message": "Invitation refusee et match supprime."}, status=200)
 
-    # Sinon, on se contente de dire que l'invitation est refusée
-    return Response({"message": "Invitation refused (match not deleted because multiple players exist)."}, status=200)
+    return Response({"message": "Invitation refusee."}, status=200)
 
 @api_view(['POST'])
 @jwt_cookie_required
@@ -162,9 +142,8 @@ def delete_individual_match(request):
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)
     except Player.DoesNotExist:
-        return Response({"error": "Player not found"}, status=404)
+        return Response({"error": "Ce joueur n'existe pas."}, status=404)
 
-    # Trouver tous les PlayerMatch "unplayed" (sans tournoi) pour ce joueur
     unplayed_qs = PlayerMatch.objects.filter(
         player=player,
         match__state='UPL',
@@ -173,12 +152,12 @@ def delete_individual_match(request):
 
     # Si aucun match unplayed
     if not unplayed_qs.exists():
-        return Response({"error": "You have no unplayed match to delete."}, status=400)
+        return Response({"error": "Aucun match non joue a supprimer."}, status=400)
 
     # Si le joueur a plus d'un match unplayed, on peut renvoyer une erreur ou en supprimer un seul
     if unplayed_qs.count() > 1:
         return Response({
-            "error": "You have multiple unplayed matches. Please resolve or contact support."
+            "error": "Vous avez plusieurs matchs non joue. Veuillez contacter le support."
         }, status=400)
 
     # On récupère le seul PlayerMatch unplayed
@@ -189,12 +168,12 @@ def delete_individual_match(request):
     existing_count = PlayerMatch.objects.filter(match=match).count()
     if existing_count > 1:
         return Response({
-            "error": "Cannot delete a match that already has multiple players."
+            "error": "Vous ne pouvez pas supprimer un match qui contient plus d'un joueur."
         }, status=400)
 
     # Si on est ici, c'est qu'il n'y a qu'un seul joueur : le créateur
     match.delete()
-    return Response({"message": "Your unplayed match has been deleted successfully."}, status=200)
+    return Response({"message": "Suppression du match non joue reussie."}, status=200)
 
 @api_view(['GET'])
 @jwt_cookie_required
@@ -203,7 +182,7 @@ def get_individual_match(request):
         player_id = request.query_params.get('id')
         player = Player.objects.get(id=player_id)
     except Player.DoesNotExist:
-        return Response({"error" : "player not found"}, status = 404)
+        return Response({"error" : "Ce joueur n'existe pas."}, status = 404)
     match_ids = PlayerMatch.objects.filter(player=player).values_list('match_id', flat=True)
 
     return Response({"matches": list(match_ids)}, status=200)

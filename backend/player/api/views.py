@@ -68,7 +68,7 @@ class PlayerInfo(APIView):
                 return Response({
                     "status": 200,
                     "players": serializer.data,
-                    "message": "User found successfully"
+                    "message": "Joueur correspond trouve dans la base de donnees"
                 })
 
             player = Player.objects.get(id=request.decoded_token['id'])
@@ -81,7 +81,7 @@ class PlayerInfo(APIView):
         except Player.DoesNotExist:
             return Response({
                 "status": 404,
-                "message": "User not found",
+                "message": "Ce joueur n'existe pas",
             })
         except Exception as e:
             return Response({
@@ -100,42 +100,42 @@ class PlayerInfo(APIView):
             if "first_name" in player_data:
                 first_name_raw = player_data['first_name']
                 if not isinstance(first_name_raw, str):
-                    return Response({"status": 400, "message": "First name must be a string."})
+                    return Response({"status": 400, "message": "Le prenom doit etre une chaine de caracteres."})
                 first_name = ' '.join(first_name_raw.strip().split())
                 if len(first_name) == 0 or len(first_name) > 50:
-                    return Response({"status": 400, "message": "Invalid first name"})
+                    return Response({"status": 400, "message": "Le prenom contient trop de caracteres (ou aucun)."})
                 if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", first_name):
-                    return Response({"status": 400, "message": "First name contains invalid characters."})
+                    return Response({"status": 400, "message": "Le prenom contient des caracteres interdit."})
                 player.first_name = first_name
                 changed = True
 
             if "last_name" in player_data:
                 last_name_raw = player_data['last_name']
                 if not isinstance(last_name_raw, str):
-                    return Response({"status": 400, "message": "Last name must be a string."})
+                    return Response({"status": 400, "message": "Le nom doit etre une chaine de caracteres."})
                 last_name = ' '.join(last_name_raw.strip().split())
                 if len(last_name) == 0 or len(last_name) > 50:
-                    return Response({"status": 400, "message": "Invalid last name"})
+                    return Response({"status": 400, "message": "Le nom contient trop de caracteres(ou aucun)."})
                 if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", last_name):
-                    return Response({"status": 400, "message": "Last name contains invalid characters."})
+                    return Response({"status": 400, "message": "Le nom contient des caracteres interdit."})
                 player.last_name = last_name
                 changed = True
 
             if "username" in player_data:
                 username_raw = player_data['username']
                 if not isinstance(username_raw, str):
-                    return Response({"status": 400, "message": "Username must be a string."})
+                    return Response({"status": 400, "message": "Le nom d'utilisateur doit etre une chaine de caracteres."})
                 username = username_raw.strip()
                 if len(username) == 0 or len(username) > 50:
-                    return Response({"status": 400, "message": "Username must be between 1 and 50 characters."})
+                    return Response({"status": 400, "message": "Le nom d'utilisateur doit contenir entre 1 et 50 caracteres."})
                 # Vérifier que le nouveau username n'est pas déjà utilisé par un autre utilisateur
                 if Player.objects.filter(username=username).exclude(id=player.id).exists():
-                    return Response({"status": 400, "message": "Username already taken."})
+                    return Response({"status": 400, "message": "Ce nom d'utilisateur existe deja."})
                 player.username = username
                 changed = True
 
             player.save()
-            message = "User updated successfully" if changed else "No changes detected"
+            message = "Les informations du joueur sont actualises" if changed else "Aucun changement"
             return Response({
                 "status": 200,
                 "message": message,
@@ -144,7 +144,7 @@ class PlayerInfo(APIView):
         except Player.DoesNotExist:
             return Response({
                 "status": 404,
-                "message": "User not found",
+                "message": "Le joueur n'existe pas",
             })
         except Exception as e:
             return Response({
@@ -154,9 +154,6 @@ class PlayerInfo(APIView):
 
 
 class TwoFactorActivation(APIView):
-    """
-    Gère l'activation/désactivation du 2FA avec une gestion séparée du QR Code
-    """
 
     @method_decorator(jwt_cookie_required)
     def post(self, request):
@@ -169,7 +166,7 @@ class TwoFactorActivation(APIView):
             show_qr_code = request.data.get("show_qr_code", False)  # Permet d'afficher le QR Code
 
             if activate_2fa is None and not show_qr_code:
-                return Response({"status": 400, "message": "Missing 'activate_2fa' or 'show_qr_code' field."})
+                return Response({"status": 400, "message": "Champ 'activate_2FA' manquant ou 'show_qr_code' manquant."})
 
             # Cas où l'on veut activer ou désactiver le 2FA
             if activate_2fa is not None:
@@ -178,18 +175,18 @@ class TwoFactorActivation(APIView):
                         player.otp_secret = pyotp.random_base32()  # Générer une clé secrète
                     player.two_factor = True
                     player.save()
-                    return Response({"status": 200, "message": "2FA activated. You can now scan the QR code."})
+                    return Response({"status": 200, "message": "2FA active. Vous pouvez scanner le QR Code."})
 
                 else:  # Désactivation du 2FA
                     player.two_factor = False
                     player.otp_secret = None  # Supprimer la clé secrète
                     player.save()
-                    return Response({"status": 200, "message": "2FA disabled successfully."})
+                    return Response({"status": 200, "message": "2FA desactive."})
 
             # Cas où l'on veut seulement afficher le QR Code
             if show_qr_code:
                 if not player.two_factor or not player.otp_secret:
-                    return Response({"status": 400, "message": "2FA is not activated. Enable it first."})
+                    return Response({"status": 400, "message": "2FA n'est pas active.Vous devez activer le 2FA."})
 
                 # Générer l'URI pour Google Authenticator
                 otp_uri = pyotp.TOTP(player.otp_secret).provisioning_uri(name=player.email, issuer_name="MyApp")
@@ -202,46 +199,43 @@ class TwoFactorActivation(APIView):
 
                 return Response({
                     "status": 200,
-                    "message": "Scan this QR code with Google Authenticator.",
+                    "message": "Scannez ce QR Code avec Google Authenticator.",
                     "qr_code": f"data:image/png;base64,{qr_base64}"
                 })
 
         except Player.DoesNotExist:
-            return Response({"status": 404, "message": "User not found."})
+            return Response({"status": 404, "message": "Ce joueur n'existe pas."})
 
         except Exception as e:
             return Response({"status": 500, "message": str(e)})
 
 
 class PlayerAvatarUpload(APIView):
-    """
-    Met à jour l'avatar du joueur avec des vérifications de sécurité.
-    """
 
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
             id = request.decoded_token['id']
             if 'avatar' not in request.FILES:
-                return Response({"status": 400, "message": "No avatar file provided"}, status=400)
+                return Response({"status": 400, "message": "Aucun fichier d'avatar"}, status=400)
 
             file = request.FILES['avatar']
 
             # Vérifier la taille du fichier
             MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
             if file.size > MAX_FILE_SIZE:
-                return Response({"status": 400, "message": "Image file too large (max 2MB)"}, status=400)
+                return Response({"status": 400, "message": "Fichier trop lourd(2MB maximum)"}, status=400)
 
             # Ouvrir et valider l'image
             try:
                 image = Image.open(file)
                 image_format = image.format
             except IOError:
-                return Response({"status": 400, "message": "Invalid image file"}, status=400)
+                return Response({"status": 400, "message": "Format d'image non valide"}, status=400)
 
             ALLOWED_FORMATS = ['JPEG', 'PNG']
             if image_format not in ALLOWED_FORMATS:
-                return Response({"status": 400, "message": f"Unsupported format: {image_format}"}, status=400)
+                return Response({"status": 400, "message": f"Format non supporte: {image_format}"}, status=400)
 
             # Redimensionner si nécessaire
             MAX_WIDTH = 640
@@ -275,10 +269,10 @@ class PlayerAvatarUpload(APIView):
             player.avatar = file_url
             player.save()
 
-            return Response({"status": 200, "message": "Avatar updated successfully", "avatar_url": file_url}, status=200)
+            return Response({"status": 200, "message": "Reussite de la mise a jour de l'avatar", "avatar_url": file_url}, status=200)
 
         except Player.DoesNotExist:
-            return Response({"status": 404, "message": "User not found"}, status=404)
+            return Response({"status": 404, "message": "Ce joueur n'existe pas."}, status=404)
         except Exception as e:
             print(f"❌ Erreur serveur : {str(e)}")
             return Response({"status": 500, "message": str(e)}, status=500)
@@ -349,14 +343,14 @@ class PlayerFriendship(APIView):
                     # Requete d'ami envoye a soi meme
                     return Response({
                         "status": 400,
-                        "message": "You can't send a friend request to yourself",
+                        "message": "Vous ne pouvez pas envoyer une requete d'amitie a vous meme.",
                     })
                 receiver = Player.objects.get(id=receiver_id)
                 if Friendship.objects.filter(player_sender=sender, player_receiver=receiver).exists():
                     # Requete deja envoye ou amitie deja existante
                     return Response({
                         "status": 400,
-                        "message": "Friend request already sent",
+                        "message": "Requete d'ami deja envoyee.",
                     })
                 elif Friendship.objects.filter(player_sender=receiver, player_receiver=sender).exists():
                     # Acceptation de la demande d'ami si la personne m'avait demande egalement en ami
@@ -374,7 +368,7 @@ class PlayerFriendship(APIView):
 					)
                     return Response({
                     "status": 200,
-                    "message": "Friend requests accepted successfully"
+                    "message": "Demande d'ami acceptee."
                     })
                 else:
                     # Envoyer une demande d'ami
@@ -382,17 +376,17 @@ class PlayerFriendship(APIView):
                     friendship.save()
                     return Response({
                         "status": 200,
-                        "message": "Friend request sent successfully"
+                        "message": "Requete d'ami envoyee."
                     })
             except Player.DoesNotExist:
                 return Response({
                     "status": 404,
-                    "message": "User not found",
+                    "message": "Ce joueur n'existe pas.",
                 })
             except Friendship.DoesNotExist:
                     return Response({
                         "status": 404,
-                        "message": "Friend request not found",
+                        "message": "La requete d'ami n'existe plus.",
                     })
             except Exception as e:
                     return Response({
@@ -415,12 +409,12 @@ class PlayerFriendship(APIView):
                     friendship.delete()
                     return Response({
                         "status": 204,
-                        "message": 'Friendship deleted successfully'
+                        "message": 'Amitie supprimee.'
                     })
                 else:
                     return Response({
                         "status": 404,
-                        "message": "Friend request not found",
+                        "message": "La requete d'ami n'existe plus.",
                     })
             except Exception as e:
                 return Response({
@@ -430,10 +424,6 @@ class PlayerFriendship(APIView):
 
 
 class ChangePasswordView(APIView):
-    """
-    Vue permettant à un utilisateur de changer son mot de passe.
-    """
-
     @method_decorator(jwt_cookie_required)
     def post(self, request):
         try:
@@ -477,16 +467,11 @@ class ChangePasswordView(APIView):
 @api_view(['GET'])
 @jwt_cookie_required
 def get_player_matches(request):
-    """
-    Récupère la liste des matchs d'un joueur (via PlayerMatch).
-    Retourne également un booléen "has_unplayed" indiquant
-    si le joueur possède au moins un match unplayed (state='UPL').
-    """
     try:
         player_id = request.decoded_token['id']
         player = Player.objects.get(id=player_id)
     except Player.DoesNotExist:
-        return Response({"error": "Player not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Ce joueur n'existe pas."}, status=status.HTTP_404_NOT_FOUND)
 
     # Récupérer tous les PlayerMatch pour ce joueur, en préchargeant le match
     player_matches = PlayerMatch.objects.filter(player=player).select_related('match')

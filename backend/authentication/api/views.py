@@ -128,10 +128,9 @@ def logout_user(request):
             }
         )
 
-        print(f"Envoi du message au groupe {group_name}")
         return response
     else:
-        return Response({"statusCode": 400, "detail": "No valid access token found"})
+        return Response({"statusCode": 400, "detail": "Token non valide"})
 
 class SignupView(APIView):
     def post(self, request):
@@ -179,9 +178,6 @@ class LoginView(APIView):
 
 
 class Verify2FAView(APIView):
-    """
-    Vérifie le code OTP après la connexion et met à jour le JWT
-    """
 
     @method_decorator(jwt_cookie_required)
     def post(self, request):
@@ -192,11 +188,11 @@ class Verify2FAView(APIView):
 
             # Vérifier que le 2FA est bien activé
             if not user.two_factor or not user.otp_secret:
-                return Response({"error": "2FA is not enabled."}, status=400)
+                return Response({"error": "Le 2FA n'est pas active."}, status=400)
 
             # Vérifier que l'OTP est bien une chaîne de 6 chiffres
             if not otp_code or not re.fullmatch(r"\d{6}", otp_code):
-                return Response({"error": "OTP must be exactly 6 digits."}, status=400)
+                return Response({"error": "Le code doit etre une chaine de 6 chiffres."}, status=400)
 
             # Vérifier le code OTP avec pyotp
             totp = pyotp.TOTP(user.otp_secret)
@@ -206,7 +202,7 @@ class Verify2FAView(APIView):
 
                 response = Response({
                     "status": 200,
-                    "message": "2FA verification successful"
+                    "message": "Verification 2FA reussie"
                 }, status=status.HTTP_200_OK)
 
                 response.set_cookie(
@@ -221,7 +217,7 @@ class Verify2FAView(APIView):
                 return Response({"error": "Invalid OTP code."}, status=400)
 
         except Player.DoesNotExist:
-            return Response({"status": 404, "message": "User not found."})
+            return Response({"status": 404, "message": "Ce jouer n'existe pas."})
 
         except Exception as e:
             return Response({"status": 500, "message": str(e)})

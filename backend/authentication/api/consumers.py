@@ -19,7 +19,6 @@ def get_friends(player):
 
 class OnlineConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("Scope path:", self.scope.get("path"))
         await self.accept()
         self.id = None
         if self.scope['status'] == 'Valid':
@@ -30,7 +29,6 @@ class OnlineConsumer(AsyncWebsocketConsumer):
 				self.group_name,
 				self.channel_name
 			)
-            print(f"Connected to group: {self.group_name}")
             if self.id not in playersOpenTabs:
                 await set_player_status(self.player, 'ON')
                 playersOpenTabs[self.id] = 1 # Creer le joueur dans le dict python
@@ -60,14 +58,12 @@ class OnlineConsumer(AsyncWebsocketConsumer):
             status = data.get("status")
             await self.notify_friends(status)
         if message_type == "force_logout":
-            print("on ferme les onglets")
             playersOpenTabs[self.id] = 0
             await self.close()
 
     async def notify_friends(self,status):
         friends = await get_friends(self.player)
         for friend in friends:
-            print("ON envoie de la notif")
             await self.channel_layer.group_send(
                 f"user_{friend.id}",
                 {
