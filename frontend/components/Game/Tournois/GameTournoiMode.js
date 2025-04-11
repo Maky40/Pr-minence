@@ -54,14 +54,16 @@ class GameTournoisMode extends Component {
   async handleCreateTournament(e) {
     e.preventDefault();
     const inputElement = document.getElementById("tournamentName");
-    if (!inputElement) return;
-    const inputValue = escapeHTML(inputElement.value.trim());
-
-    if (!inputValue) {
-      inputElement.classList.add("is-invalid");
-      return;
-    }
     try {
+      if (!inputElement) return;
+      const inputValue = escapeHTML(inputElement.value.trim());
+      const isValid = (inputElement <= 3 || inputElement > 40) && inputValue;
+      if (!isValid) {
+        inputElement.classList.add("is-invalid");
+        throw new Error(
+          "Le nom du tournoi doit être compris entre 3 et 40 caractères"
+        );
+      }
       this.setState({ loading: true, error: null });
       await this.createTournament(inputValue);
       inputElement.value = "";
@@ -299,7 +301,7 @@ class GameTournoisMode extends Component {
                                 <div class="invalid-feedback">
                                     Veuillez entrer un nom pour le tournoi
                                 </div>
-                                <small id="tournamentNameHelp" class="form-text text-muted">
+                                <small id="tournamentNameHelp" class="form-text text-muted" maxlength="40">
                                     * Champ obligatoire
                                 </small>
                             </div>
@@ -358,13 +360,7 @@ class GameTournoisMode extends Component {
                                     </tbody>
                                 </table>
                                 <div id='noTour'></div>
-                                ${
-                                  this.state.error
-                                    ? `<div class="alert alert-danger mt-3" role="alert">
-                                        ${this.state.error}
-                                        </div>`
-                                    : ""
-                                }
+                                
                             </div>
                             <div class="text-center mt-3">
                                 <button class="btn btn-primary btn-lg px-5 py-3" id="actualiserBtn">
@@ -372,9 +368,17 @@ class GameTournoisMode extends Component {
                                 </button>
                             </div>
                         </div>
+                        
                     </div>
+                    
                 </div>
-            </div>
+                ${
+                  this.state.error
+                    ? `<div class="card alert alert-danger bg-white g-4" role="alert">
+                        ${this.state.error}
+                        </div>`
+                    : ""
+                }
         </section>
       `;
     }

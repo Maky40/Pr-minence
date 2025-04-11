@@ -124,9 +124,6 @@ class GameComponent extends Component {
       changePage("home");
       return;
     }
-
-    console.log("[DEBUG] WebSocket instance:", this.webSocket);
-
     // 🎯 Ajout de la gestion de fermeture de WebSocket
     this.webSocket.onclose = (event) => {
       if (event.code === 4000) {
@@ -156,11 +153,6 @@ class GameComponent extends Component {
 
         switch (message.type) {
           case "players_info":
-            console.log(
-              "[DEBUG] Players info received:",
-              message.left_username,
-              message.right_username
-            );
             this.gameState.player1 = message.left_username;
             this.gameState.player2 = message.right_username;
             this.render();
@@ -430,22 +422,23 @@ class GameComponent extends Component {
 				
         ${
           this.local
-            ? `<div class="d-flex justify-content-center gap-4">
-				  <div class="text-info"> PLAYER 1
-					<span class="badge bg-warning text-dark">↑ </span> Up
-				  </div>
-				  <div class="text-info">
-					<span class="badge bg-warning text-dark">↓</span> Down
-				  </div>
-				</div>
-        <div class="d-flex justify-content-center gap-4">
-				  <div class="text-white"> PLAYER 2
-					<span class="badge bg-warning text-dark">w</span> Up
-				  </div>
-				  <div class="text-white">
-					<span class="badge bg-warning text-dark">s</span> Down
-				  </div>
-				</div>`
+            ? `
+            <div class="d-flex justify-content-center gap-4">
+				      <div class="text-info"> PLAYER 1
+                <span class="badge bg-warning text-dark">w</span> Up
+				      </div>
+				      <div class="text-white">
+					        <span class="badge bg-warning text-dark">s</span> Down
+				      </div>
+            </div>
+            <div class="d-flex justify-content-center gap-4">
+				      <div class="text-white"> PLAYER 2
+                <span class="badge bg-warning text-dark">↑ </span> Up
+				      </div>
+				      <div class="text-info">
+					      <span class="badge bg-warning text-dark">↓</span> Down
+				      </div>
+				    </div>`
             : `<div class="d-flex justify-content-center gap-4">
 				  <div class="text-white">
 					<span class="badge bg-warning text-dark"> ${controls.up}</span> Up

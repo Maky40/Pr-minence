@@ -41,12 +41,7 @@ class Api {
     try {
       const fetchUrl = this.makeUrl(url);
       const headers = this.makeHeader(data, auth, method, isFile);
-
-      console.log(`[API] Fetching ${method} ${fetchUrl}`);
       const response = await fetch(fetchUrl, headers);
-      console.log(
-        `[API] Response status: ${response.status}, URL: ${response.url}`
-      );
 
       // For logout, accept any successful response
       if (url === this.urlAuthDjangoLogout) {
@@ -55,14 +50,10 @@ class Api {
 
       // Gestion améliorée des réponses 400
       if (response.status === 400) {
-        console.log("[API] Handling 400 Bad Request");
-
         try {
           // Clonons la réponse pour éviter les problèmes de "body already read"
           const clonedResponse = response.clone();
           const responseData = await clonedResponse.json();
-          console.log("[API] 400 response data:", responseData);
-
           // Extraction intelligente du message d'erreur
           let errorMessage = "Bad request";
 
@@ -84,7 +75,7 @@ class Api {
               })
               .join(" | ");
           }
-          
+
           // Retourner un objet structuré pour une meilleure gestion côté client
           return {
             status: 400,
@@ -141,14 +132,8 @@ class Api {
 
       // Check if response is ok
       if (!response.ok) {
-        console.log("[API] Response error:", response);
-
         // Gestion spécifique des erreurs de serveur (5xx)
         if (response.status >= 500) {
-          console.warn(
-            `[API] Server error ${response.status}: ${response.statusText}`
-          );
-
           // Créer un message d'erreur approprié selon le code d'erreur
           let errorMessage;
           switch (response.status) {
@@ -187,12 +172,7 @@ class Api {
 
           // Si ce n'est pas du JSON, ne pas essayer de parser
           if (contentType && !contentType.includes("application/json")) {
-            console.log(`[API] Non-JSON error response (${contentType})`);
             const errorText = await response.text();
-            console.log(
-              "[API] Error response text:",
-              errorText.substring(0, 100)
-            );
 
             const errorMessage = `Erreur ${response.status}: ${response.statusText}`;
             const toast = new Toast("Erreur API", errorMessage, "error");
@@ -226,12 +206,6 @@ class Api {
 
           try {
             const errorText = await response.text();
-            console.log(
-              "[API] Error response text:",
-              errorText.substring(0, 100)
-            );
-
-            // Message plus informatif
             const errorMessage = `Erreur ${response.status}: ${response.statusText}`;
             const toast = new Toast("Erreur API", errorMessage, "error");
             toast.show();
@@ -257,11 +231,7 @@ class Api {
           }
         }
       }
-
-      // Traitement des réponses réussies
       const contentType = response.headers.get("content-type");
-      console.log(`[API] Content-Type: ${contentType}`);
-
       if (contentType && contentType.includes("application/json")) {
         const jsonResponse = await response.json();
         return {
@@ -276,8 +246,6 @@ class Api {
       } else {
         // Tentative de récupération du texte
         const text = await response.text();
-        console.log("[API] Non-JSON response:", text.substring(0, 200));
-
         // Si ça ressemble à du JSON, essayer de le parser
         if (text.trim().startsWith("{") || text.trim().startsWith("[")) {
           try {

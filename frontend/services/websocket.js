@@ -16,15 +16,11 @@ class WebSocketAPI {
   }
 
   init() {
-    console.log("WebSocket initialized:", new Date().toISOString());
-    console.log("WebSocket url:", this.wsURL);
-
     if (this.retryCount >= this.maxRetries) {
       console.error("Max retries reached. Stopping attempts.");
       this.notifyListeners("error", "Max retries reached. Stopping attempts.");
       return;
     }
-
     try {
       this.socket = new WebSocket(this.wsURL);
       this.setupEventListeners();
@@ -82,7 +78,6 @@ class WebSocketAPI {
   }
   addMessageListener(type, callback) {
     if (typeof callback !== "function") {
-      console.error("[WebSocket] Callback must be a function");
       return;
     }
     this.messageListeners.set(type, callback);
@@ -90,13 +85,11 @@ class WebSocketAPI {
 
   // Ajouter cette méthode
   removeMessageListener(type) {
-    console.log(`[WebSocket] Removing listener for type: ${type}`);
     this.messageListeners.delete(type);
   }
 
   // Ajouter cette méthode
   removeAllListeners() {
-    console.log("[WebSocket] Removing all listeners");
     this.messageListeners.clear();
   }
 
@@ -114,7 +107,6 @@ class WebSocketAPI {
 
   setupEventListeners() {
     this.socket.addEventListener("open", () => {
-      console.log("WebSocket connection established");
       this.status = "CONNECTED";
       this.retryCount = 0; // Réinitialiser le compteur de tentatives
       this.notifyListeners("open", null);
@@ -130,18 +122,12 @@ class WebSocketAPI {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "force_logout") {
-          console.log(
-            "[WebSocket] Déconnexion forcée détectée, fermeture de tous les onglets."
-          );
-          console.log("[WebSocket] URL de redirection :", data.redirect_url);
           if (this.socket) {
             this.socket.close();
           }
-          console.log(`Avant: auth.authenticated = ${auth.authenticated}`);
           if (auth.authenticated == true) {
             auth.logoutAndNotify();
           }
-          console.log(`Après: auth.authenticated = ${auth.authenticated}`);
         }
       } catch (error) {
         console.error("[WebSocket] Erreur lors du parsing du message :", error);
@@ -161,7 +147,6 @@ class WebSocketAPI {
 
     this.socket.addEventListener("error", (event) => {
       const errorMessage = "Erreur de connexion au serveur";
-      console.error("WebSocket error:", event);
       this.status = "ERROR";
       this.notifyListeners("error", errorMessage);
     });

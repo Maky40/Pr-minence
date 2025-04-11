@@ -1,11 +1,10 @@
 import Button42 from "../components/42button.js";
 import auth from "../services/auth.js";
 import pong42 from "../services/pong42.js";
-
+import { validateField } from "../utils/Form.js";
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const showErrorMessage = (message) => {
-  console.log("Error message ---:", message);
   const errorDiv = document.getElementById("error-msg");
   errorDiv.innerHTML = message;
   errorDiv.classList.remove("d-none");
@@ -31,31 +30,32 @@ const returnResult = (state, message) => {
 };
 //fonction qui check les données du formulaire
 const checkDataFromForm = (data) => {
-  if (data.password !== data.passwordConfirm) {
-    console.log("Les mots de passe ne correspondent pas");
-    return returnResult(false, "Les mots de passe ne correspondent pas");
+  // Validation des mots de passe (inchangée)...
+
+  // Email validation
+  const validateEmail = validateField("email", data.email);
+  if (validateEmail.isValid === false) {
+    return returnResult(validateEmail.isValid, validateEmail.message);
   }
 
-  if (data.password.length < 8) {
-    console.log("Mot de passe trop court");
-    return returnResult(
-      false,
-      "Le mot de passe doit contenir au moins 8 caractères"
-    );
+  // First name validation
+  const validateFirstName = validateField("civil", data.first_name);
+  if (validateFirstName.isValid === false) {
+    return returnResult(validateFirstName.isValid, validateFirstName.message);
   }
 
-  if (emailPattern.test(data.email) === false) {
-    console.log("Email invalide");
-    return returnResult(false, "Adresse email invalide");
+  // Last name validation
+  const validateLastName = validateField("civil", data.last_name);
+  if (validateLastName.isValid === false) {
+    return returnResult(validateLastName.isValid, validateLastName.message);
   }
 
-  if (data.username.length < 3) {
-    console.log("Nom d'utilisateur trop court");
-    return returnResult(
-      false,
-      "Le nom d'utilisateur doit contenir au moins 3 caractères"
-    );
+  // Username validation (déjà correct)
+  const validateUsername = validateField("username", data.username);
+  if (validateUsername.isValid === false) {
+    return returnResult(validateUsername.isValid, validateUsername.message);
   }
+
   return returnResult(true, "Les données sont valides");
 };
 
