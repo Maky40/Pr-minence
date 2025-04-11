@@ -36,6 +36,7 @@ class GameSelectionComponent extends Component {
           break;
         case "localMode":
           component = new GameLocal();
+          component.init();
           break;
         default:
           console.error(`Mode inconnu: ${mode}`);

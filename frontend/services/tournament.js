@@ -223,20 +223,13 @@ class TournamentService extends EventEmitter {
    */
   updateTournamentStatus = async () => {
     try {
-      // Récupérer les dernières données du tournoi
       const tournament = await this.getTournaments();
-      console.log(
-        "[Tournament] Tournament status updated from server EMIT3:",
-        tournament
-      );
       if (!tournament || !tournament.id) {
         this.resetTournamentInfo();
         this.stopStatusCheckInterval();
         this.emit("update", { tournament: null });
         return;
       }
-
-      // Détecter les changements
       const { hasChanged, tournamentChanged, changes } =
         this.detectChanges(tournament);
       // Si changement détecté, mettre à jour et notifier
@@ -404,7 +397,7 @@ class TournamentService extends EventEmitter {
    * @returns {Object|null} Le match trouvé ou null
    */
   getNextCurrentUserMatch(matches) {
-    if (!this.tournamentInfo.tournamentId) {
+    if (!this.currentTournamentId) {
       console.log("No tournament ID available");
       return null;
     }
@@ -444,32 +437,20 @@ class TournamentService extends EventEmitter {
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch tournaments");
       }
-      // Cas où l'utilisateur est dans un tournoi
       if (data.current_tournament) {
-        // Si le tournoi a changé ou est nouveau
         if (
           !this.current_tournament_info ||
           this.currentTournamentId !== data.current_tournament.id
         ) {
           this.resetTournamentInfo();
           this.updateTournamentInfo(data.current_tournament);
-          console.log(
-            "[Tournament] Tournament changed or new tournament detected EMIT5"
-          );
           this.emit("update", this.tournamentInfo);
           this.startStatusCheckInterval();
         }
-
-        // Vérifier si le joueur a un match
-        const myNextMatch = this.getNextCurrentUserMatch(
-          data.current_tournament.matches
-        );
-        console.log(
-          "[Tournament] Current tournament status:",
-          data.current_tournament.status
-        );
-        // Si le tournoi est en cours (BG: "Begining" - démarré)
         if (data.current_tournament.status === "BG") {
+          const myNextMatch = this.getNextCurrentUserMatch(
+            data.current_tournament.matches
+          );
           if (
             myNextMatch &&
             pong42.currentPage !== "game" &&
@@ -505,7 +486,7 @@ class TournamentService extends EventEmitter {
    */
   async checkAndUpdateTournamentStatus() {
     try {
-      if (!this.tournamentId) {
+      if (!this.currentTournamentId) {
         console.log("No tournament ID available");
         this.stopStatusCheckInterval();
         return;
@@ -514,6 +495,9 @@ class TournamentService extends EventEmitter {
       if (auth.isAuthenticated) {
         await this.updateTournamentStatus();
       } else {
+        console.log(
+          "[Tournament] User is not authenticated, stopping interval"
+        );
         this.stopStatusCheckInterval();
       }
     } catch (error) {
@@ -526,23 +510,25 @@ class TournamentService extends EventEmitter {
    * Démarre l'intervalle de vérification du statut du tournoi
    */
   startStatusCheckInterval() {
-    if (this.interval) {
-      console.log("[Tournament] Interval already running, skipping");
-      return;
-    }
+    //console.log("[Tournament] Starting status check interval and stop");
+    //this.stopStatusCheckInterval();
     if (!auth.isAuthenticated) {
       console.log("[Tournament] User is not authenticated, skipping interval");
       return;
     }
-    this.stopStatusCheckInterval();
     // Nettoyage de l'intervalle existant
-
+    console.log(
+      "[Tournament] Starting status check interval for tournament ID:",
+      this.currentTournamentId
+    );
     // Vérification de la présence d'un tournamentId
-    if (!this.tournamentId) {
+    if (!this.currentTournamentId) {
       console.log("No tournament ID provided");
       return;
     }
-
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
     this.interval = setInterval(async () => {
       console.log("[Tournament] Checking tournament status every 5 seconds");
       await this.checkAndUpdateTournamentStatus();

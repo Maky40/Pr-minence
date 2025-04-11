@@ -7,6 +7,7 @@ import {
   isPlayerIdPresent,
 } from "./GameTournoiLib.js";
 import { changePage } from "../../../utils/Page.js";
+import pong42 from "../../../services/pong42.js";
 class GameTournoiLobbyTab extends Component {
   constructor(
     tournament,
@@ -56,6 +57,14 @@ class GameTournoiLobbyTab extends Component {
       this.waitingForPlayers = true;
       const matchId = e.target.getAttribute("data-match-id");
       this.joinTournamentMatch(matchId);
+      console.log(
+        "[TOURNAMENT] Match ID to join:",
+        matchId,
+        "Tournament ID:",
+        this.tournament.id,
+        "STOPPP INTERVAL"
+      );
+      pong42.player.tournament.stopStatusCheckInterval();
       this.destroy();
     });
   }
@@ -95,7 +104,7 @@ class GameTournoiLobbyTab extends Component {
             </div>
             ${
               this.tournament.status === "PN"
-                ? `<button class="btn btn-outline-danger" id="leaveTournamentButton">
+                ? `<button class="btn btn-outline-danger me-2" id="leaveTournamentButton">
                   ${
                     this.tournament.creator
                       ? "Annuler le tournoi"
@@ -108,7 +117,7 @@ class GameTournoiLobbyTab extends Component {
               this.tournament.creator &&
               this.tournament.status === "PN" &&
               this.tournament.players_count >= 8
-                ? `<button class="btn btn-outline-success" id="startTournamentButton">
+                ? `<button class="btn btn-warning" id="startTournamentButton">
                     Démarrer le tournoi
                   </button>`
                 : ""

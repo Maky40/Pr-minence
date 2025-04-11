@@ -105,7 +105,7 @@ class Player extends EventEmitter {
     try {
       const response = await api.apiFetch("player/tournaments/", true);
       this.has_active_tournament = response.data.has_active_tournament;
-      if (!this.has_active_tournament) {
+      if (!this.has_active_tournament && !this.waitingMatch) {
         this.notifyListeners("updateTournament");
       }
       return this.has_active_tournament;
@@ -228,9 +228,9 @@ class Player extends EventEmitter {
       updateToast.show();
       return true;
     } catch (error) {
-      const toast = new Toast("Error", error.message, "error");
+      const toast = new Toast("Error", "Password incorrect (ne correspond pas ou trop petit)", "error");
       toast.show();
-      throw error;
+      throw "Password incorrect (ne correspond pas ou trop petit)";
     }
   };
 

@@ -3,8 +3,19 @@ import pong42 from "../../services/pong42.js";
 import { changePage } from "../../utils/Page.js";
 
 class GameOverComponent extends Component {
-  constructor(gameComponent, renderFunction) {
+  constructor() {
     super();
+    this.gameConfig = null;
+    this.gameState = null;
+    this.webSocket = null;
+    this.local = false;
+    this.previousTournamentInfo = null;
+    this.tournament = null;
+    this.music = null;
+    this.winner = null;
+    this.gestTournament = false;
+  }
+  async init(gameComponent) {
     this.gameConfig = gameComponent.gameConfig;
     this.gameState = gameComponent.gameState;
     this.webSocket = gameComponent.webSocket;
@@ -13,9 +24,16 @@ class GameOverComponent extends Component {
       pong42.player.tournament.previousTournamentInfo;
     this.tournament = pong42.player.tournament.tournamentInfo;
     this.music = gameComponent.music;
-    this.renderFunction = renderFunction;
     this.winner = gameComponent.winner || "Game Over";
     this.gestTournament = false;
+    console.log(
+      "[TOURNAMENT] GameOverComponent constructor called",
+      this.gameState
+    );
+    console.log(
+      "[TOURNAMENT] GameOverComponent constructor called",
+      this.tournament
+    );
   }
 
   displayTournamentRound(currentTournementRound) {

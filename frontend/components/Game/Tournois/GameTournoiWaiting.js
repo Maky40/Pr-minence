@@ -43,8 +43,6 @@ class GameTournoiWaiting extends Component {
       });
       return;
     }
-
-    console.log("[TOURNAMENT] Joining match:", this.state.matchId);
     this.hasJoinedMatch = true;
     this.isConnecting = true;
 
