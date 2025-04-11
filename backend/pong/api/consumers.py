@@ -213,7 +213,7 @@ class PongConsumer(AsyncWebsocketConsumer):
             "paddle_right_y": 250,
             "paddle_speed_left": 0,
             "paddle_speed_right": 0,
-            "paddle_width": 10,
+            "paddle_width": 20,
             "paddle_height": 100,
             "score_left": 0,
             "score_right": 0,
@@ -261,7 +261,7 @@ class PongConsumer(AsyncWebsocketConsumer):
         bx, by = state["ball_x"], state["ball_y"]
         vx, vy = state["ball_vx"], state["ball_vy"]
         w, h = state["width"], state["height"]
-        ball_size = 15
+        ball_size = 20
         paddle_left_x = 30
         paddle_right_x = w - 30 - state["paddle_width"]
         paddle_height = state["paddle_height"]
