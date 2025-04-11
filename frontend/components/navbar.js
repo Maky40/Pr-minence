@@ -141,11 +141,6 @@ export default class Navbar extends Component {
                   <i class="fas fa-home me-2"></i>Accueil
                 </a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link px-3" href="#score">
-                  <i class="fas fa-trophy text-warning me-2"></i>Légendes
-                </a>
-              </li>
                ${
                  this.state.isAuthenticated && !pong42.matchInOtherTab
                    ? `
