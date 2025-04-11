@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 //const API_HOST = "42pong.ddns.net:8443";
   const API_HOST = "42pong.zapto.org:8443";
 //const API_HOST = "42pong.bounceme.net:8443";
+=======
+// const API_HOST = "42pong.ddns.net:8443";
+//  const API_HOST = "42pong.zapto.org:8443";
+const API_HOST = "42pong.bounceme.net:8443";
+>>>>>>> 8145a35 (toast for change password)
 
 const ENV = {
   API_URL: `https://${API_HOST}/`,

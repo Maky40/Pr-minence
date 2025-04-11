@@ -228,9 +228,9 @@ class Player extends EventEmitter {
       updateToast.show();
       return true;
     } catch (error) {
-      const toast = new Toast("Error", error.message, "error");
+      const toast = new Toast("Error", "Password incorrect (ne correspond pas ou trop petit)", "error");
       toast.show();
-      throw error;
+      throw "Password incorrect (ne correspond pas ou trop petit)";
     }
   };
 
