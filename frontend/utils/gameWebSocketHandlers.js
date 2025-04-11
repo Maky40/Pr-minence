@@ -55,6 +55,7 @@ function reuseExistingWebSocket(component, options = {}) {
 
 export function initializeGameWebSocket(component, matchId, options = {}) {
   // If matchId is empty, use base URL for host connections
+  console.log("[DEBUG] Initializing WebSocket connection");
   const existingSocket = reuseExistingWebSocket(component, options);
   if (existingSocket) {
     return existingSocket;

@@ -110,9 +110,9 @@ body::before {
 }
 
 .btn.btn-warning {
-  background-color: #eaeabd;
+  background-color: #fffffd;
   border: 2px solid var(--neon-yellow);
-  color: var(--neon-yellow);
+  color: black;
   box-shadow: 0 0 5px var(--neon-yellow);
 }
 
