@@ -6,6 +6,7 @@ from .serializers import TournamentSerializer
 from .decorators import jwt_cookie_required
 from django.db import transaction
 
+
 def update_tournament(tournament_id):
     with transaction.atomic():
         # Verrouiller le tournoi pour éviter des mises à jour concurrentes

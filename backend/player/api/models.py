@@ -63,7 +63,7 @@ class Friendship(models.Model):
         return f"{self.player_sender.username} -> {self.player_receiver.username} ({self.get_state_display()})"
 
 class Tournament(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=40)
     created = models.DateTimeField(auto_now_add=True)
     STATUS_CHOICES = [
         ('PN', 'Pending'),

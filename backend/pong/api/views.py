@@ -46,21 +46,21 @@ def create_individual_match(request):
     except Player.DoesNotExist:
         return Response({"error": "Ce joueur n'existe pas."}, status=404)
 
-    # Vérifier qu'il n'a pas déjà un match unplayed
+
     if has_unplayed_match(player):
         return Response(
             {"error": "Vous avez deja un match en cours non joue. Veuillez annuler ou terminer celui ci avant d'en lancer un autre"},
             status=400
         )
 
-    # Vérifier qu'il n'est pas dans un tournoi actif
+
     if is_in_active_tournament(player):
         return Response(
             {"error": "Vous etes dans un tournoi en cours. Vous ne pouvez pas lancer de match tant que le tournoi n'est pas fini."},
             status=400
         )
 
-    # Création du match
+
     match = Match.objects.create(
         tournament=None,
         state='UPL'
@@ -91,14 +91,14 @@ def accept_individual_match(request):
     except Player.DoesNotExist:
         return Response({"error": "Ce joueur n'existe pas."}, status=404)
 
-    # Vérifier qu'il n'a pas déjà un match unplayed
+
     if has_unplayed_match(player):
         return Response(
             {"error": "Vous avez deja un match en cours non joue. Veuillez annuler ou terminer celui ci avant d'en lancer un autre."},
             status=400
         )
 
-    # Vérifier qu'il n'est pas dans un tournoi actif
+
     if is_in_active_tournament(player):
         return Response(
             {"error": "Vous etes dans un tournoi en cours. Vous ne pouvez pas lancer de match tant que le tournoi n'est pas fini."},
@@ -154,13 +154,13 @@ def delete_individual_match(request):
     if not unplayed_qs.exists():
         return Response({"error": "Aucun match non joue a supprimer."}, status=400)
 
-    # Si le joueur a plus d'un match unplayed, on peut renvoyer une erreur ou en supprimer un seul
+
     if unplayed_qs.count() > 1:
         return Response({
             "error": "Vous avez plusieurs matchs non joue. Veuillez contacter le support."
         }, status=400)
 
-    # On récupère le seul PlayerMatch unplayed
+
     player_match = unplayed_qs.first()
     match = player_match.match
 
@@ -171,7 +171,6 @@ def delete_individual_match(request):
             "error": "Vous ne pouvez pas supprimer un match qui contient plus d'un joueur."
         }, status=400)
 
-    # Si on est ici, c'est qu'il n'y a qu'un seul joueur : le créateur
     match.delete()
     return Response({"message": "Suppression du match non joue reussie."}, status=200)
 

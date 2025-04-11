@@ -34,12 +34,17 @@ class PlayerSearch(APIView):
             search_query = request.query_params.get('username', '').strip()
             current_user_id = request.decoded_token['id']
 
-            # Combine le filtre de recherche et l'exclusion dans une seule requête SQL
+            if len(search_query) > 50:
+                return Response({
+                    "status": 400,
+                    "message": "Le nom d'utilisateur ne peut pas dépasser 50 caractères.",
+                })
+
             players = Player.objects.filter(
                 username__icontains=search_query
             ).exclude(
                 id=current_user_id
-            ).order_by('username')[:5]  # Limite à 5 résultats directement dans la requête
+            ).order_by('username')[:5]
 
             serializer = PlayerInfoSerializer(players, many=True)
 
@@ -48,11 +53,13 @@ class PlayerSearch(APIView):
                 "players": serializer.data,
                 "message": f"{len(serializer.data)} joueurs trouvés."
             })
+
         except Exception as e:
             return Response({
                 "status": 500,
                 "message": str(e)
             }, status=500)
+
 
 class PlayerInfo(APIView):
 
@@ -61,14 +68,23 @@ class PlayerInfo(APIView):
         try:
             username = request.query_params.get('username')
             if username:
+                username = username.strip()
+
+                if len(username) > 50:
+                    return Response({
+                        "status": 400,
+                        "message": "Le nom d'utilisateur est trop long.",
+                    })
+
                 player = Player.objects.filter(username=username)
                 if not player.exists():
                     raise Player.DoesNotExist
+
                 serializer = PlayerInfoSerializer(player, many=True)
                 return Response({
                     "status": 200,
                     "players": serializer.data,
-                    "message": "Joueur correspond trouve dans la base de donnees"
+                    "message": "Joueur correspondant trouvé dans la base de données"
                 })
 
             player = Player.objects.get(id=request.decoded_token['id'])
@@ -100,42 +116,41 @@ class PlayerInfo(APIView):
             if "first_name" in player_data:
                 first_name_raw = player_data['first_name']
                 if not isinstance(first_name_raw, str):
-                    return Response({"status": 400, "message": "Le prenom doit etre une chaine de caracteres."})
+                    return Response({"status": 400, "message": "Le prénom doit être une chaîne de caractères."})
                 first_name = ' '.join(first_name_raw.strip().split())
                 if len(first_name) == 0 or len(first_name) > 50:
-                    return Response({"status": 400, "message": "Le prenom contient trop de caracteres (ou aucun)."})
+                    return Response({"status": 400, "message": "Le prénom contient trop de caractères (ou aucun)."})
                 if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", first_name):
-                    return Response({"status": 400, "message": "Le prenom contient des caracteres interdit."})
+                    return Response({"status": 400, "message": "Le prénom contient des caractères interdits."})
                 player.first_name = first_name
                 changed = True
 
             if "last_name" in player_data:
                 last_name_raw = player_data['last_name']
                 if not isinstance(last_name_raw, str):
-                    return Response({"status": 400, "message": "Le nom doit etre une chaine de caracteres."})
+                    return Response({"status": 400, "message": "Le nom doit être une chaîne de caractères."})
                 last_name = ' '.join(last_name_raw.strip().split())
                 if len(last_name) == 0 or len(last_name) > 50:
-                    return Response({"status": 400, "message": "Le nom contient trop de caracteres(ou aucun)."})
+                    return Response({"status": 400, "message": "Le nom contient trop de caractères (ou aucun)."})
                 if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", last_name):
-                    return Response({"status": 400, "message": "Le nom contient des caracteres interdit."})
+                    return Response({"status": 400, "message": "Le nom contient des caractères interdits."})
                 player.last_name = last_name
                 changed = True
 
             if "username" in player_data:
                 username_raw = player_data['username']
                 if not isinstance(username_raw, str):
-                    return Response({"status": 400, "message": "Le nom d'utilisateur doit etre une chaine de caracteres."})
+                    return Response({"status": 400, "message": "Le nom d'utilisateur doit être une chaîne de caractères."})
                 username = username_raw.strip()
                 if len(username) == 0 or len(username) > 50:
-                    return Response({"status": 400, "message": "Le nom d'utilisateur doit contenir entre 1 et 50 caracteres."})
-                # Vérifier que le nouveau username n'est pas déjà utilisé par un autre utilisateur
+                    return Response({"status": 400, "message": "Le nom d'utilisateur doit contenir entre 1 et 50 caractères."})
                 if Player.objects.filter(username=username).exclude(id=player.id).exists():
-                    return Response({"status": 400, "message": "Ce nom d'utilisateur existe deja."})
+                    return Response({"status": 400, "message": "Ce nom d'utilisateur existe déjà."})
                 player.username = username
                 changed = True
 
             player.save()
-            message = "Les informations du joueur sont actualises" if changed else "Aucun changement"
+            message = "Les informations du joueur sont actualisées" if changed else "Aucun changement"
             return Response({
                 "status": 200,
                 "message": message,
@@ -281,146 +296,147 @@ class PlayerAvatarUpload(APIView):
 
 class PlayerFriendship(APIView):
 
-        @method_decorator(jwt_cookie_required)
-        def get(self, request):
-            id = request.decoded_token['id']
-            try:
-                get_type = request.query_params.get('target')
-                if get_type == 'invites':
-                    # Invitation recues
-                    friendships = Friendship.objects.filter(player_receiver=id, state='PN')
-                    friendship_data = []
-                    for friendship in friendships:
-                        friend = friendship.player_sender
-                        friend_data = PlayerInfoSerializer(friend).data
-                        friendship_data.append(friend_data)
-                    return Response({
-                        "status": 200,
-                        "friendships": friendship_data
-                    })
-                elif get_type == 'friends':
-                    # Liste d'Amis
-                    friendships = Friendship.objects.filter(Q(player_sender=id) | Q(player_receiver=id),state="AC")
-                    friendship_data = []
-                    for friendship in friendships:
-                        friend = friendship.player_sender if friendship.player_sender.id != id else friendship.player_receiver
-                        friend_data = PlayerInfoSerializer(friend).data
-                        friendship_data.append(friend_data)
-                    return Response({
-                        "status": 200,
-                        "friendships": friendship_data
-                    })
-                elif get_type == 'requests':
-                    # Demande d'amis envoyes
-                    friendships = Friendship.objects.filter(player_sender=id, state='PN')
-                    friendship_data = []
-                    for friendship in friendships:
-                        friend = friendship.player_receiver
-                        friend_data = PlayerInfoSerializer(friend).data
-                        friendship_data.append(friend_data)
-                    return Response({
-                        "status": 200,
-                        "friendships": friendship_data
-                    })
-                else:
-                    return Response({
-                        "status": 400,
-                        "message": "Invalid request",
-                    })
-            except Exception as e:
+    @method_decorator(jwt_cookie_required)
+    def get(self, request):
+        id = request.decoded_token['id']
+        try:
+            get_type = request.query_params.get('target')
+
+            allowed_targets = {'invites', 'friends', 'requests'}
+            if not get_type or len(get_type) > 20 or get_type not in allowed_targets:
                 return Response({
-                    "status": 500,
-                    "message": str(e),
+                    "status": 400,
+                    "message": "Le parametre target ne correspond pas aux types autorises.",
                 })
 
-        @method_decorator(jwt_cookie_required)
-        def post(self, request):
-            id = request.decoded_token['id']
-            try:
-                sender = Player.objects.get(id=id)
-                receiver_id = request.data.get('target_id')
-                if receiver_id == id:
-                    # Requete d'ami envoye a soi meme
-                    return Response({
-                        "status": 400,
-                        "message": "Vous ne pouvez pas envoyer une requete d'amitie a vous meme.",
-                    })
-                receiver = Player.objects.get(id=receiver_id)
-                if Friendship.objects.filter(player_sender=sender, player_receiver=receiver).exists():
-                    # Requete deja envoye ou amitie deja existante
-                    return Response({
-                        "status": 400,
-                        "message": "Requete d'ami deja envoyee.",
-                    })
-                elif Friendship.objects.filter(player_sender=receiver, player_receiver=sender).exists():
-                    # Acceptation de la demande d'ami si la personne m'avait demande egalement en ami
-                    friendships = Friendship.objects.filter(player_sender=receiver, player_receiver=sender)
-                    friendships.update(state='AC')
-                    # Envoie l'evenement via django channel pour MAJ le statut pending en direct
-                    channel_layer = get_channel_layer()
-                    async_to_sync(channel_layer.group_send)(
-                        f"user_{receiver.id}",
-                        {
-                            "type": "status_update",
-                            "user_id": sender.id,
-                            "status": "ON",
-						}
-					)
-                    return Response({
+            if get_type == 'invites':
+                friendships = Friendship.objects.filter(player_receiver=id, state='PN')
+                friendship_data = []
+                for friendship in friendships:
+                    friend = friendship.player_sender
+                    friend_data = PlayerInfoSerializer(friend).data
+                    friendship_data.append(friend_data)
+                return Response({
+                    "status": 200,
+                    "friendships": friendship_data
+                })
+
+            elif get_type == 'friends':
+                friendships = Friendship.objects.filter(
+                    Q(player_sender=id) | Q(player_receiver=id), state="AC"
+                )
+                friendship_data = []
+                for friendship in friendships:
+                    friend = friendship.player_sender if friendship.player_sender.id != id else friendship.player_receiver
+                    friend_data = PlayerInfoSerializer(friend).data
+                    friendship_data.append(friend_data)
+                return Response({
+                    "status": 200,
+                    "friendships": friendship_data
+                })
+
+            elif get_type == 'requests':
+                friendships = Friendship.objects.filter(player_sender=id, state='PN')
+                friendship_data = []
+                for friendship in friendships:
+                    friend = friendship.player_receiver
+                    friend_data = PlayerInfoSerializer(friend).data
+                    friendship_data.append(friend_data)
+                return Response({
+                    "status": 200,
+                    "friendships": friendship_data
+                })
+
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": str(e),
+            })
+
+    @method_decorator(jwt_cookie_required)
+    def post(self, request):
+        id = request.decoded_token['id']
+        try:
+            sender = Player.objects.get(id=id)
+            receiver_id = request.data.get('target_id')
+            if receiver_id == id:
+                return Response({
+                    "status": 400,
+                    "message": "Vous ne pouvez pas envoyer une requete d'amitie a vous meme.",
+                })
+            receiver = Player.objects.get(id=receiver_id)
+            if Friendship.objects.filter(player_sender=sender, player_receiver=receiver).exists():
+                return Response({
+                    "status": 400,
+                    "message": "Requete d'ami deja envoyee.",
+                })
+            elif Friendship.objects.filter(player_sender=receiver, player_receiver=sender).exists():
+                friendships = Friendship.objects.filter(player_sender=receiver, player_receiver=sender)
+                friendships.update(state='AC')
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{receiver.id}",
+                    {
+                        "type": "status_update",
+                        "user_id": sender.id,
+                        "status": "ON",
+                    }
+                )
+                return Response({
                     "status": 200,
                     "message": "Demande d'ami acceptee."
-                    })
-                else:
-                    # Envoyer une demande d'ami
-                    friendship = Friendship.objects.create(player_sender=sender, player_receiver=receiver, state='PN')
-                    friendship.save()
-                    return Response({
-                        "status": 200,
-                        "message": "Requete d'ami envoyee."
-                    })
-            except Player.DoesNotExist:
+                })
+            else:
+                friendship = Friendship.objects.create(player_sender=sender, player_receiver=receiver, state='PN')
+                friendship.save()
+                return Response({
+                    "status": 200,
+                    "message": "Requete d'ami envoyee."
+                })
+        except Player.DoesNotExist:
+            return Response({
+                "status": 404,
+                "message": "Ce joueur n'existe pas.",
+            })
+        except Friendship.DoesNotExist:
+            return Response({
+                "status": 404,
+                "message": "La requete d'ami n'existe plus.",
+            })
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": str(e),
+            })
+
+    @method_decorator(jwt_cookie_required)
+    def delete(self, request):
+        try:
+            sender_id = request.decoded_token['id']
+            receiver_id = request.data.get('target_id')
+            sender = Player.objects.get(id=sender_id)
+            receiver = Player.objects.get(id=receiver_id)
+            try:
+                friendship = Friendship.objects.get(player_sender=sender, player_receiver=receiver)
+            except Friendship.DoesNotExist:
+                friendship = Friendship.objects.get(player_sender=receiver, player_receiver=sender)
+            if friendship:
+                friendship.delete()
+                return Response({
+                    "status": 204,
+                    "message": 'Amitie supprimee.'
+                })
+            else:
                 return Response({
                     "status": 404,
-                    "message": "Ce joueur n'existe pas.",
+                    "message": "La requete d'ami n'existe plus.",
                 })
-            except Friendship.DoesNotExist:
-                    return Response({
-                        "status": 404,
-                        "message": "La requete d'ami n'existe plus.",
-                    })
-            except Exception as e:
-                    return Response({
-                        "status": 500,
-                        "message": str(e),
-                    })
+        except Exception as e:
+            return Response({
+                "status": 500,
+                "message": str(e),
+            })
 
-        @method_decorator(jwt_cookie_required)
-        def delete(self, request):
-            try:
-                sender_id = request.decoded_token['id']
-                receiver_id = request.data.get('target_id')
-                sender = Player.objects.get(id=sender_id)
-                receiver = Player.objects.get(id=receiver_id)
-                try:
-                    friendship = Friendship.objects.get(player_sender=sender, player_receiver=receiver)
-                except Friendship.DoesNotExist:
-                    friendship = Friendship.objects.get(player_sender=receiver, player_receiver=sender)
-                if friendship:
-                    friendship.delete()
-                    return Response({
-                        "status": 204,
-                        "message": 'Amitie supprimee.'
-                    })
-                else:
-                    return Response({
-                        "status": 404,
-                        "message": "La requete d'ami n'existe plus.",
-                    })
-            except Exception as e:
-                return Response({
-                    "status": 500,
-                    "message": str(e),
-                })
 
 
 class ChangePasswordView(APIView):

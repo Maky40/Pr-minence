@@ -105,7 +105,6 @@ def logout_user(request):
     if request.token is not None:
         id = request.decoded_token['id']
         user = Player.objects.get(id=id)
-        print("JE PASSE DANS LOGOUT USER")
 
         # Invalidate the token
         cache.set(request.token, True, timeout=None)
