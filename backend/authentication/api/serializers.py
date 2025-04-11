@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate
 import re
 from django.core.validators import EmailValidator
 
+
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
 
@@ -24,8 +25,13 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def validate_username(self, value):
-        if len(value.strip()) == 0 or len(value) > 50:
+        value = value.strip()
+        if len(value) == 0 or len(value) > 50:
             raise serializers.ValidationError("Le nom d'utilisateur doit faire entre 1 et 50 caractères.")
+        if not re.match(r'^[a-zA-Z0-9._-]+$', value):
+            raise serializers.ValidationError(
+                "Le nom d'utilisateur contient des caractères non autorisés. Seuls les lettres, chiffres, '.', '-' et '_' sont autorisés."
+            )
         if Player.objects.filter(username=value).exists():
             raise serializers.ValidationError("L'inscription a échoué.")
         return value
@@ -34,7 +40,7 @@ class SignupSerializer(serializers.ModelSerializer):
         value = ' '.join(value.strip().split())
         if len(value) == 0 or len(value) > 50:
             raise serializers.ValidationError("Le prénom doit faire entre 1 et 50 caractères.")
-        if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", value):
+        if not re.match(r"^[A-Za-zÀ-ÿ' \-]+$", value):
             raise serializers.ValidationError("Le prénom contient des caractères non autorisés.")
         return value
 
@@ -42,7 +48,7 @@ class SignupSerializer(serializers.ModelSerializer):
         value = ' '.join(value.strip().split())
         if len(value) == 0 or len(value) > 50:
             raise serializers.ValidationError("Le nom doit faire entre 1 et 50 caractères.")
-        if not re.match(r"^[A-Za-zÀ-ÿ0-9'@.\- ]+$", value):
+        if not re.match(r"^[A-Za-zÀ-ÿ' \-]+$", value):
             raise serializers.ValidationError("Le nom contient des caractères non autorisés.")
         return value
 
