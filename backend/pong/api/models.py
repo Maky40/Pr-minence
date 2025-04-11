@@ -11,14 +11,14 @@ class Player(AbstractBaseUser):
     ]
 
     id = models.AutoField(primary_key=True)
-    email = models.EmailField(max_length=30, blank=False, null=False, unique=True)
-    username = models.CharField(max_length=20, blank=False, null=False, unique=True)
-    first_name = models.CharField(max_length=20, blank=False, null=False)
-    last_name = models.CharField(max_length=20, blank=False, null=False)
+    email = models.EmailField(max_length=100, blank=False, null=False, unique=True)
+    username = models.CharField(max_length=50, blank=False, null=False, unique=True)
+    first_name = models.CharField(max_length=50, blank=False, null=False)
+    last_name = models.CharField(max_length=50, blank=False, null=False)
     avatar = models.URLField(
         blank=False,
         null=False,
-        default=f'https://{settings.IP_ADDRESS}/player/static/api/images/default_avatar.png'  # Remplacez par votre domaine réel
+        default=f'https://{settings.IP_ADDRESS}/player/static/api/images/default_avatar.png'
     )
     champions = models.IntegerField(blank=False, null=False, default=0)
     wins = models.IntegerField(blank=False, null=False, default=0)
@@ -28,7 +28,7 @@ class Player(AbstractBaseUser):
     otp_secret = models.CharField(max_length=255, blank=True, null=True)
     from_42 = models.BooleanField(default=False)
 
-    # Champs requis pour l'authentification
+
     is_active = models.BooleanField(default=True)
 
     # Configuration du "user model"
@@ -85,7 +85,7 @@ class Tournament(models.Model):
 class PlayerTournament(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     tournament = models.ForeignKey(Tournament, on_delete=models.CASCADE)
-    creator = models.BooleanField(default=False)  # Si le joueur est le créateur du tournoi
+    creator = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('player', 'tournament')
@@ -97,7 +97,6 @@ class Match(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=20, choices=[('UPL', 'Unplayed'), ('PLY', 'Played')], default='UPL')
     tournament = models.ForeignKey(Tournament, on_delete=models.SET_NULL, null=True, blank=True)
-    moves = models.JSONField(null=True, blank=True)  # Pour enregistrer les mouvements dans une partie
     ROUND_CHOICES = [
         ('QU', 'Quarter'),
         ('HF', 'Half'),
@@ -112,8 +111,8 @@ class Match(models.Model):
 class PlayerMatch(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     match = models.ForeignKey(Match, on_delete=models.CASCADE)
-    score = models.IntegerField(default=0)  # Score du joueur dans le match (facultatif)
-    is_winner = models.BooleanField(default=False)  # Indique si le joueur a gagné ce match
+    score = models.IntegerField(default=0)
+    is_winner = models.BooleanField(default=False)
     SIDE_CHOICES = [
         ('L', 'Left'),
         ('R', 'Right'),
